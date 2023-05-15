@@ -26,6 +26,11 @@ fn valid_includes() {
     assert!(IDLParser::parse(Rule::include, r#"include           "header.idl""#).is_ok());
     assert!(IDLParser::parse(Rule::include, r#"include   "/path/to/header.idl""#).is_ok());
     assert!(IDLParser::parse(Rule::include, r#"include   "/path/to/.header.idl""#).is_ok());
+    assert!(IDLParser::parse(
+        Rule::include,
+        r#"include   "/path/to/.header with space.idl""#
+    )
+    .is_ok());
     assert!(IDLParser::parse(Rule::include, r#"include   "/.path/to/.header.idl""#).is_ok());
 }
 
@@ -76,4 +81,20 @@ fn r#struct() {
     assert!(IDLParser::parse(Rule::r#struct, "struct test { uint8[64] test\n; }").is_err());
     assert!(IDLParser::parse(Rule::r#struct, "struct test { uint8[\n64] test; }").is_err());
     assert!(IDLParser::parse(Rule::r#struct, "struct test { uint8[64]\ntest; }").is_err());
+}
+
+#[test]
+fn values() {
+    assert!(IDLParser::parse(Rule::value, "123").is_ok());
+    assert!(IDLParser::parse(Rule::value, "0x123abf").is_ok());
+}
+
+#[test]
+fn consts() {
+    assert!(IDLParser::parse(Rule::r#const, "const uint8 foo = 123;").is_ok());
+    assert!(IDLParser::parse(Rule::r#const, "const uint8 bar = 0x123abf;").is_ok());
+
+    assert!(IDLParser::parse(Rule::r#const, "const uint8 foo = 0x123azf;").is_err());
+    assert!(IDLParser::parse(Rule::r#const, "const uint8 bar = 123abf;").is_err());
+    assert!(IDLParser::parse(Rule::r#const, "const uint8 bar = abc;").is_err());
 }
