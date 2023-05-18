@@ -55,7 +55,7 @@ fn identifiers() {
             "teller",
             "s",
         ]
-    )
+    );
 }
 
 #[test]
@@ -113,6 +113,36 @@ fn consts() {
             "const uint8 foo = 0x123azf;",
             "const uint8 bar = 123abf;",
             "const uint8 bar = abc;",
+        ]
+    );
+}
+
+#[test]
+fn function() {
+    valid!(
+        function,
+        [
+            "method foo(in buffer req, out buffer rsp);",
+            "method bar(in uint32 req, out float64 rsp);",
+            "method bar();",
+            "method bar(in interface x,    out interface y);",
+            "method bar(in IHWKey x,    out IHWKeyFactory2 y);",
+        ]
+    );
+
+    invalid!(
+        function,
+        [
+            "method foo(,);",
+            "methods foo();",
+            "method 123foo();",
+            "method foo(int buffer req);",
+            "method foo(buffer req);",
+            "method foo(in req);",
+            "method foo(in, in);",
+            "method foo(in uint32 123req);",
+            "method foo()",
+            "method bar(in 2IHWKey x,    out IHWKeyFactory2 y);",
         ]
     );
 }

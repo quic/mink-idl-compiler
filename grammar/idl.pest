@@ -17,4 +17,10 @@ struct       = { "struct " ~ ident ~ "{" ~ (NEWLINE* ~ struct_field ~ NEWLINE*)+
 
 const = { "const " ~ primitive_types ~ ident ~ "=" ~ value ~ ";" }
 
+param_values = @{ (primitive_types | "interface" | "buffer") }
+mutable      = @{ "out" }
+immutable    = @{ "in" }
+params       =  { (mutable | immutable) ~ (param_values | ident) ~ ident }
+function     =  { "method " ~ ident ~ "(" ~ (params ~ ","?)* ~ ");" }
+
 idl = { SOI ~ include* ~ EOI }
