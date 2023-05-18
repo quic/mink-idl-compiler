@@ -78,18 +78,19 @@ fn r#struct() {
     valid!(
         r#struct,
         [
-            "struct test {uint8 test;}",
-            "struct test { uint8[64] test; }",
-            "struct test { uint8[64] test; uint64 test2; }",
-            "struct test { uint8[64] test;\n\n\n\n uint64 test2;\n\n\n\n\n }",
+            "struct test {uint8 test;};",
+            "struct test { uint8[64] test; };",
+            "struct test { uint8[64] test; uint64 test2; };",
+            "struct test { uint8[64] test;\n\n\n\n uint64 test2;\n\n\n\n\n };",
         ]
     );
 
     invalid!(
         r#struct,
         [
-            "struct test { uint8[64] test\n; }",
-            "struct test { uint8[\n64] test; }",
+            "struct test { uint8[64] test\n; };",
+            "struct test { uint8[\n64] test; };",
+            "struct test { uint8[64]\ntest; };",
             "struct test { uint8[64]\ntest; }",
         ]
     );
