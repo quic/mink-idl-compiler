@@ -1,10 +1,8 @@
 WHITESPACE = _{ " " }
+COMMENT    = _{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
 
-path       = { inner_path+ }
-inner_path = {
-    !".idl" ~ (ASCII_ALPHANUMERIC | "." | "/")
-}
-include    = { "include " ~ "\"" ~ path ~ ".idl\"" }
+path    = { (!".idl" ~ (ASCII_ALPHANUMERIC | "." | "/"))+ }
+include = { "include " ~ "\"" ~ path ~ ".idl\"" }
 
 ident           = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
 integer_types   = @{ "u"? ~ "int" ~ ("8" | "16" | "32" | "64") }
@@ -12,15 +10,18 @@ float_types     = @{ "float" ~ ("32" | "64") }
 primitive_types = @{ (integer_types | float_types) }
 value           = @{ ("0x" ~ ASCII_HEX_DIGIT+ | ASCII_DIGIT+) }
 
-struct_field = { primitive_types ~ ("[" ~ value ~ "]")? ~ ident ~ ";" }
-struct       = { "struct " ~ ident ~ "{" ~ (NEWLINE* ~ struct_field ~ NEWLINE*)+ ~ "}" }
+array        = { "[" ~ value ~ "]" }
+struct_field = { (primitive_types | ident) ~ array? ~ ident ~ ";" }
+struct       = { "struct " ~ ident ~ "{" ~ (NEWLINE* ~ struct_field ~ NEWLINE*)+ ~ "};" }
 
 const = { "const " ~ primitive_types ~ ident ~ "=" ~ value ~ ";" }
 
 param_values = @{ (primitive_types | "interface" | "buffer") }
-mutable      = @{ "out" }
-immutable    = @{ "in" }
-params       =  { (mutable | immutable) ~ (param_values | ident) ~ ident }
+mutability   = @{ ("in" | "out") }
+params       =  { mutability ~ (param_values | ident) ~ ident }
 function     =  { "method " ~ ident ~ "(" ~ (params ~ ","?)* ~ ");" }
 
-idl = { SOI ~ include* ~ EOI }
+error     = { "error " ~ ident ~ ";" }
+interface = { "interface " ~ ident ~ "{" ~ NEWLINE* ~ ((function | const | struct | error) ~ NEWLINE*)* ~ NEWLINE* ~ "};" }
+
+idl = { SOI ~ NEWLINE* ~ (include ~ NEWLINE)* ~ ((const | struct | interface) ~ NEWLINE*)* ~ EOI }
