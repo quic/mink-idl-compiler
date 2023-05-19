@@ -1,5 +1,8 @@
+COMMENT_VARIANT_DOUBLESLASH = @{ ("//" ~ (!NEWLINE ~ ANY)* ~ NEWLINE)+ }
+COMMENT_VARIANT_ASTERISK    = @{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
+
 WHITESPACE = _{ " " }
-COMMENT    = _{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
+COMMENT    =  { (COMMENT_VARIANT_ASTERISK | COMMENT_VARIANT_DOUBLESLASH) }
 
 path    = { (!".idl" ~ (ASCII_ALPHANUMERIC | "." | "/"))+ }
 include = { "include " ~ "\"" ~ path ~ ".idl\"" }
