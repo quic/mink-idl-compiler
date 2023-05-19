@@ -21,6 +21,11 @@ struct Args {
     #[arg(short, long)]
     /// Path of IDL to dump AST for
     path: String,
+
+    #[arg(short, long, default_value = "false")]
+    /// Print the Abstract Syntax Tree formed from the IDL. Useful to analyze parsing
+    /// inconsistencies..
+    dump_ast: bool,
 }
 
 fn main() {
@@ -28,11 +33,8 @@ fn main() {
     use pest::Parser as PestParser;
     let args = Args::parse();
     let file = std::fs::read_to_string(args.path).expect("File read to succeed.");
-
-    let now = std::time::Instant::now();
     let ast = IDLParser::parse(Rule::idl, &file).expect("Successful AST dump");
-    let end = now.elapsed();
-    println!("AST generated in {end:?}");
-    std::hint::black_box(ast);
-    //dbg!(ast);
+    if args.dump_ast {
+        println!("{:#?}", &ast);
+    }
 }
