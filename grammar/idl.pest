@@ -25,6 +25,6 @@ params       =  { mutability ~ (param_values | ident) ~ ident }
 function     =  { "method " ~ ident ~ "(" ~ (params ~ ","?)* ~ ");" }
 
 error     = { "error " ~ ident ~ ";" }
-interface = { "interface " ~ ident ~ "{" ~ (function | const | struct | error)* ~ "};" }
+interface = { "interface " ~ ident ~ (":" ~ ident)? ~ "{" ~ (function | const | struct | error)* ~ "};" }
 
 idl = { SOI ~ include* ~ (const | struct | interface)* ~ EOI }

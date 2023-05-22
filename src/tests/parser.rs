@@ -180,3 +180,23 @@ fn comments() {
         ]
     );
 }
+
+#[test]
+fn interface() {
+    valid!(
+        interface,
+        [
+            "interface ITest {};",
+            "interface ITest: IBase { error tmp; };",
+        ]
+    );
+
+    invalid!(
+        interface,
+        [
+            "interface 12ITest {};",
+            "interface 12ITest {abc};",
+            "interface ITest: IBase IBase2 {};",
+        ]
+    );
+}
