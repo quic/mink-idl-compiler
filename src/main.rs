@@ -33,8 +33,11 @@ fn main() {
     use pest::Parser as PestParser;
     let args = Args::parse();
     let file = std::fs::read_to_string(args.path).expect("File read to succeed.");
-    let ast = IDLParser::parse(Rule::idl, &file).expect("Successful AST dump");
-    if args.dump_ast {
-        println!("{:#?}", &ast);
-    }
+    let ast = match IDLParser::parse(Rule::idl, &file) {
+        Ok(ast) => ast,
+        Err(e) => {
+            eprintln!("{e}");
+            panic!("Couldn't generate AST");
+        }
+    };
 }
