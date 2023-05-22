@@ -4,8 +4,8 @@ COMMENT_VARIANT_ASTERISK    = @{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
 WHITESPACE = _{ " " | "\t" | NEWLINE }
 COMMENT    =  { COMMENT_VARIANT_ASTERISK | COMMENT_VARIANT_DOUBLESLASH }
 
-path    = @{ (!".idl" ~ (ASCII_ALPHANUMERIC | "." | "/" | " "))+ }
-include = ${ "include " ~ " "* ~ "\"" ~ path ~ ".idl\"" }
+path    = @{ (!".idl" ~ (ASCII_ALPHANUMERIC | "." | "/" | " "))+ ~ ".idl" }
+include = ${ "include " ~ " "* ~ "\"" ~ path ~ "\"" }
 
 ident           = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
 integer_types   = @{ "u"? ~ "int" ~ ("8" | "16" | "32" | "64") }
@@ -25,6 +25,7 @@ params     =  { mutability ~ param_type ~ ident }
 function   =  { "method " ~ ident ~ "(" ~ (params ~ ","?)* ~ ");" }
 
 error     = { "error " ~ ident ~ ";" }
-interface = { "interface " ~ ident ~ (":" ~ ident)? ~ "{" ~ (function | const | struct | error)* ~ "};" }
+iname     = { ident ~ (":" ~ ident)? }
+interface = { "interface " ~ iname ~ "{" ~ (function | const | struct | error)* ~ "};" }
 
 idl = { SOI ~ include* ~ (const | struct | interface)* ~ EOI }
