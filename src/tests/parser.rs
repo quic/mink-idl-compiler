@@ -139,6 +139,9 @@ fn function() {
         [
             "method foo(in buffer req, out buffer rsp);",
             "method bar(in uint32 req, out float64 rsp);",
+            "method bar(in uint32[] req, out float64 rsp);",
+            "method bar(in interface[] req, out float64 rsp);",
+            "method bar(in IHWKey[] req, out float64 rsp);",
             "method bar();",
             "method bar(in interface x,    out interface y);",
             "method bar(in IHWKey x,    out IHWKeyFactory2 y);",

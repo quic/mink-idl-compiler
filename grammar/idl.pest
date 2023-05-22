@@ -19,10 +19,10 @@ struct       =  { "struct " ~ ident ~ "{" ~ (struct_field)+ ~ "};" }
 
 const = { "const " ~ primitive_types ~ ident ~ "=" ~ value ~ ";" }
 
-param_values = @{ (primitive_types | "interface" | "buffer") }
-mutability   = @{ ("in" | "out") }
-params       =  { mutability ~ (param_values | ident) ~ ident }
-function     =  { "method " ~ ident ~ "(" ~ (params ~ ","?)* ~ ");" }
+param_type = @{ (primitive_types | "interface" | ident) ~ "[]"? | "buffer" }
+mutability = @{ ("in" | "out") }
+params     =  { mutability ~ param_type ~ ident }
+function   =  { "method " ~ ident ~ "(" ~ (params ~ ","?)* ~ ");" }
 
 error     = { "error " ~ ident ~ ";" }
 interface = { "interface " ~ ident ~ (":" ~ ident)? ~ "{" ~ (function | const | struct | error)* ~ "};" }
