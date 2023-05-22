@@ -22,7 +22,7 @@ const = { "const " ~ primitive_types ~ ident ~ "=" ~ value ~ ";" }
 param_values = @{ (primitive_types | "interface" | "buffer") }
 mutability   = @{ ("in" | "out") }
 params       =  { mutability ~ (param_values | ident) ~ ident }
-function     =  { "method " ~ ident ~ "(" ~ (params ~ ","?)* ~ ");" }
+function     =  { "method " ~ ident ~ "(" ~ NEWLINE? ~ (params ~ ","?)* ~ NEWLINE? ~ ");" }
 
 error     = { "error " ~ ident ~ ";" }
 interface = { "interface " ~ ident ~ "{" ~ NEWLINE* ~ ((function | const | struct | error) ~ NEWLINE*)* ~ NEWLINE* ~ "};" }
