@@ -81,31 +81,43 @@ fn r#struct() {
             "struct test {uint8 test;};",
             "struct test { uint8[64] test; };",
             "struct test { uint8[64] test; uint64 test2; };",
-            "struct test { uint8[64] test;\n\n\n\n uint64 test2;\n\n\n\n\n };",
+            "struct test { uint8[64] test\n;\n\n\n\n uint64 test2;\n\n\n\n\n };",
+            r#"struct ISecureImage_programHeader {
+                  uint64 p_type;
+                  uint64 p_offset;
+                  uint64 p_vaddr;
+                  uint64 p_paddr;
+                  uint64 p_filesz;
+                  uint64 p_memsz;
+                  uint64 p_flags;
+                  uint64 p_align;
+            };"#,
         ]
     );
 
     invalid!(
         r#struct,
         [
-            "struct test { uint8[64] test\n; };",
-            "struct test { uint8[\n64] test; };",
-            "struct test { uint8[64]\ntest; };",
-            "struct test { uint8[64]\ntest; }",
+            "struct test { uint81[32] test; };",
+            "struct test { uint8[32] 123test; };",
         ]
     );
 }
 
 #[test]
 fn values() {
-    valid!(value, ["123", "0x123abf",]);
+    valid!(value, ["123", "0x123abf", "-123",]);
 }
 
 #[test]
 fn consts() {
     valid!(
         r#const,
-        ["const uint8 foo = 123;", "const uint8 bar = 0x123abf;",]
+        [
+            "const uint8 foo = 123;",
+            "const uint8 bar = 0x123abf;",
+            "const int8 foo = -5;",
+        ]
     );
 
     invalid!(
@@ -114,6 +126,8 @@ fn consts() {
             "const uint8 foo = 0x123azf;",
             "const uint8 bar = 123abf;",
             "const uint8 bar = abc;",
+            "const uint8 bar = -abc;",
+            "const uint8 bar = -0xabc;",
         ]
     );
 }
@@ -128,6 +142,11 @@ fn function() {
             "method bar();",
             "method bar(in interface x,    out interface y);",
             "method bar(in IHWKey x,    out IHWKeyFactory2 y);",
+            r#"method bar(in uint32 req,
+                          out uint32 rsp);"#,
+            r#"method bar(in uint32 req,
+                          out uint32 foo,
+                          out uint32 bar);"#,
         ]
     );
 
@@ -144,6 +163,20 @@ fn function() {
             "method foo(in uint32 123req);",
             "method foo()",
             "method bar(in 2IHWKey x,    out IHWKeyFactory2 y);",
+        ]
+    );
+}
+
+#[test]
+fn comments() {
+    valid!(
+        COMMENT,
+        [
+            "// foo",
+            "// foo\n//bar",
+            "/** foo */",
+            "/** foo \n bar */",
+            "/** foo \n bar */\n\n\n",
         ]
     );
 }

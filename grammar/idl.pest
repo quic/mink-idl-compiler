@@ -1,30 +1,30 @@
-COMMENT_VARIANT_DOUBLESLASH = @{ ("//" ~ (!NEWLINE ~ ANY)* ~ NEWLINE)+ }
+COMMENT_VARIANT_DOUBLESLASH = @{ "//" ~ (!NEWLINE ~ ANY)* }
 COMMENT_VARIANT_ASTERISK    = @{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
 
-WHITESPACE = _{ " " }
-COMMENT    =  { (COMMENT_VARIANT_ASTERISK | COMMENT_VARIANT_DOUBLESLASH) }
+WHITESPACE = _{ " " | "\t" | NEWLINE }
+COMMENT    =  { COMMENT_VARIANT_ASTERISK | COMMENT_VARIANT_DOUBLESLASH }
 
-path    = { (!".idl" ~ (ASCII_ALPHANUMERIC | "." | "/"))+ }
-include = { "include " ~ "\"" ~ path ~ ".idl\"" }
+path    = @{ (!".idl" ~ (ASCII_ALPHANUMERIC | "." | "/" | " "))+ }
+include = ${ "include " ~ " "* ~ "\"" ~ path ~ ".idl\"" }
 
 ident           = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
 integer_types   = @{ "u"? ~ "int" ~ ("8" | "16" | "32" | "64") }
 float_types     = @{ "float" ~ ("32" | "64") }
 primitive_types = @{ (integer_types | float_types) }
-value           = @{ ("0x" ~ ASCII_HEX_DIGIT+ | ASCII_DIGIT+) }
+value           = @{ ("0x" ~ ASCII_HEX_DIGIT+ | "-"? ~ ASCII_DIGIT+) }
 
-array        = { "[" ~ value ~ "]" }
-struct_field = { (primitive_types | ident) ~ array? ~ ident ~ ";" }
-struct       = { "struct " ~ ident ~ "{" ~ (NEWLINE* ~ struct_field ~ NEWLINE*)+ ~ "};" }
+array        = ${ "[" ~ value ~ "]" }
+struct_field =  { (primitive_types | ident) ~ array? ~ ident ~ ";" }
+struct       =  { "struct " ~ ident ~ "{" ~ (struct_field)+ ~ "};" }
 
 const = { "const " ~ primitive_types ~ ident ~ "=" ~ value ~ ";" }
 
 param_values = @{ (primitive_types | "interface" | "buffer") }
 mutability   = @{ ("in" | "out") }
 params       =  { mutability ~ (param_values | ident) ~ ident }
-function     =  { "method " ~ ident ~ "(" ~ NEWLINE? ~ (params ~ ","?)* ~ NEWLINE? ~ ");" }
+function     =  { "method " ~ ident ~ "(" ~ (params ~ ","?)* ~ ");" }
 
 error     = { "error " ~ ident ~ ";" }
-interface = { "interface " ~ ident ~ "{" ~ NEWLINE* ~ ((function | const | struct | error) ~ NEWLINE*)* ~ NEWLINE* ~ "};" }
+interface = { "interface " ~ ident ~ "{" ~ (function | const | struct | error)* ~ "};" }
 
-idl = { SOI ~ NEWLINE* ~ (include ~ NEWLINE)* ~ ((const | struct | interface) ~ NEWLINE*)* ~ EOI }
+idl = { SOI ~ include* ~ (const | struct | interface)* ~ EOI }
