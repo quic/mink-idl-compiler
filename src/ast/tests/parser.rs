@@ -177,8 +177,8 @@ fn comments() {
     valid!(
         COMMENT,
         [
-            "// foo",
-            "// foo\n//bar",
+            "// foo\n",
+            "// foo\n//bar\n",
             "/** foo */",
             "/** foo \n bar */",
             "/** foo \n bar */\n\n\n",
