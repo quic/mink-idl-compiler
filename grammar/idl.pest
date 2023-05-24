@@ -2,7 +2,7 @@ COMMENT_VARIANT_DOUBLESLASH = @{ "//" ~ (!NEWLINE ~ ANY)* }
 COMMENT_VARIANT_ASTERISK    = @{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
 
 WHITESPACE = _{ " " | "\t" | NEWLINE }
-COMMENT    =  { COMMENT_VARIANT_ASTERISK | COMMENT_VARIANT_DOUBLESLASH }
+COMMENT    = _{ COMMENT_VARIANT_ASTERISK | COMMENT_VARIANT_DOUBLESLASH }
 
 path    = @{ (!".idl" ~ (ASCII_ALPHANUMERIC | "." | "/" | " "))+ ~ ".idl" }
 include = ${ "include " ~ " "* ~ "\"" ~ path ~ "\"" }
@@ -11,21 +11,21 @@ ident           = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
 integer_types   = @{ "u"? ~ "int" ~ ("8" | "16" | "32" | "64") }
 float_types     = @{ "float" ~ ("32" | "64") }
 primitive_types = @{ (integer_types | float_types) }
-value           = @{ ("0x" ~ ASCII_HEX_DIGIT+ | "-"? ~ ASCII_DIGIT+) }
+value           = @{ ("0x" ~ ASCII_HEX_DIGIT+ | "-"? ~ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)?) }
 
-array        = ${ "[" ~ value ~ "]" }
-struct_field =  { (primitive_types | ident) ~ array? ~ ident ~ ";" }
+array        = @{ ASCII_DIGIT+ }
+struct_field =  { (primitive_types | ident) ~ ("[" ~ array ~ "]")? ~ ident ~ ";" }
 struct       =  { "struct " ~ ident ~ "{" ~ (struct_field)+ ~ "};" }
 
 const = { "const " ~ primitive_types ~ ident ~ "=" ~ value ~ ";" }
 
-param_type = @{ (primitive_types | "interface" | ident) ~ "[]"? | "buffer" }
+param_type = @{ (primitive_types | ident | "interface") ~ "[]"? | "buffer" }
 mutability = @{ ("in" | "out") }
-params     =  { mutability ~ param_type ~ ident }
-function   =  { "method " ~ ident ~ "(" ~ (params ~ ","?)* ~ ");" }
+param      =  { mutability ~ param_type ~ ident }
+function   =  { "method " ~ ident ~ "(" ~ (param ~ ","?)* ~ ");" }
 
 error     = { "error " ~ ident ~ ";" }
 iname     = { ident ~ (":" ~ ident)? }
-interface = { "interface " ~ iname ~ "{" ~ (function | const | struct | error)* ~ "};" }
+interface = { "interface " ~ iname ~ "{" ~ (function | const | error)* ~ "};" }
 
 idl = { SOI ~ include* ~ (const | struct | interface)* ~ EOI }

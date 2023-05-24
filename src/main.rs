@@ -1,10 +1,4 @@
-#[cfg(test)]
-mod tests;
-
-#[derive(pest_derive::Parser)]
-#[grammar = "../grammar/idl.pest"]
-pub struct IDLParser;
-
+mod ast;
 #[derive(clap::Parser)]
 #[command(author, version, about = None, long_about)]
 /// Parse .idl files into AST.
@@ -18,26 +12,30 @@ pub struct IDLParser;
 /// The C-compiler for example returns `nested too deeply`, rust detects cyclic
 /// imports nicer.
 struct Args {
-    #[arg(short, long)]
     /// Path of IDL to dump AST for
     path: String,
 
-    #[arg(short, long, default_value = "false")]
-    /// Print the Abstract Syntax Tree formed from the IDL. Useful to analyze parsing
-    /// inconsistencies..
-    dump_ast: bool,
+    #[arg(long, value_enum)]
+    /// Dump various phases of the compiler and exit.
+    dump: Option<Dumpable>,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, clap::ValueEnum)]
+enum Dumpable {
+    /// Parse Syntax Tree
+    Pst,
+    /// Abstract Syntax Tree
+    Ast,
 }
 
 fn main() {
     use clap::Parser as ClapParser;
-    use pest::Parser as PestParser;
     let args = Args::parse();
-    let file = std::fs::read_to_string(args.path).expect("File read to succeed.");
-    let ast = match IDLParser::parse(Rule::idl, &file) {
-        Ok(ast) => ast,
-        Err(e) => {
-            eprintln!("{e}");
-            panic!("Couldn't generate AST");
+    if let Some(dump) = args.dump {
+        match dump {
+            Dumpable::Pst => ast::dump_pst(&args.path),
+            Dumpable::Ast => ast::dump_ast(&args.path),
         }
-    };
+        std::process::exit(0);
+    }
 }

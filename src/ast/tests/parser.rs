@@ -1,5 +1,4 @@
 use super::{invalid, valid};
-use pest::Parser;
 
 #[test]
 fn invalid_includes() {
@@ -117,6 +116,8 @@ fn consts() {
             "const uint8 foo = 123;",
             "const uint8 bar = 0x123abf;",
             "const int8 foo = -5;",
+            "const float32 foo = -5.123213;",
+            "const float32 bar = 5.123213;",
         ]
     );
 
@@ -128,6 +129,7 @@ fn consts() {
             "const uint8 bar = abc;",
             "const uint8 bar = -abc;",
             "const uint8 bar = -0xabc;",
+            "const float32 bar = 5.;",
         ]
     );
 }
