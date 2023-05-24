@@ -19,6 +19,8 @@ pub enum Error {
     UnknownPrimitiveType(String),
     #[error("Cannot parse integer")]
     ParseIntError(#[from] std::num::ParseIntError),
+    #[error("Documentation for this node doesn't exist yet")]
+    UnsupportedDocumentation,
 }
 
 macro_rules! ast_unwrap {
@@ -53,9 +55,17 @@ pub enum AstNode {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[repr(transparent)]
+pub struct Documentation(String);
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum InterfaceNode {
     Const(Const),
-    Function { ident: Ident, params: Vec<Param> },
+    Function {
+        doc: Option<Documentation>,
+        ident: Ident,
+        params: Vec<Param>,
+    },
     Error(Ident),
 }
 
@@ -187,6 +197,9 @@ impl<'a> From<Pairs<'a, Rule>> for AstNode {
                                     val: (r#type, elem),
                                 });
                             }
+                            Rule::COMMENT => {
+                                // Currently unsupported for structs due to varying styles
+                            }
                             _ => unreachable!(),
                         }
                     }
@@ -205,11 +218,16 @@ impl<'a> From<Pairs<'a, Rule>> for AstNode {
                     let base = pairs.next().map(|base| base.as_str().to_string());
 
                     let mut iface_nodes = Vec::new();
+                    let mut comment: Option<Documentation> = None;
                     for rule in interface {
                         match rule.as_rule() {
                             Rule::r#const | Rule::function | Rule::error => {
-                                let node = InterfaceNode::from(rule);
+                                let node = InterfaceNode::from((comment, rule));
+                                comment = None;
                                 iface_nodes.push(node);
+                            }
+                            Rule::COMMENT => {
+                                comment = Documentation::try_from(rule).ok();
                             }
                             _ => unreachable!(),
                         }
@@ -241,8 +259,9 @@ impl<'a> From<Pairs<'a, Rule>> for Const {
     }
 }
 
-impl<'a> From<Pair<'a, Rule>> for InterfaceNode {
-    fn from(pair: Pair<'a, Rule>) -> Self {
+impl<'a> From<(Option<Documentation>, Pair<'a, Rule>)> for InterfaceNode {
+    fn from(pair: (Option<Documentation>, Pair<'a, Rule>)) -> Self {
+        let (doc, pair) = pair;
         match pair.as_rule() {
             Rule::error => InterfaceNode::Error(pair.into_inner().as_str().to_string()),
             Rule::r#const => InterfaceNode::Const(Const::from(pair.into_inner())),
@@ -253,7 +272,7 @@ impl<'a> From<Pair<'a, Rule>> for InterfaceNode {
                 for param in inner {
                     params.push(Param::from(param));
                 }
-                InterfaceNode::Function { ident, params }
+                InterfaceNode::Function { doc, ident, params }
             }
             _ => unreachable!(),
         }
@@ -270,6 +289,25 @@ impl<'a> From<Pair<'a, Rule>> for Param {
         match mutability {
             "in" => Param::In { r#type, ident },
             "out" => Param::Out { r#type, ident },
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl<'a> TryFrom<Pair<'a, Rule>> for Documentation {
+    type Error = Error;
+    fn try_from(value: Pair<'a, Rule>) -> Result<Self, Self::Error> {
+        debug_assert_eq!(value.as_rule(), Rule::COMMENT);
+        let comment = value
+            .into_inner()
+            .next()
+            .ok_or(Error::UnsupportedDocumentation)?;
+        match comment.as_rule() {
+            Rule::DOCUMENTATION => {
+                let raw = comment.as_str();
+                let window = raw[3..raw.len() - 2].trim();
+                Ok(Documentation(window.to_string()))
+            }
             _ => unreachable!(),
         }
     }
@@ -294,14 +332,25 @@ impl From<Type> for ParamType {
 }
 
 pub fn dump_pst<P: AsRef<Path>>(path: P) {
+    use std::time::Instant;
+
     let inp = std::fs::read_to_string(path).unwrap();
-    match Parser::parse(Rule::idl, &inp) {
+    let now = Instant::now();
+    let pst = Parser::parse(Rule::idl, &inp);
+    let duration = now.elapsed();
+    match pst {
         Ok(pst) => println!("{pst:#?}"),
         Err(e) => eprintln!("Parsing failed:\n{e}\n"),
     }
+    eprintln!("'dump_pst' completed in {duration:?}");
 }
 
 pub fn dump_ast<P: AsRef<Path>>(path: P) {
+    use std::time::Instant;
+
+    let now = Instant::now();
     let ast = AstNode::from_file(path).unwrap();
+    let duration = now.elapsed();
     println!("{ast:#?}");
+    eprintln!("'dump_ast' completed in {duration:?}");
 }
