@@ -8,19 +8,27 @@ use pest::{
     Parser as PestParser,
 };
 
-#[allow(clippy::enum_variant_names)]
+#[derive(pest_derive::Parser, Debug)]
+#[grammar = "../grammar/idl.pest"]
+pub struct Parser;
+
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("IoError for '{1}' due to `{0}`")]
-    IoError(#[source] std::io::Error, String),
+    Io(#[source] std::io::Error, String),
     #[error("IDL Parsing failure:\n{0}\n")]
-    AstGenerationFailure(#[from] pest::error::Error<Rule>),
+    AstGenerationFailure(Box<pest::error::Error<Rule>>),
     #[error("Unknown primitive type {0} encountered.")]
     UnknownPrimitiveType(String),
     #[error("Cannot parse integer")]
     ParseIntError(#[from] std::num::ParseIntError),
     #[error("Documentation for this node doesn't exist yet")]
     UnsupportedDocumentation,
+}
+impl From<pest::error::Error<Rule>> for Error {
+    fn from(value: pest::error::Error<Rule>) -> Self {
+        Self::AstGenerationFailure(Box::new(value))
+    }
 }
 
 macro_rules! ast_unwrap {
@@ -29,17 +37,13 @@ macro_rules! ast_unwrap {
     };
 }
 
-#[derive(pest_derive::Parser, Debug)]
-#[grammar = "../grammar/idl.pest"]
-pub struct Parser;
-
 /// Identifiers are utf-8 strings.
 type Ident = String;
 /// Maximum allowed size for a struct array [`u16::MAX`]
 type Count = NonZeroU16;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum AstNode {
+pub enum Node {
     Include(String),
     Const(Const),
     Struct {
@@ -51,12 +55,53 @@ pub enum AstNode {
         base: Option<Ident>,
         nodes: Vec<InterfaceNode>,
     },
-    CompilationUnit(Vec<AstNode>),
+    CompilationUnit(String, Vec<Node>),
+}
+impl Node {
+    pub fn ident(&self) -> Option<&Ident> {
+        match self {
+            Node::Const(c) => Some(c.ident()),
+            Node::Struct { ident, fields: _ } => Some(ident),
+            Node::Interface {
+                name,
+                base: _,
+                nodes: _,
+            } => Some(name),
+            Node::CompilationUnit(root, _) => Some(root),
+            Node::Include(_) => None,
+        }
+    }
+
+    pub fn r#type(&self) -> &'static str {
+        match self {
+            Node::Include(_) => "include",
+            Node::Const(_) => "const",
+            Node::Struct {
+                ident: _,
+                fields: _,
+            } => "struct",
+            Node::Interface {
+                name: _,
+                base: _,
+                nodes: _,
+            } => "interface",
+            Node::CompilationUnit(_, _) => "Unit",
+        }
+    }
+}
+
+pub trait Identifiable {
+    fn ident(&self) -> &Ident;
 }
 
 #[derive(Debug, Clone, PartialEq)]
 #[repr(transparent)]
 pub struct Documentation(String);
+impl Documentation {
+    pub fn doc(&self) -> &String {
+        &self.0
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum InterfaceNode {
@@ -75,6 +120,19 @@ pub struct Const {
     r#type: Primitive,
     value: String,
 }
+impl Identifiable for Const {
+    fn ident(&self) -> &Ident {
+        &self.ident
+    }
+}
+impl Const {
+    pub fn r#type(&self) -> &Primitive {
+        &self.r#type
+    }
+    pub fn value(&self) -> &String {
+        &self.value
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ParamType {
@@ -87,11 +145,28 @@ pub enum Param {
     In { r#type: ParamType, ident: Ident },
     Out { r#type: ParamType, ident: Ident },
 }
+impl Identifiable for Param {
+    fn ident(&self) -> &Ident {
+        match self {
+            Param::In { r#type: _, ident } | Param::Out { r#type: _, ident } => ident,
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct StructField {
     ident: Ident,
     val: (Type, Count),
+}
+impl Identifiable for StructField {
+    fn ident(&self) -> &Ident {
+        &self.ident
+    }
+}
+impl StructField {
+    pub fn r#type(&self) -> &(Type, Count) {
+        &self.val
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -144,22 +219,22 @@ impl TryFrom<&str> for Primitive {
     }
 }
 
-impl AstNode {
+impl Node {
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self, Error> {
         let content = std::fs::read_to_string(&path)
-            .map_err(|e| Error::IoError(e, path.as_ref().display().to_string()))?;
-        Self::from_string(content)
+            .map_err(|e| Error::Io(e, path.as_ref().display().to_string()))?;
+        Self::from_string(path.as_ref().display().to_string(), content)
     }
 
-    pub fn from_string<S: AsRef<str>>(s: S) -> Result<Self, Error> {
+    pub fn from_string<S: AsRef<str>>(root: String, s: S) -> Result<Self, Error> {
         let pst = Parser::parse(Rule::idl, s.as_ref())?;
-        Ok(AstNode::from(pst))
+        Ok(Node::from((root, pst)))
     }
 }
 
-impl<'a> From<Pairs<'a, Rule>> for AstNode {
-    fn from(mut pairs: Pairs<'a, Rule>) -> Self {
-        let idl = ast_unwrap!(pairs.next());
+impl<'a> From<(String, Pairs<'a, Rule>)> for Node {
+    fn from(mut compile_unit: (String, Pairs<'a, Rule>)) -> Self {
+        let idl = ast_unwrap!(compile_unit.1.next());
         assert_eq!(idl.as_rule(), Rule::idl);
         let mut nodes = Vec::new();
 
@@ -167,7 +242,7 @@ impl<'a> From<Pairs<'a, Rule>> for AstNode {
             match inner.as_rule() {
                 Rule::include => {
                     let path = ast_unwrap!(inner.into_inner().next());
-                    nodes.push(AstNode::Include(path.as_str().to_string()));
+                    nodes.push(Node::Include(path.as_str().to_string()));
                 }
                 Rule::r#struct => {
                     let mut struct_pst = inner.into_inner();
@@ -203,13 +278,13 @@ impl<'a> From<Pairs<'a, Rule>> for AstNode {
                             _ => unreachable!(),
                         }
                     }
-                    nodes.push(AstNode::Struct {
+                    nodes.push(Node::Struct {
                         ident: struct_name,
                         fields,
                     });
                 }
                 Rule::r#const => {
-                    nodes.push(AstNode::Const(Const::from(inner.into_inner())));
+                    nodes.push(Node::Const(Const::from(inner.into_inner())));
                 }
                 Rule::interface => {
                     let mut interface = inner.into_inner();
@@ -232,7 +307,7 @@ impl<'a> From<Pairs<'a, Rule>> for AstNode {
                             _ => unreachable!(),
                         }
                     }
-                    nodes.push(AstNode::Interface {
+                    nodes.push(Node::Interface {
                         name,
                         base,
                         nodes: iface_nodes,
@@ -242,7 +317,7 @@ impl<'a> From<Pairs<'a, Rule>> for AstNode {
             }
         }
 
-        AstNode::CompilationUnit(nodes)
+        Node::CompilationUnit(compile_unit.0, nodes)
     }
 }
 
@@ -345,11 +420,11 @@ pub fn dump_pst<P: AsRef<Path>>(path: P) {
     eprintln!("'dump_pst' completed in {duration:?}");
 }
 
-pub fn dump_ast<P: AsRef<Path>>(path: P) {
+pub fn dump<P: AsRef<Path>>(path: P) {
     use std::time::Instant;
 
     let now = Instant::now();
-    let ast = AstNode::from_file(path).unwrap();
+    let ast = Node::from_file(path).unwrap();
     let duration = now.elapsed();
     println!("{ast:#?}");
     eprintln!("'dump_ast' completed in {duration:?}");
