@@ -1,4 +1,6 @@
 mod ast;
+mod passes;
+
 #[derive(clap::Parser)]
 #[command(author, version, about = None, long_about)]
 /// Parse .idl files into AST.
@@ -20,6 +22,19 @@ struct Args {
     dump: Option<Dumpable>,
 }
 
+fn check<T: std::fmt::Debug, E: std::fmt::Display>(r: Result<T, E>) -> T {
+    match r {
+        Ok(t) => {
+            dbg!(&t);
+            t
+        }
+        Err(e) => {
+            eprintln!("{e}");
+            panic!();
+        }
+    }
+}
+
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, clap::ValueEnum)]
 enum Dumpable {
     /// Parse Syntax Tree
@@ -34,8 +49,17 @@ fn main() {
     if let Some(dump) = args.dump {
         match dump {
             Dumpable::Pst => ast::dump_pst(&args.path),
-            Dumpable::Ast => ast::dump_ast(&args.path),
+            Dumpable::Ast => ast::dump(&args.path),
         }
         std::process::exit(0);
     }
+
+    let ast = ast::Node::from_file(&args.path).unwrap();
+
+    println!("Checking for duplicate symbols...");
+    check(passes::duplicate::contains_duplicate_symbols(&ast));
+
+    println!("Checking for unresolved includes...");
+    let mut includes = passes::includes::Includes::new(&ast);
+    check(includes.symbol_table());
 }

@@ -10,6 +10,7 @@ authors = [ "Arvind Mukund<arvimuku@quicinc.com" ]
 clap = { version = "4.2.7", features = ["derive"] }
 pest = "2.6.0"
 pest_derive = "2.6.0"
+petgraph = "0.6.3"
 thiserror = "1.0.40"
 
 [profile.opt]

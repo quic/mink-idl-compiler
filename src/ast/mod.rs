@@ -152,6 +152,15 @@ impl Identifiable for Param {
         }
     }
 }
+impl Param {
+    pub fn r#type(&self) -> &Type {
+        match self {
+            Param::In { r#type, ident: _ } | Param::Out { r#type, ident: _ } => match r#type {
+                ParamType::PassByReference(t) | ParamType::PassByValue(t) => t,
+            },
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct StructField {
