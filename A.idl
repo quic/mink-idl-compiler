@@ -1,4 +1,0 @@
-interface L {
-    method foo_in(in uint32[] x, in interface interface, in IHWKey hwkey, in buffer buf);
-    method bar_out(out uint32[] x, out interface interface, out IHWKey hwkey, out buffer buf);
-};

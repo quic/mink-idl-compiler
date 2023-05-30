@@ -1,3 +1,5 @@
+// Binary targets might not use all the functions.
+#![allow(unused)]
 mod ast;
 mod passes;
 

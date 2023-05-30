@@ -4,13 +4,12 @@ use petgraph::{
     stable_graph::{NodeIndex, StableDiGraph},
 };
 use std::{
-    borrow::BorrowMut,
-    cell::{Ref, RefCell},
+    cell::RefCell,
     collections::{HashMap, HashSet},
     rc::Rc,
 };
 
-use crate::ast::{Identifiable, InterfaceNode, Node, Type};
+use crate::ast::{InterfaceNode, Node, Type};
 
 type IncludeGraph<'a> = StableDiGraph<String, ()>;
 type Symbol = String;

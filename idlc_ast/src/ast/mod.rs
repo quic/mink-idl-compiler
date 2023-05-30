@@ -164,7 +164,7 @@ impl Param {
             Param::In { r#type, ident: _ } => match r#type {
                 ParamTypeIn::Array(t) | ParamTypeIn::Value(t) => t,
             },
-            Param::Out { r#type, ident } => match r#type {
+            Param::Out { r#type, ident: _} => match r#type {
                 ParamTypeOut::Array(t) | ParamTypeOut::Reference(t) => t,
             },
         }
