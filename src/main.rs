@@ -60,6 +60,6 @@ fn main() {
     check(passes::duplicate::contains_duplicate_symbols(&ast));
 
     println!("Checking for unresolved includes...");
-    let mut includes = passes::includes::Includes::new(&ast);
+    let includes = passes::includes::Includes::new(&ast);
     check(includes.symbol_table());
 }

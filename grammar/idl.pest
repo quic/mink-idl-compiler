@@ -20,7 +20,8 @@ struct       =  { "struct " ~ ident ~ "{" ~ (struct_field)+ ~ "};" }
 
 const = { "const " ~ primitive_types ~ ident ~ "=" ~ value ~ ";" }
 
-param_type = @{ (primitive_types | ident | "interface") ~ "[]"? | "buffer" }
+param_arr  = @{ "[]" }
+param_type = ${ (primitive_types | ident | "interface") ~ param_arr? | "buffer" }
 mutability = @{ ("in" | "out") }
 param      =  { mutability ~ param_type ~ ident }
 function   =  { "method " ~ ident ~ "(" ~ (param ~ ","?)* ~ ");" }

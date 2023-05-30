@@ -135,15 +135,21 @@ impl Const {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum ParamType {
-    PassByReference(Type),
-    PassByValue(Type),
+pub enum ParamTypeIn {
+    Array(Type),
+    Value(Type),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ParamTypeOut {
+    Array(Type),
+    Reference(Type),
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Param {
-    In { r#type: ParamType, ident: Ident },
-    Out { r#type: ParamType, ident: Ident },
+    In { r#type: ParamTypeIn, ident: Ident },
+    Out { r#type: ParamTypeOut, ident: Ident },
 }
 impl Identifiable for Param {
     fn ident(&self) -> &Ident {
@@ -155,8 +161,11 @@ impl Identifiable for Param {
 impl Param {
     pub fn r#type(&self) -> &Type {
         match self {
-            Param::In { r#type, ident: _ } | Param::Out { r#type, ident: _ } => match r#type {
-                ParamType::PassByReference(t) | ParamType::PassByValue(t) => t,
+            Param::In { r#type, ident: _ } => match r#type {
+                ParamTypeIn::Array(t) | ParamTypeIn::Value(t) => t,
+            },
+            Param::Out { r#type, ident } => match r#type {
+                ParamTypeOut::Array(t) | ParamTypeOut::Reference(t) => t,
             },
         }
     }
@@ -368,12 +377,57 @@ impl<'a> From<Pair<'a, Rule>> for Param {
         debug_assert_eq!(value.as_rule(), Rule::param);
         let mut params = value.into_inner();
         let mutability = ast_unwrap!(params.next()).as_str();
-        let r#type = ParamType::from(Type::from(ast_unwrap!(params.next()).as_str()));
+        let r#type = ast_unwrap!(params.next());
         let ident = ast_unwrap!(params.next()).as_str().to_string();
         match mutability {
-            "in" => Param::In { r#type, ident },
-            "out" => Param::Out { r#type, ident },
+            "in" => {
+                let r#type = ParamTypeIn::from(r#type);
+                Param::In { r#type, ident }
+            }
+            "out" => {
+                let r#type = ParamTypeOut::from(r#type);
+                Param::Out { r#type, ident }
+            }
             _ => unreachable!(),
+        }
+    }
+}
+
+impl From<Pair<'_, Rule>> for ParamTypeIn {
+    fn from(rule: Pair<Rule>) -> Self {
+        debug_assert_eq!(rule.as_rule(), Rule::param_type);
+        let mut inner = rule.into_inner();
+        let r#type = Type::from(ast_unwrap!(inner.next()).as_str());
+        if let Type::Ident(r#type) = &r#type {
+            if r#type == "buffer" {
+                return ParamTypeIn::Array(Type::Primitive(Primitive::Uint8));
+            }
+        }
+
+        if let Some(pair) = inner.next() {
+            debug_assert_eq!(pair.as_rule(), Rule::param_arr);
+            ParamTypeIn::Array(r#type)
+        } else {
+            ParamTypeIn::Value(r#type)
+        }
+    }
+}
+impl From<Pair<'_, Rule>> for ParamTypeOut {
+    fn from(rule: Pair<Rule>) -> Self {
+        debug_assert_eq!(rule.as_rule(), Rule::param_type);
+        let mut inner = rule.into_inner();
+        let r#type = Type::from(ast_unwrap!(inner.next()).as_str());
+        if let Type::Ident(r#type) = &r#type {
+            if r#type == "buffer" {
+                return ParamTypeOut::Array(Type::Primitive(Primitive::Uint8));
+            }
+        }
+
+        if let Some(pair) = inner.next() {
+            debug_assert_eq!(pair.as_rule(), Rule::param_arr);
+            ParamTypeOut::Array(r#type)
+        } else {
+            ParamTypeOut::Reference(r#type)
         }
     }
 }
@@ -393,24 +447,6 @@ impl<'a> TryFrom<Pair<'a, Rule>> for Documentation {
                 Ok(Documentation(window.to_string()))
             }
             _ => unreachable!(),
-        }
-    }
-}
-
-impl From<Type> for ParamType {
-    fn from(r#type: Type) -> Self {
-        match r#type {
-            Type::Primitive(_) => ParamType::PassByValue(r#type),
-            Type::Ident(ident) => {
-                if ident == "buffer" {
-                    ParamType::PassByReference(Type::Primitive(Primitive::Uint8))
-                } else if ident.ends_with("[]") {
-                    let name = ident[..ident.len() - 2].to_string();
-                    ParamType::PassByReference(Type::Ident(name))
-                } else {
-                    ParamType::PassByValue(Type::Ident(ident))
-                }
-            }
         }
     }
 }

@@ -150,7 +150,7 @@ fn get_idx<'a>(
     }
 }
 
-pub fn get_symbols(ast: &Node) -> Result<(Symbols, Symbols), Error> {
+fn get_symbols(ast: &Node) -> Result<(Symbols, Symbols), Error> {
     let mut unresolved = Symbols::new();
     let mut defined = Symbols::new();
     let Node::CompilationUnit(_, nodes) = ast else { return  Err(Error::AstDoesntContainRoot); };
