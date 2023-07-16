@@ -10,7 +10,7 @@ use pest::{
 
 #[derive(pest_derive::Parser, Debug)]
 #[grammar = "../grammar/idl.pest"]
-pub struct Parser;
+pub(crate) struct Parser;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -33,6 +33,7 @@ impl From<pest::error::Error<Rule>> for Error {
 
 macro_rules! ast_unwrap {
     ($e: expr) => {
+        // Safety: PST to AST is a 1-to-1 transition and can never fail.
         unsafe { ($e).unwrap_unchecked() }
     };
 }
@@ -43,18 +44,31 @@ type Ident = String;
 type Count = NonZeroU16;
 
 #[derive(Debug, Clone, PartialEq)]
+/// AST structure for an IDL.
+///
+/// The layout is defined as a tree with a root node named
+/// [`Node::CompilationUnit`] and all it's children may or may not contain
+/// branches.
 pub enum Node {
+    /// Denotes an `include "foo.idl"`
     Include(String),
+    /// Denotes a `const <type> <ident> = <val>;` decl.
     Const(Const),
+    /// Denotes a structure with arbitrary amount of fields.
     Struct {
         ident: Ident,
         fields: Vec<StructField>,
     },
+    /// Denotes an interface with arbitrary amount of sub nodes,
+    ///
+    /// These subnodes are limited to what [`InterfaceNode`] defines and doesn't
+    /// allow the full features of a [`Node`]
     Interface {
         name: Ident,
         base: Option<Ident>,
         nodes: Vec<InterfaceNode>,
     },
+    /// Root of the tree
     CompilationUnit(String, Vec<Node>),
 }
 impl Node {
@@ -164,7 +178,7 @@ impl Param {
             Param::In { r#type, ident: _ } => match r#type {
                 ParamTypeIn::Array(t) | ParamTypeIn::Value(t) => t,
             },
-            Param::Out { r#type, ident: _} => match r#type {
+            Param::Out { r#type, ident: _ } => match r#type {
                 ParamTypeOut::Array(t) | ParamTypeOut::Reference(t) => t,
             },
         }
