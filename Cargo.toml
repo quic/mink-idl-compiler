@@ -2,4 +2,12 @@
 
 members = [
     "idlc_ast",
+    "idlc_codegen_rust"
 ]
+
+[profile.opt]
+inherits = "release"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

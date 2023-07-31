@@ -13,15 +13,9 @@ name = "idlc_ast"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { version = "4.2.7", features = ["derive"] }
-pest = "2.6.0"
-pest_derive = "2.6.0"
+clap = { version = "4.3.19", features = ["derive"] }
+pest = "2.7.1"
+pest_derive = "2.7.1"
 petgraph = "0.6.3"
-thiserror = "1.0.40"
+thiserror = "1.0.44"
 
-[profile.opt]
-inherits = "release"
-lto = true
-codegen-units = 1
-strip = true
-panic = "abort"
