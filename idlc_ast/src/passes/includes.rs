@@ -9,7 +9,7 @@ use std::{
     rc::Rc,
 };
 
-use crate::ast::{InterfaceNode, Node, Type};
+use crate::ast::{Identifiable, InterfaceNode, Node, Type};
 
 type IncludeGraph<'a> = StableDiGraph<String, ()>;
 type Symbol = String;
@@ -168,12 +168,8 @@ fn get_symbols(ast: &Node) -> Result<(Symbols, Symbols), Error> {
                 defined.insert(ident.clone());
                 unresolved.remove(ident.as_str());
             }
-            Node::Interface {
-                name,
-                base: _,
-                nodes,
-            } => {
-                for node in nodes {
+            Node::Interface(i) => {
+                for node in i.nodes() {
                     if let InterfaceNode::Function {
                         doc: _,
                         ident: _,
@@ -189,8 +185,8 @@ fn get_symbols(ast: &Node) -> Result<(Symbols, Symbols), Error> {
                         }
                     }
                 }
-                defined.insert(name.clone());
-                unresolved.remove(name);
+                defined.insert(i.ident().clone());
+                unresolved.remove(i.ident());
             }
             _ => {}
         }

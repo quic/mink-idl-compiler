@@ -27,11 +27,7 @@ pub fn contains_duplicate_symbols(ast: &Node) -> Result<(), Error> {
                     map_err(insert_set(&mut field_set, field.ident()))?;
                 }
             }
-            Node::Interface {
-                name: iface,
-                base: _,
-                nodes,
-            } => map_err(validate_iface(&mut map, iface, nodes))?,
+            Node::Interface(i) => map_err(validate_iface(&mut map, i.ident(), i.nodes()))?,
             _ => {}
         }
     }
@@ -66,7 +62,7 @@ fn insert_set<'a>(set: &mut IdentSet<'a>, ident: &'a str) -> Result<(), String> 
 fn validate_iface<'a>(
     map: &mut IdentMap<'a>,
     iface: &'a str,
-    nodes: &'a Vec<InterfaceNode>,
+    nodes: &'a [InterfaceNode],
 ) -> Result<(), String> {
     if map.contains_key(iface) {
         return Err(iface.to_string());

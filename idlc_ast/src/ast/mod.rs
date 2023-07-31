@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests;
+pub mod visitor;
 
 use std::{num::NonZeroU16, path::Path};
 
@@ -63,11 +64,7 @@ pub enum Node {
     ///
     /// These subnodes are limited to what [`InterfaceNode`] defines and doesn't
     /// allow the full features of a [`Node`]
-    Interface {
-        name: Ident,
-        base: Option<Ident>,
-        nodes: Vec<InterfaceNode>,
-    },
+    Interface(Interface),
     /// Root of the tree
     CompilationUnit(String, Vec<Node>),
 }
@@ -76,11 +73,7 @@ impl Node {
         match self {
             Node::Const(c) => Some(c.ident()),
             Node::Struct { ident, fields: _ } => Some(ident),
-            Node::Interface {
-                name,
-                base: _,
-                nodes: _,
-            } => Some(name),
+            Node::Interface(i) => Some(i.ident()),
             Node::CompilationUnit(root, _) => Some(root),
             Node::Include(_) => None,
         }
@@ -94,13 +87,30 @@ impl Node {
                 ident: _,
                 fields: _,
             } => "struct",
-            Node::Interface {
-                name: _,
-                base: _,
-                nodes: _,
-            } => "interface",
+            Node::Interface(_) => "interface",
             Node::CompilationUnit(_, _) => "Unit",
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Interface {
+    name: Ident,
+    base: Option<Ident>,
+    nodes: Vec<InterfaceNode>,
+}
+impl Identifiable for Interface {
+    fn ident(&self) -> &Ident {
+        &self.name
+    }
+}
+impl Interface {
+    pub fn parent(&self) -> &Option<Ident> {
+        &self.base
+    }
+
+    pub fn nodes(&self) -> &[InterfaceNode] {
+        &self.nodes
     }
 }
 
@@ -339,11 +349,11 @@ impl<'a> From<(String, Pairs<'a, Rule>)> for Node {
                             _ => unreachable!(),
                         }
                     }
-                    nodes.push(Node::Interface {
+                    nodes.push(Node::Interface(Interface {
                         name,
                         base,
                         nodes: iface_nodes,
-                    });
+                    }));
                 }
                 _ => {}
             }
