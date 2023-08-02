@@ -9,7 +9,7 @@ use std::{
     rc::Rc,
 };
 
-use crate::ast::{Identifiable, InterfaceNode, Node, Type};
+use crate::ast::{InterfaceNode, Node, Type};
 
 type IncludeGraph<'a> = StableDiGraph<String, ()>;
 type Symbol = String;
@@ -156,20 +156,20 @@ fn get_symbols(ast: &Node) -> Result<(Symbols, Symbols), Error> {
     for node in nodes {
         match node {
             Node::Struct(s) => {
-                for field in s.fields() {
+                for field in &s.fields {
                     // See if fields are undefined
-                    if let Type::Ident(ident) = &field.r#type().0 {
+                    if let Type::Custom(ident) = &field.r#type().0 {
                         if !defined.contains(ident.as_str()) {
                             unresolved.insert(ident.clone());
                         }
                     }
                 }
                 // Define the struct
-                defined.insert(s.ident().to_string());
-                unresolved.remove(s.ident());
+                defined.insert(s.ident.to_string());
+                unresolved.remove(s.ident.as_ref());
             }
             Node::Interface(i) => {
-                for node in i.nodes() {
+                for node in &i.nodes {
                     if let InterfaceNode::Function {
                         doc: _,
                         ident: _,
@@ -177,7 +177,7 @@ fn get_symbols(ast: &Node) -> Result<(Symbols, Symbols), Error> {
                     } = node
                     {
                         for param in params {
-                            if let Type::Ident(ident) = param.r#type() {
+                            if let Type::Custom(ident) = param.r#type() {
                                 if !defined.contains(ident.as_str()) {
                                     unresolved.insert(ident.clone());
                                 }
@@ -185,8 +185,8 @@ fn get_symbols(ast: &Node) -> Result<(Symbols, Symbols), Error> {
                         }
                     }
                 }
-                defined.insert(i.ident().clone());
-                unresolved.remove(i.ident());
+                defined.insert(i.ident.to_string());
+                unresolved.remove(i.ident.as_ref());
             }
             _ => {}
         }

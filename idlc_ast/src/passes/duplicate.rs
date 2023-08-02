@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::ast::{Identifiable, InterfaceNode, Node, Param};
+use crate::ast::{InterfaceNode, Node, Param};
 
 use super::Error;
 type IdentSet<'a> = HashSet<&'a str>;
@@ -19,15 +19,15 @@ pub fn contains_duplicate_symbols(ast: &Node) -> Result<(), Error> {
         };
 
         match node {
-            Node::Const(c) => map_err(insert_if_not_duplicate(&mut map, root, c.ident()))?,
+            Node::Const(c) => map_err(insert_if_not_duplicate(&mut map, root, &c.ident))?,
             Node::Struct(s) => {
-                map_err(insert_if_not_duplicate(&mut map, root, s.ident()))?;
+                map_err(insert_if_not_duplicate(&mut map, root, &s.ident))?;
                 let mut field_set = IdentSet::new();
-                for field in s.fields() {
-                    map_err(insert_set(&mut field_set, field.ident()))?;
+                for field in &s.fields {
+                    map_err(insert_set(&mut field_set, &field.ident))?;
                 }
             }
-            Node::Interface(i) => map_err(validate_iface(&mut map, i.ident(), i.nodes()))?,
+            Node::Interface(i) => map_err(validate_iface(&mut map, &i.ident, &i.nodes))?,
             _ => {}
         }
     }
@@ -69,7 +69,7 @@ fn validate_iface<'a>(
     }
     for node in nodes {
         match node {
-            InterfaceNode::Const(c) => insert_if_not_duplicate(map, iface, c.ident())?,
+            InterfaceNode::Const(c) => insert_if_not_duplicate(map, iface, &c.ident)?,
             InterfaceNode::Error(e) => insert_if_not_duplicate(map, iface, e)?,
             InterfaceNode::Function {
                 doc: _,

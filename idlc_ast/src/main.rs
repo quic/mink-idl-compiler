@@ -55,7 +55,7 @@ impl RustCodegen {
     fn into_rust_type(r#type: &ast::Type) -> &str {
         match r#type {
             ast::Type::Primitive(primitive) => Self::into_rust_primitive(primitive),
-            ast::Type::Ident(ident) => ident.as_str(),
+            ast::Type::Custom(ident) => ident.as_str(),
         }
     }
 

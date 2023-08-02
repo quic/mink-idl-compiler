@@ -11,7 +11,7 @@ use pest::{
 
 #[derive(pest_derive::Parser, Debug)]
 #[grammar = "../grammar/idl.pest"]
-pub(crate) struct Parser;
+pub struct Parser;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -39,8 +39,63 @@ macro_rules! ast_unwrap {
     };
 }
 
-/// Identifiers are utf-8 strings.
-type Ident = String;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Span {
+    pub start: usize,
+    pub end: usize,
+}
+
+impl From<pest::Span<'_>> for Span {
+    fn from(value: pest::Span) -> Self {
+        Span {
+            start: value.start(),
+            end: value.end(),
+        }
+    }
+}
+
+/// Identifiers are utf-8 strings with a span.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Ident {
+    pub span: Span,
+    pub ident: String,
+}
+impl<R: pest::RuleType + Ord> From<Pair<'_, R>> for Ident {
+    fn from(value: Pair<'_, R>) -> Self {
+        Self {
+            span: Span {
+                start: value.as_span().start(),
+                end: value.as_span().end(),
+            },
+            ident: value.as_str().to_string(),
+        }
+    }
+}
+impl std::fmt::Display for Ident {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(&self.ident, f)
+    }
+}
+
+impl PartialEq<str> for Ident {
+    fn eq(&self, other: &str) -> bool {
+        self.ident == other
+    }
+}
+
+impl AsRef<str> for Ident {
+    fn as_ref(&self) -> &str {
+        &self.ident
+    }
+}
+impl std::ops::Deref for Ident {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
+        &self.ident
+    }
+}
+
 /// Maximum allowed size for a struct array [`u16::MAX`]
 type Count = NonZeroU16;
 
@@ -68,11 +123,10 @@ pub enum Node {
 impl Node {
     pub fn ident(&self) -> Option<&Ident> {
         match self {
-            Node::Const(c) => Some(c.ident()),
-            Node::Struct(s) => Some(s.ident()),
-            Node::Interface(i) => Some(i.ident()),
-            Node::CompilationUnit(root, _) => Some(root),
-            Node::Include(_) => None,
+            Node::Const(c) => Some(&c.ident),
+            Node::Struct(s) => Some(&s.ident),
+            Node::Interface(i) => Some(&i.ident),
+            _ => None,
         }
     }
 
@@ -89,53 +143,20 @@ impl Node {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Struct {
-    ident: Ident,
-    fields: Vec<StructField>,
-}
-impl Identifiable for Struct {
-    fn ident(&self) -> &Ident {
-        &self.ident
-    }
-}
-impl Struct {
-    pub fn fields(&self) -> &[StructField] {
-        &self.fields
-    }
+    pub ident: Ident,
+    pub fields: Vec<StructField>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Interface {
-    name: Ident,
-    base: Option<Ident>,
-    nodes: Vec<InterfaceNode>,
-}
-impl Identifiable for Interface {
-    fn ident(&self) -> &Ident {
-        &self.name
-    }
-}
-impl Interface {
-    pub fn parent(&self) -> &Option<Ident> {
-        &self.base
-    }
-
-    pub fn nodes(&self) -> &[InterfaceNode] {
-        &self.nodes
-    }
-}
-
-pub trait Identifiable {
-    fn ident(&self) -> &Ident;
+    pub ident: Ident,
+    pub base: Option<Ident>,
+    pub nodes: Vec<InterfaceNode>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 #[repr(transparent)]
-pub struct Documentation(String);
-impl Documentation {
-    pub fn doc(&self) -> &String {
-        &self.0
-    }
-}
+pub struct Documentation(pub String);
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum InterfaceNode {
@@ -150,15 +171,11 @@ pub enum InterfaceNode {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Const {
-    ident: Ident,
-    r#type: Primitive,
-    value: String,
+    pub ident: Ident,
+    pub r#type: Primitive,
+    pub value: String,
 }
-impl Identifiable for Const {
-    fn ident(&self) -> &Ident {
-        &self.ident
-    }
-}
+
 impl Const {
     pub fn r#type(&self) -> &Primitive {
         &self.r#type
@@ -185,13 +202,7 @@ pub enum Param {
     In { r#type: ParamTypeIn, ident: Ident },
     Out { r#type: ParamTypeOut, ident: Ident },
 }
-impl Identifiable for Param {
-    fn ident(&self) -> &Ident {
-        match self {
-            Param::In { r#type: _, ident } | Param::Out { r#type: _, ident } => ident,
-        }
-    }
-}
+
 impl Param {
     pub fn r#type(&self) -> &Type {
         match self {
@@ -207,14 +218,10 @@ impl Param {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct StructField {
-    ident: Ident,
-    val: (Type, Count),
+    pub ident: Ident,
+    pub val: (Type, Count),
 }
-impl Identifiable for StructField {
-    fn ident(&self) -> &Ident {
-        &self.ident
-    }
-}
+
 impl StructField {
     pub fn r#type(&self) -> &(Type, Count) {
         &self.val
@@ -224,7 +231,7 @@ impl StructField {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Type {
     Primitive(Primitive),
-    Ident(Ident),
+    Custom(String),
 }
 
 impl From<&str> for Type {
@@ -232,7 +239,7 @@ impl From<&str> for Type {
         if let Ok(primitive) = Primitive::try_from(value) {
             Self::Primitive(primitive)
         } else {
-            Self::Ident(value.to_string())
+            Self::Custom(value.to_string())
         }
     }
 }
@@ -291,6 +298,10 @@ impl<'a> From<(String, Pairs<'a, Rule>)> for Node {
         let mut nodes = Vec::new();
 
         for inner in idl.into_inner() {
+            let span = Span {
+                start: inner.as_span().start(),
+                end: inner.as_span().end(),
+            };
             match inner.as_rule() {
                 Rule::include => {
                     let path = ast_unwrap!(inner.into_inner().next());
@@ -298,7 +309,7 @@ impl<'a> From<(String, Pairs<'a, Rule>)> for Node {
                 }
                 Rule::r#struct => {
                     let mut struct_pst = inner.into_inner();
-                    let struct_name = ast_unwrap!(struct_pst.next()).as_str().to_string();
+                    let ident: Ident = ast_unwrap!(struct_pst.next()).into();
                     let mut fields = Vec::<StructField>::new();
                     for rule in struct_pst {
                         match rule.as_rule() {
@@ -320,7 +331,10 @@ impl<'a> From<(String, Pairs<'a, Rule>)> for Node {
                                 };
 
                                 fields.push(StructField {
-                                    ident,
+                                    ident: Ident {
+                                        span: Span::from(next.as_span()),
+                                        ident,
+                                    },
                                     val: (r#type, elem),
                                 });
                             }
@@ -330,10 +344,7 @@ impl<'a> From<(String, Pairs<'a, Rule>)> for Node {
                             _ => unreachable!(),
                         }
                     }
-                    nodes.push(Node::Struct(Struct {
-                        ident: struct_name,
-                        fields,
-                    }));
+                    nodes.push(Node::Struct(Struct { ident, fields }));
                 }
                 Rule::r#const => {
                     nodes.push(Node::Const(Const::from(inner.into_inner())));
@@ -341,8 +352,11 @@ impl<'a> From<(String, Pairs<'a, Rule>)> for Node {
                 Rule::interface => {
                     let mut interface = inner.into_inner();
                     let mut pairs = ast_unwrap!(interface.next()).into_inner();
-                    let name = ast_unwrap!(pairs.next()).as_str().to_string();
-                    let base = pairs.next().map(|base| base.as_str().to_string());
+                    let ident = ast_unwrap!(pairs.next()).as_str().to_string();
+                    let base = pairs.next().map(|base| Ident {
+                        span: base.as_span().into(),
+                        ident: base.as_str().to_string(),
+                    });
 
                     let mut iface_nodes = Vec::new();
                     let mut comment: Option<Documentation> = None;
@@ -360,7 +374,7 @@ impl<'a> From<(String, Pairs<'a, Rule>)> for Node {
                         }
                     }
                     nodes.push(Node::Interface(Interface {
-                        name,
+                        ident: Ident { span, ident },
                         base,
                         nodes: iface_nodes,
                     }));
@@ -376,7 +390,7 @@ impl<'a> From<(String, Pairs<'a, Rule>)> for Node {
 impl<'a> From<Pairs<'a, Rule>> for Const {
     fn from(mut inner: Pairs<'a, Rule>) -> Self {
         let r#type = Primitive::try_from(ast_unwrap!(inner.next()).as_str());
-        let ident = ast_unwrap!(inner.next()).as_str().to_string();
+        let ident = ast_unwrap!(inner.next()).into();
         let value = ast_unwrap!(inner.next()).as_str().to_string();
         Const {
             ident,
@@ -390,11 +404,14 @@ impl<'a> From<(Option<Documentation>, Pair<'a, Rule>)> for InterfaceNode {
     fn from(pair: (Option<Documentation>, Pair<'a, Rule>)) -> Self {
         let (doc, pair) = pair;
         match pair.as_rule() {
-            Rule::error => InterfaceNode::Error(pair.into_inner().as_str().to_string()),
+            Rule::error => InterfaceNode::Error(Ident {
+                span: pair.as_span().into(),
+                ident: pair.into_inner().as_str().to_string(),
+            }),
             Rule::r#const => InterfaceNode::Const(Const::from(pair.into_inner())),
             Rule::function => {
                 let mut inner = pair.into_inner();
-                let ident = ast_unwrap!(inner.next()).as_str().to_string();
+                let ident = ast_unwrap!(inner.next()).into();
                 let mut params = Vec::new();
                 for param in inner {
                     params.push(Param::from(param));
@@ -412,7 +429,7 @@ impl<'a> From<Pair<'a, Rule>> for Param {
         let mut params = value.into_inner();
         let mutability = ast_unwrap!(params.next()).as_str();
         let r#type = ast_unwrap!(params.next());
-        let ident = ast_unwrap!(params.next()).as_str().to_string();
+        let ident = ast_unwrap!(params.next()).into();
         match mutability {
             "in" => {
                 let r#type = ParamTypeIn::from(r#type);
@@ -432,7 +449,7 @@ impl From<Pair<'_, Rule>> for ParamTypeIn {
         debug_assert_eq!(rule.as_rule(), Rule::param_type);
         let mut inner = rule.into_inner();
         let r#type = Type::from(ast_unwrap!(inner.next()).as_str());
-        if let Type::Ident(r#type) = &r#type {
+        if let Type::Custom(r#type) = &r#type {
             if r#type == "buffer" {
                 return ParamTypeIn::Array(Type::Primitive(Primitive::Uint8));
             }
@@ -451,7 +468,7 @@ impl From<Pair<'_, Rule>> for ParamTypeOut {
         debug_assert_eq!(rule.as_rule(), Rule::param_type);
         let mut inner = rule.into_inner();
         let r#type = Type::from(ast_unwrap!(inner.next()).as_str());
-        if let Type::Ident(r#type) = &r#type {
+        if let Type::Custom(r#type) = &r#type {
             if r#type == "buffer" {
                 return ParamTypeOut::Array(Type::Primitive(Primitive::Uint8));
             }
