@@ -20,10 +20,10 @@ pub fn contains_duplicate_symbols(ast: &Node) -> Result<(), Error> {
 
         match node {
             Node::Const(c) => map_err(insert_if_not_duplicate(&mut map, root, c.ident()))?,
-            Node::Struct { ident, fields } => {
-                map_err(insert_if_not_duplicate(&mut map, root, ident))?;
+            Node::Struct(s) => {
+                map_err(insert_if_not_duplicate(&mut map, root, s.ident()))?;
                 let mut field_set = IdentSet::new();
-                for field in fields {
+                for field in s.fields() {
                     map_err(insert_set(&mut field_set, field.ident()))?;
                 }
             }

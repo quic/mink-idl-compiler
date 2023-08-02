@@ -155,8 +155,8 @@ fn get_symbols(ast: &Node) -> Result<(Symbols, Symbols), Error> {
     let Node::CompilationUnit(_, nodes) = ast else { return  Err(Error::AstDoesntContainRoot); };
     for node in nodes {
         match node {
-            Node::Struct { ident, fields } => {
-                for field in fields {
+            Node::Struct(s) => {
+                for field in s.fields() {
                     // See if fields are undefined
                     if let Type::Ident(ident) = &field.r#type().0 {
                         if !defined.contains(ident.as_str()) {
@@ -165,8 +165,8 @@ fn get_symbols(ast: &Node) -> Result<(Symbols, Symbols), Error> {
                     }
                 }
                 // Define the struct
-                defined.insert(ident.clone());
-                unresolved.remove(ident.as_str());
+                defined.insert(s.ident().to_string());
+                unresolved.remove(s.ident());
             }
             Node::Interface(i) => {
                 for node in i.nodes() {

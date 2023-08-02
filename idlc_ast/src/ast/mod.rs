@@ -56,10 +56,7 @@ pub enum Node {
     /// Denotes a `const <type> <ident> = <val>;` decl.
     Const(Const),
     /// Denotes a structure with arbitrary amount of fields.
-    Struct {
-        ident: Ident,
-        fields: Vec<StructField>,
-    },
+    Struct(Struct),
     /// Denotes an interface with arbitrary amount of sub nodes,
     ///
     /// These subnodes are limited to what [`InterfaceNode`] defines and doesn't
@@ -72,7 +69,7 @@ impl Node {
     pub fn ident(&self) -> Option<&Ident> {
         match self {
             Node::Const(c) => Some(c.ident()),
-            Node::Struct { ident, fields: _ } => Some(ident),
+            Node::Struct(s) => Some(s.ident()),
             Node::Interface(i) => Some(i.ident()),
             Node::CompilationUnit(root, _) => Some(root),
             Node::Include(_) => None,
@@ -83,13 +80,26 @@ impl Node {
         match self {
             Node::Include(_) => "include",
             Node::Const(_) => "const",
-            Node::Struct {
-                ident: _,
-                fields: _,
-            } => "struct",
+            Node::Struct(_) => "struct",
             Node::Interface(_) => "interface",
             Node::CompilationUnit(_, _) => "Unit",
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Struct {
+    ident: Ident,
+    fields: Vec<StructField>,
+}
+impl Identifiable for Struct {
+    fn ident(&self) -> &Ident {
+        &self.ident
+    }
+}
+impl Struct {
+    pub fn fields(&self) -> &[StructField] {
+        &self.fields
     }
 }
 
@@ -320,10 +330,10 @@ impl<'a> From<(String, Pairs<'a, Rule>)> for Node {
                             _ => unreachable!(),
                         }
                     }
-                    nodes.push(Node::Struct {
+                    nodes.push(Node::Struct(Struct {
                         ident: struct_name,
                         fields,
-                    });
+                    }));
                 }
                 Rule::r#const => {
                     nodes.push(Node::Const(Const::from(inner.into_inner())));

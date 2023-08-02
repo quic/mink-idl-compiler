@@ -1,4 +1,4 @@
-use super::{Interface, StructField};
+use super::{Identifiable, Interface, Struct, StructField};
 
 pub trait Visitor {
     fn visit_struct_field(&mut self, field: &StructField) -> String;
@@ -6,13 +6,13 @@ pub trait Visitor {
     fn visit_struct_suffix(&mut self, ident: &str) -> String;
     fn struct_field_seperator(&self) -> &'static str;
 
-    fn visit_struct(&mut self, ident: &str, fields: &[StructField]) -> String {
-        let mut init = self.visit_struct_prefix(ident);
-        for field in fields {
+    fn visit_struct(&mut self, r#struct: &Struct) -> String {
+        let mut init = self.visit_struct_prefix(r#struct.ident());
+        for field in r#struct.fields() {
             init += &self.visit_struct_field(field);
             init += self.struct_field_seperator()
         }
-        init + &self.visit_struct_suffix(ident)
+        init + &self.visit_struct_suffix(r#struct.ident())
     }
     fn visit_include(&mut self, include: &str) -> String;
     fn visit_caller(&mut self, interface: &Interface) -> String;

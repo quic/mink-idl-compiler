@@ -160,8 +160,8 @@ fn visit_all(codegen: &mut impl Visitor, ast: ast::Node) {
         match &node {
             ast::Node::Include(r#include) => println!("{}\n", codegen.visit_include(r#include)),
             ast::Node::Const(_) => {}
-            ast::Node::Struct { ident, fields } => {
-                println!("{}\n", codegen.visit_struct(ident, fields));
+            ast::Node::Struct(s) => {
+                println!("{}\n", codegen.visit_struct(s));
             }
             ast::Node::Interface(interface) => println!("{}\n", codegen.visit_caller(interface)),
             _ => unreachable!(),
