@@ -9,8 +9,6 @@ use pest::{
     Parser as PestParser,
 };
 
-use self::visitor::Visitor;
-
 #[derive(pest_derive::Parser, Debug)]
 #[grammar = "../grammar/idl.pest"]
 pub struct Parser;

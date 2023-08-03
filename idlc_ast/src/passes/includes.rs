@@ -1,3 +1,4 @@
+use super::CompilerPass;
 use super::Error;
 use petgraph::{
     algo::{is_cyclic_directed, toposort},
@@ -187,4 +188,11 @@ fn get_symbols(ast: &Node) -> Result<(Symbols, Symbols), Error> {
         }
     }
     Ok((unresolved, defined))
+}
+
+impl<'ast> CompilerPass<'ast, Vec<String>> for Includes<'ast> {
+    fn run_pass(ast: &'ast Node) -> Result<Vec<String>, Error> {
+        let visitor = Includes::new(ast);
+        visitor.toposort()
+    }
 }

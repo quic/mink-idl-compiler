@@ -1,10 +1,9 @@
-use crate::passes::includes::Includes;
-
 use super::{
     Const, Count, Documentation, Function, Ident, Interface, InterfaceNode, Node, Param, Primitive,
     Struct, StructField, Type,
 };
 
+#[allow(unused_variables)]
 pub trait Visitor<'ast>: Sized {
     fn visit_include(&mut self, include: &'ast str) {}
 

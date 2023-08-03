@@ -15,11 +15,35 @@
 //! 4. Creating a dependency tree data structure that contain symbols required
 //!    from each external include.
 
-use crate::ast::Ident;
+use std::collections::HashMap;
+
+use crate::ast::{Ident, Node};
+
+/// Compilation unit is split into a hashmap here.
+pub struct ASTStore(HashMap<String, Vec<Node>>);
+
+impl ASTStore {
+    pub fn new() -> Self {
+        Self(HashMap::new())
+    }
+
+    pub fn get_or_insert(&mut self, file_path: &str) -> Result<&[Node], Error> {
+        if !self.0.contains_key(file_path) {
+            let Node::CompilationUnit(_, nodes) = Node::from_file(file_path)? else { unreachable!("ICE: Cannot find root node in AST from file.")};
+            self.0.insert(file_path.to_string(), nodes);
+        }
+
+        Ok(unsafe { self.0.get(file_path).unwrap_unchecked() })
+    }
+}
+
+pub trait CompilerPass<'ast, T> {
+    fn run_pass(ast: &'ast Node) -> Result<T, Error>;
+}
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("Cylical imports")]
+    #[error("Cylical imports found")]
     CyclicalInclude,
     #[error("Input AST doesn't contain AstNode::CompilationUnit")]
     AstDoesntContainRoot,

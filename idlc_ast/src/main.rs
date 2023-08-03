@@ -3,6 +3,8 @@
 
 use ast::visitor::Visitor;
 
+use crate::passes::{duplicate, includes, CompilerPass, Error};
+
 mod ast;
 mod passes;
 
@@ -182,9 +184,8 @@ fn main() {
     let ast = ast::Node::from_file(&args.path).unwrap();
 
     println!("Checking for duplicate symbols...");
-    check(passes::duplicate::contains_duplicate_symbols(&ast));
+    check(duplicate::DuplicateDetector::run_pass(&ast));
 
     println!("Checking for unresolved includes...");
-    let includes = passes::includes::Includes::new(&ast);
-    check(includes.symbol_table());
+    check(includes::Includes::run_pass(&ast));
 }

@@ -1,3 +1,7 @@
+//! As long as the current AST doesn't have duplicate symbols that's all we care
+//! about since minkidl only generates interface files for the input AST not the
+//! dependencies.
+
 use std::collections::HashSet;
 
 use crate::ast::{
@@ -5,10 +9,10 @@ use crate::ast::{
     Ident, Node,
 };
 
-use super::Error;
+use super::{CompilerPass, Error};
 
 #[derive(Debug, Clone)]
-struct DuplicateDetector<'a> {
+pub struct DuplicateDetector<'a> {
     set: HashSet<&'a Ident>,
     dup: Option<&'a Ident>,
 }
@@ -45,8 +49,10 @@ impl<'ast> Visitor<'ast> for DuplicateDetector<'ast> {
     }
 }
 
-pub fn contains_duplicate_symbols(ast: &Node) -> Result<(), Error> {
-    let mut visitor = DuplicateDetector::new();
-    walk_all(&mut visitor, ast);
-    visitor.is_success()
+impl CompilerPass<'_, ()> for DuplicateDetector<'_> {
+    fn run_pass(ast: &'_ Node) -> Result<(), Error> {
+        let mut visitor = Self::new();
+        walk_all(&mut visitor, ast);
+        visitor.is_success()
+    }
 }
