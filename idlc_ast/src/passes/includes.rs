@@ -1,198 +1,97 @@
-use super::CompilerPass;
-use super::Error;
-use petgraph::{
-    algo::{is_cyclic_directed, toposort},
-    stable_graph::{NodeIndex, StableDiGraph},
-};
-use std::{
-    cell::RefCell,
-    collections::{HashMap, HashSet},
-    rc::Rc,
-};
+use std::collections::{HashMap, HashSet};
+use std::rc::Rc;
 
-use crate::ast::{InterfaceNode, Node, Type};
+use super::{ASTStore, CompilerPass};
+use petgraph::algo::toposort;
+use petgraph::stable_graph::StableDiGraph;
 
-type IncludeGraph<'a> = StableDiGraph<String, ()>;
-type Symbol = String;
-type Symbols = HashSet<Symbol>;
-type Source = String;
+use crate::ast::visitor::{walk_all, Visitor};
 
-#[derive(Debug)]
-pub struct SymbolTable(HashMap<Source, Symbols>);
-impl SymbolTable {
-    fn new() -> Self {
-        Self(HashMap::new())
-    }
+#[track_caller]
+#[cold]
+#[inline(never)]
+fn cannot_find_dep(reason: &str) -> ! {
+    eprintln!("{reason}");
+    std::process::exit(1)
+}
 
-    fn add_source(&mut self, source: Source, ident: Symbol) {
-        let map = &mut self.0;
-        if let Some(set) = map.get_mut(&source) {
-            set.insert(ident);
-        } else {
-            let mut set = HashSet::new();
-            set.insert(ident);
-            map.insert(source, set);
-        }
-    }
+#[track_caller]
+#[cold]
+#[inline(never)]
+fn cyclical_dep_found(inc: &str) -> ! {
+    eprintln!("Direct cyclical dependency found `{inc}` depends on `{inc}`");
+    std::process::exit(1)
 }
 
 pub struct Includes<'a> {
-    root: &'a Node,
-    cache: RefCell<HashMap<Source, Rc<Node>>>,
+    current: Option<Rc<String>>,
+    map: HashMap<Rc<String>, HashSet<String>>,
+    visited: HashSet<Rc<String>>,
+    ast_store: &'a ASTStore,
+}
+
+impl Visitor<'_> for Includes<'_> {
+    fn visit_root_ident(&mut self, root_ident: &'_ str) {
+        let ident = Rc::new(root_ident.to_string());
+        self.current = Some(Rc::clone(&ident));
+        self.map.insert(ident, HashSet::new());
+    }
+
+    fn visit_include(&mut self, include: &'_ str) {
+        let inc = include.to_string();
+        let current = self.current.take().unwrap();
+        self.visited.insert(Rc::clone(&current));
+        if let Some(set) = self.map.get_mut(&current) {
+            if self.visited.contains(&inc) {
+                cyclical_dep_found(include);
+            }
+            set.insert(inc);
+            let Ok(inc_ast) = self.ast_store.get_or_insert(include) else { cannot_find_dep("Cannot load AST, file not found") };
+            walk_all(self, &inc_ast);
+            self.current = Some(current);
+        } else {
+            unreachable!("ICE: Unknown root is trying to add children");
+        }
+    }
 }
 
 impl<'a> Includes<'a> {
-    pub fn new(ast: &'a Node) -> Self {
+    pub fn new(ast_store: &'a ASTStore) -> Self {
         Self {
-            root: ast,
-            cache: RefCell::new(HashMap::new()),
+            current: None,
+            map: HashMap::new(),
+            visited: HashSet::new(),
+            ast_store,
         }
     }
 
-    pub fn symbol_table(&self) -> Result<SymbolTable, Error> {
-        let (mut unresolved, _) = get_symbols(self.root)?;
-        if unresolved.is_empty() {
-            return Ok(SymbolTable::new());
+    fn is_success(&self) -> Result<Vec<String>, super::Error> {
+        let mut graph = StableDiGraph::new();
+        let mut node_map = HashMap::new();
+        for key in self.map.keys() {
+            node_map.insert(key.as_str(), graph.add_node(key.as_str()));
         }
 
-        let mut symbol_table = SymbolTable::new();
-        let includes = self.toposort()?;
-
-        for include in &includes[..includes.len() - 1] {
-            if unresolved.is_empty() {
-                break;
-            }
-
-            let ast = self.get_ast(include)?;
-            let (i_unresolved, defined) = get_symbols(&ast)?;
-            assert!(
-                i_unresolved.is_empty(),
-                "Expected {include} to not have any unresolved symbols but it had {unresolved:?}"
-            );
-            for symbol in defined {
-                if unresolved.contains(&symbol) {
-                    unresolved.remove(&symbol);
-                    symbol_table.add_source(include.clone(), symbol);
-                }
-            }
-        }
-        if !unresolved.is_empty() {
-            return Err(Error::UnresolvedSymbols(unresolved));
-        }
-
-        Ok(symbol_table)
-    }
-
-    fn get_ast(&self, key: &str) -> Result<Rc<Node>, Error> {
-        {
-            let mut cache = self.cache.borrow_mut();
-            if !cache.contains_key(key) {
-                let ast = Node::from_file(key)?;
-                cache.insert(key.to_string(), Rc::new(ast));
+        for (source, sinks) in self.map.iter() {
+            let from = node_map.get(source.as_str()).unwrap();
+            for sink in sinks {
+                let to = node_map.get(sink.as_str()).unwrap();
+                // Dependency inverts the graph.
+                graph.add_edge(*to, *from, ());
             }
         }
 
-        Ok(Rc::clone(self.cache.borrow().get(key).unwrap()))
-    }
-
-    fn toposort(&self) -> Result<Vec<String>, Error> {
-        let mut graph = IncludeGraph::new();
-        let mut node_map: HashMap<String, NodeIndex> = HashMap::new();
-        let mut stack = vec![Rc::new(self.root.clone())];
-        while let Some(ast) = stack.pop() {
-            let Node::CompilationUnit(root, nodes) = &*ast else { return Err(Error::AstDoesntContainRoot) };
-            let deps = get_dependencies(nodes);
-            let root_idx = get_idx(&mut graph, &mut node_map, root);
-            for dep in deps {
-                let dep_idx = get_idx(&mut graph, &mut node_map, dep);
-                graph.add_edge(dep_idx, root_idx, ());
-                stack.push(self.get_ast(dep)?);
-            }
-            if is_cyclic_directed(&graph) {
-                return Err(Error::CyclicalInclude);
-            }
-        }
-
-        // Safety: Cycles can never be formed if we reach here since we do
-        // incremental cycle checking
-        unsafe {
-            let toposort = toposort(&graph, None).unwrap_unchecked();
-            Ok(toposort
-                .into_iter()
-                .map(|nidx| graph.node_weight(nidx).unwrap_unchecked().clone())
-                .collect())
-        }
+        toposort(&graph, None)
+            .map(|node| node.into_iter().map(|idx| graph[idx].to_string()).collect())
+            .map_err(|_| super::Error::CyclicalInclude)
     }
 }
 
-fn get_dependencies(nodes: &[Node]) -> impl Iterator<Item = &str> {
-    nodes.iter().filter_map(|node| {
-        if let Node::Include(include) = node {
-            Some(include.as_str())
-        } else {
-            None
-        }
-    })
-}
+impl CompilerPass<'_> for Includes<'_> {
+    type Output = Vec<String>;
 
-fn get_idx<'a>(
-    graph: &'a mut IncludeGraph,
-    map: &'a mut HashMap<String, NodeIndex>,
-    key: &'a str,
-) -> NodeIndex {
-    if let Some(&val) = map.get(key) {
-        val
-    } else {
-        let key = key.to_string();
-        let idx = graph.add_node(key.clone());
-        map.insert(key, idx);
-        idx
-    }
-}
-
-fn get_symbols(ast: &Node) -> Result<(Symbols, Symbols), Error> {
-    let mut unresolved = Symbols::new();
-    let mut defined = Symbols::new();
-    let Node::CompilationUnit(_, nodes) = ast else { return  Err(Error::AstDoesntContainRoot); };
-    for node in nodes {
-        match node {
-            Node::Struct(s) => {
-                for field in &s.fields {
-                    // See if fields are undefined
-                    if let Type::Custom(ident) = &field.r#type().0 {
-                        if !defined.contains(ident.as_str()) {
-                            unresolved.insert(ident.clone());
-                        }
-                    }
-                }
-                // Define the struct
-                defined.insert(s.ident.to_string());
-                unresolved.remove(s.ident.as_ref());
-            }
-            Node::Interface(i) => {
-                for node in &i.nodes {
-                    if let InterfaceNode::Function(f) = node {
-                        for param in &f.params {
-                            if let Type::Custom(ident) = param.r#type() {
-                                if !defined.contains(ident.as_str()) {
-                                    unresolved.insert(ident.clone());
-                                }
-                            }
-                        }
-                    }
-                }
-                defined.insert(i.ident.to_string());
-                unresolved.remove(i.ident.as_ref());
-            }
-            _ => {}
-        }
-    }
-    Ok((unresolved, defined))
-}
-
-impl<'ast> CompilerPass<'ast, Vec<String>> for Includes<'ast> {
-    fn run_pass(ast: &'ast Node) -> Result<Vec<String>, Error> {
-        let visitor = Includes::new(ast);
-        visitor.toposort()
+    fn run_pass(&'_ mut self, ast: &'_ crate::ast::Node) -> Result<Self::Output, super::Error> {
+        walk_all(self, ast);
+        self.is_success()
     }
 }

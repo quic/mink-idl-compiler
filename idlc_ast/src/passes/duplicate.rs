@@ -11,18 +11,15 @@ use crate::ast::{
 
 use super::{CompilerPass, Error};
 
-#[derive(Debug, Clone)]
+#[derive(Default, Debug, Clone)]
 pub struct DuplicateDetector<'a> {
     set: HashSet<&'a Ident>,
     dup: Option<&'a Ident>,
 }
 
 impl DuplicateDetector<'_> {
-    fn new() -> Self {
-        Self {
-            set: HashSet::new(),
-            dup: None,
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 
     fn is_success(&self) -> Result<(), Error> {
@@ -40,19 +37,18 @@ impl DuplicateDetector<'_> {
 
 impl<'ast> Visitor<'ast> for DuplicateDetector<'ast> {
     fn visit_ident(&mut self, ident: &'ast Ident) {
-        if self.dup.is_none() {
-            if !self.set.insert(ident) {
-                // Duplicate was found
-                self.dup = Some(ident);
-            }
+        if self.dup.is_none() && !self.set.insert(ident) {
+            // Duplicate was found
+            self.dup = Some(ident);
         }
     }
 }
 
-impl CompilerPass<'_, ()> for DuplicateDetector<'_> {
-    fn run_pass(ast: &'_ Node) -> Result<(), Error> {
-        let mut visitor = Self::new();
-        walk_all(&mut visitor, ast);
-        visitor.is_success()
+impl<'ast> CompilerPass<'ast> for DuplicateDetector<'ast> {
+    type Output = ();
+
+    fn run_pass(&'ast mut self, ast: &'ast Node) -> Result<Self::Output, Error> {
+        walk_all(self, ast);
+        self.is_success()
     }
 }

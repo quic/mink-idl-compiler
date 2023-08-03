@@ -3,7 +3,7 @@
 
 use ast::visitor::Visitor;
 
-use crate::passes::{duplicate, includes, CompilerPass, Error};
+use crate::passes::{duplicate, includes, ASTStore, CompilerPass, Error};
 
 mod ast;
 mod passes;
@@ -181,11 +181,12 @@ fn main() {
         std::process::exit(0);
     }
 
-    let ast = ast::Node::from_file(&args.path).unwrap();
+    let ast_store = ASTStore::new();
+    let ast = ast_store.get_or_insert(&args.path).unwrap();
 
     println!("Checking for duplicate symbols...");
-    check(duplicate::DuplicateDetector::run_pass(&ast));
+    check(duplicate::DuplicateDetector::new().run_pass(&ast));
 
     println!("Checking for unresolved includes...");
-    check(includes::Includes::run_pass(&ast));
+    check(includes::Includes::new(&ast_store).run_pass(&ast));
 }

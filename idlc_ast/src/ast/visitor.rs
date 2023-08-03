@@ -41,6 +41,7 @@ pub trait Visitor<'ast>: Sized {
     fn visit_error(&mut self, error: &'ast Ident) {}
     fn visit_doc(&mut self, doc: &'ast Documentation) {}
     fn visit_fn_param(&mut self, param: &'ast Param) {}
+    fn visit_root_ident(&mut self, root_ident: &'ast str) {}
 }
 
 pub fn walk_const<'a, V: Visitor<'a>>(visitor: &mut V, constant: &'a Const) {
@@ -98,7 +99,8 @@ pub fn walk_fn<'a, V: Visitor<'a>>(visitor: &mut V, function: &'a Function) {
 }
 
 pub fn walk_all<'a, V: Visitor<'a>>(visitor: &mut V, root: &'a Node) {
-    let Node::CompilationUnit(_, nodes) =  root else { unreachable!("ICE: walk_all was called without root being the starting node.")};
+    let Node::CompilationUnit(root_ident, nodes) =  root else { unreachable!("ICE: walk_all was called without root being the starting node.")};
+    visitor.visit_root_ident(root_ident);
     for node in nodes {
         match node {
             Node::Include(i) => visitor.visit_include(i),

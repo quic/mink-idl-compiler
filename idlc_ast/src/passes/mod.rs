@@ -15,30 +15,36 @@
 //! 4. Creating a dependency tree data structure that contain symbols required
 //!    from each external include.
 
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::ast::{Ident, Node};
 
 /// Compilation unit is split into a hashmap here.
-pub struct ASTStore(HashMap<String, Vec<Node>>);
+#[derive(Default, Debug)]
+pub struct ASTStore(RefCell<HashMap<String, Rc<Node>>>);
 
 impl ASTStore {
     pub fn new() -> Self {
-        Self(HashMap::new())
+        Self(RefCell::new(HashMap::new()))
     }
 
-    pub fn get_or_insert(&mut self, file_path: &str) -> Result<&[Node], Error> {
-        if !self.0.contains_key(file_path) {
-            let Node::CompilationUnit(_, nodes) = Node::from_file(file_path)? else { unreachable!("ICE: Cannot find root node in AST from file.")};
-            self.0.insert(file_path.to_string(), nodes);
+    pub fn get_or_insert(&self, file_path: &str) -> Result<Rc<Node>, Error> {
+        if !self.0.borrow().contains_key(file_path) {
+            let node =
+                Node::from_file(file_path).expect("ICE: Cannot find root node in AST from file.");
+            self.0
+                .borrow_mut()
+                .insert(file_path.to_string(), Rc::new(node));
         }
 
-        Ok(unsafe { self.0.get(file_path).unwrap_unchecked() })
+        Ok(unsafe { Rc::clone(self.0.borrow().get(file_path).unwrap_unchecked()) })
     }
 }
 
-pub trait CompilerPass<'ast, T> {
-    fn run_pass(ast: &'ast Node) -> Result<T, Error>;
+pub trait CompilerPass<'ast> {
+    type Output;
+
+    fn run_pass(&'ast mut self, ast: &'ast Node) -> Result<Self::Output, Error>;
 }
 
 #[derive(thiserror::Error, Debug)]
