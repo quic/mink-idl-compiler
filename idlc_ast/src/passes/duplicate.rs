@@ -12,18 +12,18 @@ use crate::ast::{
 use super::{CompilerPass, Error};
 
 #[derive(Default, Debug, Clone)]
-pub struct DuplicateDetector<'a> {
-    set: HashSet<&'a Ident>,
-    dup: Option<&'a Ident>,
+pub struct DuplicateDetector {
+    set: HashSet<Ident>,
+    dup: Option<Ident>,
 }
 
-impl DuplicateDetector<'_> {
+impl DuplicateDetector {
     pub fn new() -> Self {
         Self::default()
     }
 
     fn is_success(&self) -> Result<(), Error> {
-        if let Some(occ2) = self.dup {
+        if let Some(occ2) = &self.dup {
             let occ1 = (*self.set.get(occ2).unwrap()).clone();
             Err(Error::DuplicateDefinition {
                 occ1,
@@ -35,19 +35,19 @@ impl DuplicateDetector<'_> {
     }
 }
 
-impl<'ast> Visitor<'ast> for DuplicateDetector<'ast> {
-    fn visit_ident(&mut self, ident: &'ast Ident) {
-        if self.dup.is_none() && !self.set.insert(ident) {
+impl Visitor<'_> for DuplicateDetector {
+    fn visit_ident(&mut self, ident: &'_ Ident) {
+        if self.dup.is_none() && !self.set.insert(ident.clone()) {
             // Duplicate was found
-            self.dup = Some(ident);
+            self.dup = Some(ident.clone());
         }
     }
 }
 
-impl<'ast> CompilerPass<'ast> for DuplicateDetector<'ast> {
+impl CompilerPass<'_> for DuplicateDetector {
     type Output = ();
 
-    fn run_pass(&'ast mut self, ast: &'ast Node) -> Result<Self::Output, Error> {
+    fn run_pass(&mut self, ast: &'_ Node) -> Result<Self::Output, Error> {
         walk_all(self, ast);
         self.is_success()
     }

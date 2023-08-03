@@ -184,9 +184,12 @@ fn main() {
     let ast_store = ASTStore::new();
     let ast = ast_store.get_or_insert(&args.path).unwrap();
 
-    println!("Checking for duplicate symbols...");
-    check(duplicate::DuplicateDetector::new().run_pass(&ast));
-
     println!("Checking for unresolved includes...");
-    check(includes::Includes::new(&ast_store).run_pass(&ast));
+    let ordering = check(includes::Includes::new(&ast_store).run_pass(&ast));
+
+    println!("Checking for duplicate symbols...");
+    let mut dups = duplicate::DuplicateDetector::new();
+    for file_path in ordering {
+        check(dups.run_pass(&ast_store.get_or_insert(&file_path).unwrap()));
+    }
 }
