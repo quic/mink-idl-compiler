@@ -3,7 +3,6 @@
 
 use ast::visitor::Visitor;
 
-use crate::ast::Identifiable;
 mod ast;
 mod passes;
 
@@ -49,125 +48,125 @@ enum Dumpable {
     Ast,
 }
 
-#[derive(Debug, Clone)]
-struct RustCodegen;
-impl RustCodegen {
-    fn into_rust_type(r#type: &ast::Type) -> &str {
-        match r#type {
-            ast::Type::Primitive(primitive) => Self::into_rust_primitive(primitive),
-            ast::Type::Custom(ident) => ident.as_str(),
-        }
-    }
+// #[derive(Debug, Clone)]
+// struct RustCodegen;
+// impl RustCodegen {
+//     fn into_rust_type(r#type: &ast::Type) -> &str {
+//         match r#type {
+//             ast::Type::Primitive(primitive) => Self::into_rust_primitive(primitive),
+//             ast::Type::Custom(ident) => ident.as_str(),
+//         }
+//     }
 
-    fn into_rust_primitive(primitive: &ast::Primitive) -> &'static str {
-        match primitive {
-            ast::Primitive::Uint8 => "u8",
-            ast::Primitive::Uint16 => "u16",
-            ast::Primitive::Uint32 => "u32",
-            ast::Primitive::Uint64 => "u64",
-            ast::Primitive::Int8 => "i8",
-            ast::Primitive::Int16 => "i16",
-            ast::Primitive::Int32 => "i32",
-            ast::Primitive::Int64 => "i64",
-            ast::Primitive::Float32 => "f32",
-            ast::Primitive::Float64 => "f64",
-        }
-    }
-}
+//     fn into_rust_primitive(primitive: &ast::Primitive) -> &'static str {
+//         match primitive {
+//             ast::Primitive::Uint8 => "u8",
+//             ast::Primitive::Uint16 => "u16",
+//             ast::Primitive::Uint32 => "u32",
+//             ast::Primitive::Uint64 => "u64",
+//             ast::Primitive::Int8 => "i8",
+//             ast::Primitive::Int16 => "i16",
+//             ast::Primitive::Int32 => "i32",
+//             ast::Primitive::Int64 => "i64",
+//             ast::Primitive::Float32 => "f32",
+//             ast::Primitive::Float64 => "f64",
+//         }
+//     }
+// }
 
-impl Visitor for RustCodegen {
-    fn visit_struct_field(&mut self, field: &ast::StructField) -> String {
-        let (r#type, count) = field.r#type();
-        let rust_type = RustCodegen::into_rust_type(r#type);
+// impl Visitor for RustCodegen {
+//     fn visit_struct_field(&mut self, field: &ast::StructField) -> String {
+//         let (r#type, count) = field.r#type();
+//         let rust_type = RustCodegen::into_rust_type(r#type);
 
-        if count.get() > 1 {
-            format!("{}: [{rust_type}; {count}]", field.ident())
-        } else {
-            format!("{}: {rust_type}", field.ident())
-        }
-    }
+//         if count.get() > 1 {
+//             format!("{}: [{rust_type}; {count}]", field.ident)
+//         } else {
+//             format!("{}: {rust_type}", field.ident)
+//         }
+//     }
 
-    fn visit_struct_prefix(&mut self, ident: &str) -> String {
-        format!(
-            r#"#[derive(Debug, Clone, Copy, PartialEq)]
-struct {ident} {{
-"#
-        )
-    }
+//     fn visit_struct_prefix(&mut self, ident: &str) -> String {
+//         format!(
+//             r#"#[derive(Debug, Clone, Copy, PartialEq)]
+// struct {ident} {{
+// "#
+//         )
+//     }
 
-    fn visit_struct_suffix(&mut self, ident: &str) -> String {
-        "}".to_string()
-    }
+//     fn visit_struct_suffix(&mut self, ident: &str) -> String {
+//         "}".to_string()
+//     }
 
-    fn struct_field_seperator(&self) -> &'static str {
-        ",\n"
-    }
+//     fn struct_field_seperator(&self) -> &'static str {
+//         ",\n"
+//     }
 
-    fn visit_include(&mut self, include: &str) -> String {
-        let prefix = include.len() - 4;
-        format!(
-            "use crate::interfaces::{};",
-            include[..prefix].to_lowercase()
-        )
-    }
+//     fn visit_include(&mut self, include: &str) -> String {
+//         let prefix = include.len() - 4;
+//         format!(
+//             "use crate::interfaces::{};",
+//             include[..prefix].to_lowercase()
+//         )
+//     }
 
-    fn visit_caller(&mut self, interface: &ast::Interface) -> String {
-        let error = format!(
-            r#"#[repr(transparent)]
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub struct Error(crate::object::Error);
+//     fn visit_caller(&mut self, interface: &ast::Interface) -> String {
+//         let error = format!(
+//             r#"#[repr(transparent)]
+// #[derive(Clone, Copy, PartialEq, Eq)]
+// pub struct Error(crate::object::Error);
 
-impl From<Error> for crate::object::Error {{
-    fn from(e: Error) -> Self {{
-        e.0
-    }}
-}}
+// impl From<Error> for crate::object::Error {{
+//     fn from(e: Error) -> Self {{
+//         e.0
+//     }}
+// }}
 
-impl From<crate::object::Error> for Error {{
-    fn from(e: crate::object::Error) -> Self {{
-        Self(e)
-    }}
-}}
-"#
-        );
-        let mut consts = String::new();
-        let mut functions = String::new();
-        for node in interface.nodes() {
-            match node {
-                ast::InterfaceNode::Const(c) => consts.push_str(&format!(
-                    "pub const {}: {} = {};",
-                    c.ident(),
-                    RustCodegen::into_rust_primitive(c.r#type()),
-                    c.value()
-                )),
-                ast::InterfaceNode::Function { doc, ident, params } => {}
-                ast::InterfaceNode::Error(e) => {}
-            }
-        }
+// impl From<crate::object::Error> for Error {{
+//     fn from(e: crate::object::Error) -> Self {{
+//         Self(e)
+//     }}
+// }}
+// "#
+//         );
+//         let mut consts = String::new();
+//         let mut functions = String::new();
+//         for node in &interface.nodes {
+//             match node {
+//                 ast::InterfaceNode::Const(c) => consts.push_str(&format!(
+//                     "pub const {}: {} = {};",
+//                     c.ident,
+//                     RustCodegen::into_rust_primitive(c.r#type()),
+//                     c.value
+//                 )),
+//                 ast::InterfaceNode::Function { doc, ident, params } => {}
+//                 ast::InterfaceNode::Error(e) => {}
+//             }
+//         }
 
-        (error + &consts)
-    }
+//         (error + &consts)
+//     }
 
-    fn visit_callee(&mut self, interface: &ast::Interface) -> String {
-        todo!()
-    }
-}
+//     fn visit_callee(&mut self, interface: &ast::Interface) -> String {
+//         todo!()
+//     }
+// }
 
-fn visit_all(codegen: &mut impl Visitor, ast: ast::Node) {
-    let ast::Node::CompilationUnit(name, nodes) = ast else { unreachable!() };
-    for node in nodes {
-        //dbg!(&node);
-        match &node {
-            ast::Node::Include(r#include) => println!("{}\n", codegen.visit_include(r#include)),
-            ast::Node::Const(_) => {}
-            ast::Node::Struct(s) => {
-                println!("{}\n", codegen.visit_struct(s));
-            }
-            ast::Node::Interface(interface) => println!("{}\n", codegen.visit_caller(interface)),
-            _ => unreachable!(),
-        }
-    }
-}
+// fn visit_all(codegen: &mut impl Visitor, ast: ast::Node) {
+//     let ast::Node::CompilationUnit(name, nodes) = ast else { unreachable!() };
+//     for node in &nodes {
+//         //dbg!(&node);
+//         match &node {
+//             ast::Node::Include(r#include) => println!("{}\n", codegen.visit_include(r#include)),
+//             ast::Node::Const(_) => {}
+//             ast::Node::Struct(s) => {
+//                 println!("{}\n", codegen.visit_struct(s));
+//             }
+//             ast::Node::Interface(interface) => println!("{}\n", codegen.visit_caller(interface)),
+//             _ => unreachable!(),
+//         }
+//     }
+// }
 
 fn main() {
     use clap::Parser as ClapParser;
@@ -188,6 +187,4 @@ fn main() {
     println!("Checking for unresolved includes...");
     let includes = passes::includes::Includes::new(&ast);
     check(includes.symbol_table());
-
-    visit_all(&mut RustCodegen, ast);
 }

@@ -170,13 +170,8 @@ fn get_symbols(ast: &Node) -> Result<(Symbols, Symbols), Error> {
             }
             Node::Interface(i) => {
                 for node in &i.nodes {
-                    if let InterfaceNode::Function {
-                        doc: _,
-                        ident: _,
-                        params,
-                    } = node
-                    {
-                        for param in params {
+                    if let InterfaceNode::Function(f) = node {
+                        for param in &f.params {
                             if let Type::Custom(ident) = param.r#type() {
                                 if !defined.contains(ident.as_str()) {
                                     unresolved.insert(ident.clone());

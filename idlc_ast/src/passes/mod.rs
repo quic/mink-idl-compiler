@@ -15,6 +15,8 @@
 //! 4. Creating a dependency tree data structure that contain symbols required
 //!    from each external include.
 
+use crate::ast::Ident;
+
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("Cylical imports")]
@@ -23,8 +25,8 @@ pub enum Error {
     AstDoesntContainRoot,
     #[error("Error parsing AST")]
     AstParse(#[from] crate::ast::Error),
-    #[error("Duplicate definition of '{ident}' in '{root}'")]
-    DuplicateDefinition { root: String, ident: String },
+    #[error("Duplicate definition of '{}'", occ1.ident)]
+    DuplicateDefinition { occ1: Ident, occ2: Ident },
     #[error("Couldn't find defintions of the following symbols: {0:?}")]
     UnresolvedSymbols(std::collections::HashSet<String>),
 }

@@ -9,6 +9,8 @@ use pest::{
     Parser as PestParser,
 };
 
+use self::visitor::Visitor;
+
 #[derive(pest_derive::Parser, Debug)]
 #[grammar = "../grammar/idl.pest"]
 pub struct Parser;
@@ -55,11 +57,23 @@ impl From<pest::Span<'_>> for Span {
 }
 
 /// Identifiers are utf-8 strings with a span.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct Ident {
     pub span: Span,
     pub ident: String,
 }
+impl PartialEq<Ident> for Ident {
+    fn eq(&self, other: &Ident) -> bool {
+        self.ident == other.ident
+    }
+}
+impl Eq for Ident {}
+impl std::hash::Hash for Ident {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.ident.hash(state);
+    }
+}
+
 impl<R: pest::RuleType + Ord> From<Pair<'_, R>> for Ident {
     fn from(value: Pair<'_, R>) -> Self {
         Self {
@@ -161,12 +175,15 @@ pub struct Documentation(pub String);
 #[derive(Debug, Clone, PartialEq)]
 pub enum InterfaceNode {
     Const(Const),
-    Function {
-        doc: Option<Documentation>,
-        ident: Ident,
-        params: Vec<Param>,
-    },
+    Function(Function),
     Error(Ident),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Function {
+    pub doc: Option<Documentation>,
+    pub ident: Ident,
+    pub params: Vec<Param>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -416,7 +433,7 @@ impl<'a> From<(Option<Documentation>, Pair<'a, Rule>)> for InterfaceNode {
                 for param in inner {
                     params.push(Param::from(param));
                 }
-                InterfaceNode::Function { doc, ident, params }
+                InterfaceNode::Function(Function { doc, ident, params })
             }
             _ => unreachable!(),
         }
