@@ -1,7 +1,9 @@
 // Binary targets might not use all the functions.
 #![allow(unused)]
 
-use ast::visitor::Visitor;
+use std::collections::HashMap;
+
+use ast::{visitor::Visitor, Node, Struct};
 
 use crate::passes::{duplicate, includes, ASTStore, CompilerPass, Error};
 
@@ -11,12 +13,6 @@ mod passes;
 #[derive(clap::Parser)]
 #[command(author, version, about = None, long_about)]
 /// Parse .idl files into AST.
-///
-/// TODO(arvimuku): Currently the syntatic analysis phase is done although
-/// there's no semantic analysis done for external types. I'm wondering how i'd
-/// address the dependencies nicely especially detect cyclic dependencies and
-/// such would need to include some sort of cycle detection + topological
-/// sorting + creating a giant paste table.
 ///
 /// The C-compiler for example returns `nested too deeply`, rust detects cyclic
 /// imports nicer.

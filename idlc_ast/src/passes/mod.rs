@@ -17,27 +17,45 @@
 
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::ast::{Ident, Node};
+use crate::ast::{Ident, Node, Struct};
 
 /// Compilation unit is split into a hashmap here.
 #[derive(Default, Debug)]
-pub struct ASTStore(RefCell<HashMap<String, Rc<Node>>>);
+pub struct ASTStore {
+    ast_store: RefCell<HashMap<String, Rc<Node>>>,
+    symbol_map: RefCell<HashMap<String, Struct>>,
+}
 
 impl ASTStore {
     pub fn new() -> Self {
-        Self(RefCell::new(HashMap::new()))
+        Self::default()
+    }
+
+    #[inline]
+    fn gather_symbols_from_ast(ast: &Node, map: &mut HashMap<String, Struct>) {
+        let Node::CompilationUnit(_, nodes) = ast else { unreachable!("ICE: Cannot find root node in AST from file.") };
+        for node in nodes {
+            if let Node::Struct(s) = node {
+                map.insert(s.ident.to_string(), s.clone());
+            }
+        }
     }
 
     pub fn get_or_insert(&self, file_path: &str) -> Result<Rc<Node>, Error> {
-        if !self.0.borrow().contains_key(file_path) {
+        if !self.ast_store.borrow().contains_key(file_path) {
             let node =
                 Node::from_file(file_path).expect("ICE: Cannot find root node in AST from file.");
-            self.0
+            Self::gather_symbols_from_ast(&node, &mut self.symbol_map.borrow_mut());
+            self.ast_store
                 .borrow_mut()
                 .insert(file_path.to_string(), Rc::new(node));
         }
 
-        Ok(unsafe { Rc::clone(self.0.borrow().get(file_path).unwrap_unchecked()) })
+        Ok(unsafe { Rc::clone(self.ast_store.borrow().get(file_path).unwrap_unchecked()) })
+    }
+
+    pub fn symbol_lookup(&self, name: &str) -> Option<Struct> {
+        self.symbol_map.borrow().get(name).cloned()
     }
 }
 
