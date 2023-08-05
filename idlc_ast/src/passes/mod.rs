@@ -33,10 +33,15 @@ impl ASTStore {
 
     #[inline]
     fn gather_symbols_from_ast(ast: &Node, map: &mut HashMap<String, Struct>) {
-        let Node::CompilationUnit(_, nodes) = ast else { unreachable!("ICE: Cannot find root node in AST from file.") };
+        let Node::CompilationUnit(_, nodes) = ast else { unreachable!("ICE: Cannot find root node in AST from file. {ast:?}") };
         for node in nodes {
-            if let Node::Struct(s) = node {
-                map.insert(s.ident.to_string(), s.clone());
+            if let Node::Struct(s) = node.as_ref() {
+                if let Some(prev) = map.insert(s.ident.to_string(), s.clone()) {
+                    panic!(
+                        "Duplicate symbol detected, previously defined @ {:?}, defined again @ {:?}",
+                        prev.ident.span, s.ident.span
+                    );
+                }
             }
         }
     }
@@ -79,6 +84,5 @@ pub enum Error {
     UnresolvedSymbols(std::collections::HashSet<String>),
 }
 
-pub mod duplicate;
 pub mod includes;
 // mod resolve_symbols;

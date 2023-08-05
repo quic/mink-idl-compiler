@@ -102,7 +102,7 @@ pub fn walk_all<'a, V: Visitor<'a>>(visitor: &mut V, root: &'a Node) {
     let Node::CompilationUnit(root_ident, nodes) =  root else { unreachable!("ICE: walk_all was called without root being the starting node.")};
     visitor.visit_root_ident(root_ident);
     for node in nodes {
-        match node {
+        match node.as_ref() {
             Node::Include(i) => visitor.visit_include(i),
             Node::Const(c) => visitor.visit_const(c),
             Node::Struct(s) => visitor.visit_struct(s),

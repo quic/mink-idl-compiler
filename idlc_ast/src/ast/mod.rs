@@ -2,7 +2,7 @@
 mod tests;
 pub mod visitor;
 
-use std::{num::NonZeroU16, path::Path};
+use std::{num::NonZeroU16, path::Path, rc::Rc};
 
 use pest::{
     iterators::{Pair, Pairs},
@@ -130,7 +130,7 @@ pub enum Node {
     /// allow the full features of a [`Node`]
     Interface(Interface),
     /// Root of the tree
-    CompilationUnit(String, Vec<Node>),
+    CompilationUnit(String, Vec<Rc<Node>>),
 }
 impl Node {
     pub fn ident(&self) -> Option<&Ident> {
@@ -320,7 +320,7 @@ impl<'a> From<(String, Pairs<'a, Rule>)> for Node {
             match inner.as_rule() {
                 Rule::include => {
                     let path = ast_unwrap!(inner.into_inner().next());
-                    nodes.push(Node::Include(path.as_str().to_string()));
+                    nodes.push(Rc::new(Node::Include(path.as_str().to_string())));
                 }
                 Rule::r#struct => {
                     let mut struct_pst = inner.into_inner();
@@ -359,11 +359,9 @@ impl<'a> From<(String, Pairs<'a, Rule>)> for Node {
                             _ => unreachable!(),
                         }
                     }
-                    nodes.push(Node::Struct(Struct { ident, fields }));
+                    nodes.push(Rc::new(Node::Struct(Struct { ident, fields })));
                 }
-                Rule::r#const => {
-                    nodes.push(Node::Const(Const::from(inner.into_inner())));
-                }
+                Rule::r#const => nodes.push(Rc::new(Node::Const(Const::from(inner.into_inner())))),
                 Rule::interface => {
                     let mut interface = inner.into_inner();
                     let mut pairs = ast_unwrap!(interface.next()).into_inner();
@@ -388,11 +386,11 @@ impl<'a> From<(String, Pairs<'a, Rule>)> for Node {
                             _ => unreachable!(),
                         }
                     }
-                    nodes.push(Node::Interface(Interface {
+                    nodes.push(Rc::new(Node::Interface(Interface {
                         ident: Ident { span, ident },
                         base,
                         nodes: iface_nodes,
-                    }));
+                    })))
                 }
                 _ => {}
             }

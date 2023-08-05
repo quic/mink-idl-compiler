@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use ast::{visitor::Visitor, Node, Struct};
 
-use crate::passes::{duplicate, includes, ASTStore, CompilerPass, Error};
+use crate::passes::{includes, ASTStore, CompilerPass, Error};
 
 mod ast;
 mod passes;
@@ -182,10 +182,4 @@ fn main() {
 
     println!("Checking for unresolved includes...");
     let ordering = check(includes::Includes::new(&ast_store).run_pass(&ast));
-
-    println!("Checking for duplicate symbols...");
-    let mut dups = duplicate::DuplicateDetector::new();
-    for file_path in ordering {
-        check(dups.run_pass(&ast_store.get_or_insert(&file_path).unwrap()));
-    }
 }
