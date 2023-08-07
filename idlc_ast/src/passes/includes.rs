@@ -72,7 +72,7 @@ impl<'a> Includes<'a> {
             node_map.insert(key.as_str(), graph.add_node(key.as_str()));
         }
 
-        for (source, sinks) in self.map.iter() {
+        for (source, sinks) in &self.map {
             let from = node_map.get(source.as_str()).unwrap();
             for sink in sinks {
                 let to = node_map.get(sink.as_str()).unwrap();

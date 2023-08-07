@@ -55,7 +55,7 @@ impl<'ast> Visitor<'ast> for StructVerifier<'ast> {
                     let custom = self
                         .ast_store
                         .symbol_lookup(c)
-                        .unwrap_or_else(|| panic!("Symbol {} not found", c));
+                        .unwrap_or_else(|| panic!("Symbol {c} not found"));
                     for _ in 0..element.val.1.get() {
                         stack.extend(custom.fields.iter().cloned());
                     }
