@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use ast::{visitor::Visitor, Node, Struct};
 
-use crate::passes::{includes, ASTStore, CompilerPass, Error};
+use crate::passes::{includes, struct_verifier, ASTStore, CompilerPass, Error};
 
 mod ast;
 mod passes;
@@ -182,4 +182,7 @@ fn main() {
 
     println!("Checking for unresolved includes...");
     let ordering = check(includes::Includes::new(&ast_store).run_pass(&ast));
+
+    println!("Checking for struct sizes");
+    check(struct_verifier::StructVerifier::new(&ast_store).run_pass(&ast));
 }

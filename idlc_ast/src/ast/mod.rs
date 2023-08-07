@@ -273,6 +273,22 @@ pub enum Primitive {
     Float64,
 }
 
+impl Primitive {
+    pub const fn size(self) -> usize {
+        match self {
+            Primitive::Uint8 | Primitive::Int8 => 1,
+            Primitive::Uint16 | Primitive::Int16 => 2,
+            Primitive::Uint32 | Primitive::Int32 | Primitive::Float32 => 4,
+            Primitive::Uint64 | Primitive::Int64 | Primitive::Float64 => 8,
+        }
+    }
+
+    pub const fn alignment(self) -> usize {
+        // All primitive types are required to be aligned to it's size.
+        self.size()
+    }
+}
+
 impl TryFrom<&str> for Primitive {
     type Error = Error;
 

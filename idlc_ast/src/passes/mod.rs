@@ -85,4 +85,4 @@ pub enum Error {
 }
 
 pub mod includes;
-// mod resolve_symbols;
+pub mod struct_verifier;
