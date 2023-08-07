@@ -7,7 +7,7 @@
 //! DFS search.
 //!
 
-use std::collections::{HashSet, VecDeque};
+use std::collections::VecDeque;
 
 use crate::ast::{
     visitor::{walk_all, Visitor},
@@ -15,6 +15,8 @@ use crate::ast::{
 };
 
 use super::{ASTStore, CompilerPass};
+
+const MAX_DEPTH: usize = 100;
 
 #[derive(Debug, Clone)]
 pub struct StructVerifier<'ast> {
@@ -29,18 +31,17 @@ impl<'ast> StructVerifier<'ast> {
 
 impl<'ast> Visitor<'ast> for StructVerifier<'ast> {
     fn visit_struct(&mut self, r#struct: &'ast crate::ast::Struct) {
-        let mut visited: HashSet<&'ast str> = HashSet::new();
-        visited.insert(&r#struct.ident);
+        let mut depth = 0;
         let mut stack = VecDeque::new();
         stack.extend(r#struct.fields.iter().cloned());
-        let mut size = 0;
+        let mut offset = 0;
         while let Some(element) = stack.pop_front() {
-            size += match &element.val.0 {
+            offset += match &element.val.0 {
                 crate::ast::Type::Primitive(p) => {
                     assert_eq!(
-                        size % p.alignment(),
+                        offset % p.alignment(),
                         0,
-                        "ICE: In struct `{}`; field `{}` didn't match alignment requirements of `{}`",
+                        "struct `{}`; [sub-]field `{}` didn't match alignment requirements of `{}`",
                         r#struct.ident,
                         &element.ident,
                         p.alignment()
@@ -48,10 +49,14 @@ impl<'ast> Visitor<'ast> for StructVerifier<'ast> {
                     p.size()
                 }
                 crate::ast::Type::Custom(c) => {
-                    assert!(
-                        !visited.contains(c.as_str()),
-                        "Circular dependency detected for {c}"
-                    );
+                    if depth == MAX_DEPTH {
+                        panic!(
+                            "DFS recursed {MAX_DEPTH} nodes while traversing {}, \
+                             possible recursive structures? These are unsupported and will \
+                             possible never be supported due to language restrictions.",
+                            r#struct.ident
+                        );
+                    }
                     let custom = self
                         .ast_store
                         .symbol_lookup(c)
@@ -62,6 +67,7 @@ impl<'ast> Visitor<'ast> for StructVerifier<'ast> {
                     0
                 }
             };
+            depth += 1;
         }
     }
 }
