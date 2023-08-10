@@ -5,7 +5,7 @@ use super::{ASTStore, CompilerPass};
 use petgraph::algo::toposort;
 use petgraph::stable_graph::StableDiGraph;
 
-use crate::ast::visitor::{walk_all, Visitor};
+use idlc_ast::visitor::{walk_all, Visitor};
 
 #[track_caller]
 #[cold]
@@ -90,7 +90,7 @@ impl<'a> Includes<'a> {
 impl CompilerPass<'_> for Includes<'_> {
     type Output = Vec<String>;
 
-    fn run_pass(&'_ mut self, ast: &'_ crate::ast::Node) -> Result<Self::Output, super::Error> {
+    fn run_pass(&'_ mut self, ast: &'_ idlc_ast::Node) -> Result<Self::Output, super::Error> {
         walk_all(self, ast);
         self.is_success()
     }

@@ -1,4 +1,5 @@
 use super::{invalid, valid};
+use pest::Parser as PestParser;
 
 #[test]
 fn invalid_includes() {
@@ -81,16 +82,16 @@ fn r#struct() {
             "struct test { uint8[64] test; };",
             "struct test { uint8[64] test; uint64 test2; };",
             "struct test { uint8[64] test\n;\n\n\n\n uint64 test2;\n\n\n\n\n };",
-            r#"struct ISecureImage_programHeader {
-                  uint64 p_type;
-                  uint64 p_offset;
-                  uint64 p_vaddr;
-                  uint64 p_paddr;
-                  uint64 p_filesz;
-                  uint64 p_memsz;
-                  uint64 p_flags;
-                  uint64 p_align;
-            };"#,
+            r"struct multiple_fields {
+                  uint64 a;
+                  uint64 b;
+                  uint64 c;
+                  uint64 d;
+                  uint64 e;
+                  uint64 f;
+                  uint64 g;
+                  uint64 h;
+            };",
         ]
     );
 

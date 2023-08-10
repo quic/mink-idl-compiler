@@ -11,9 +11,9 @@
 
 use std::collections::VecDeque;
 
-use crate::ast::{
+use idlc_ast::{
     visitor::{walk_all, Visitor},
-    Node,
+    Node, Struct, Type,
 };
 
 use super::{ASTStore, CompilerPass};
@@ -32,14 +32,14 @@ impl<'ast> StructVerifier<'ast> {
 }
 
 impl<'ast> Visitor<'ast> for StructVerifier<'ast> {
-    fn visit_struct(&mut self, r#struct: &'ast crate::ast::Struct) {
+    fn visit_struct(&mut self, r#struct: &'ast Struct) {
         let mut stack = VecDeque::new();
         stack.extend(r#struct.fields.iter().cloned());
         let mut offset = 0;
         let mut alignment = 0;
         while let Some(element) = stack.pop_front() {
             offset += match &element.val.0 {
-                crate::ast::Type::Primitive(p) => {
+                Type::Primitive(p) => {
                     assert_eq!(
                         offset % p.alignment(),
                         0,
@@ -51,7 +51,7 @@ impl<'ast> Visitor<'ast> for StructVerifier<'ast> {
                     alignment = alignment.max(p.alignment());
                     p.size()
                 }
-                crate::ast::Type::Custom(c) => {
+                Type::Custom(c) => {
                     let custom = self
                         .ast_store
                         .symbol_lookup(c)
