@@ -162,6 +162,7 @@ fn function() {
             "methods foo();",
             "method 123foo();",
             "method foo(int buffer req);",
+            "method foo(in buffer req in buffer rsp);",
             "method foo(buffer req);",
             "method foo(in req);",
             "method foo(in, in);",

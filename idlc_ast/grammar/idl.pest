@@ -24,7 +24,7 @@ param_arr  = @{ "[]" }
 param_type = ${ (primitive_types | ident | "interface") ~ param_arr? | "buffer" }
 mutability = @{ ("in" | "out") }
 param      =  { mutability ~ param_type ~ ident }
-function   =  { "method " ~ ident ~ "(" ~ (param ~ ","?)* ~ ");" }
+function   =  { "method " ~ ident ~ "(" ~ param? ~ ("," ~ param)* ~ ");" }
 
 error     = { "error " ~ ident ~ ";" }
 iname     = { ident ~ (":" ~ ident)? }
