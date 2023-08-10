@@ -72,8 +72,8 @@ pub trait CompilerPass<'ast> {
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("Cylical imports found")]
-    CyclicalInclude,
+    #[error("Cylical imports found {0:?}")]
+    CyclicalInclude(Vec<String>),
     #[error("Input AST doesn't contain AstNode::CompilationUnit")]
     AstDoesntContainRoot,
     #[error("Error parsing AST")]
@@ -84,5 +84,6 @@ pub enum Error {
     UnresolvedSymbols(std::collections::HashSet<String>),
 }
 
+mod graph;
 pub mod includes;
 pub mod struct_verifier;

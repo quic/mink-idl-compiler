@@ -9,5 +9,4 @@ description = "Contains compiler passes over raw AST"
 
 [dependencies]
 "idlc_ast" = { path="../idlc_ast" }
-petgraph = "0.6.3"
 thiserror = "1.0.44"
