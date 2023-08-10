@@ -6,6 +6,8 @@
 //! Also ensures recursive structs don't exist by holding a visited set for the
 //! DFS search.
 //!
+//! FIXME: Currently maxes out on [`MAX_SIZE`] which doesn't denote a cycle and could just be a huge struct.
+//! Ideally we want to detect cycles using the toposort.
 
 use std::collections::VecDeque;
 
@@ -16,7 +18,7 @@ use crate::ast::{
 
 use super::{ASTStore, CompilerPass};
 
-const MAX_DEPTH: usize = 100;
+const MAX_SIZE: usize = 1024;
 
 #[derive(Debug, Clone)]
 pub struct StructVerifier<'ast> {
@@ -31,10 +33,10 @@ impl<'ast> StructVerifier<'ast> {
 
 impl<'ast> Visitor<'ast> for StructVerifier<'ast> {
     fn visit_struct(&mut self, r#struct: &'ast crate::ast::Struct) {
-        let mut depth = 0;
         let mut stack = VecDeque::new();
         stack.extend(r#struct.fields.iter().cloned());
         let mut offset = 0;
+        let mut alignment = 0;
         while let Some(element) = stack.pop_front() {
             offset += match &element.val.0 {
                 crate::ast::Type::Primitive(p) => {
@@ -46,17 +48,10 @@ impl<'ast> Visitor<'ast> for StructVerifier<'ast> {
                         &element.ident,
                         p.alignment()
                     );
+                    alignment = alignment.max(p.alignment());
                     p.size()
                 }
                 crate::ast::Type::Custom(c) => {
-                    if depth == MAX_DEPTH {
-                        panic!(
-                            "DFS recursed {MAX_DEPTH} nodes while traversing {}, \
-                             possible recursive structures? These are unsupported and will \
-                             possible never be supported due to language restrictions.",
-                            r#struct.ident
-                        );
-                    }
                     let custom = self
                         .ast_store
                         .symbol_lookup(c)
@@ -66,11 +61,24 @@ impl<'ast> Visitor<'ast> for StructVerifier<'ast> {
                             stack.push_front(field.clone());
                         }
                     }
-                    depth += 1;
                     0
                 }
             };
+
+            if offset >= MAX_SIZE {
+                panic!(
+                    "Struct sizes are limited @ {MAX_SIZE}. Possible recursive structures? \
+                    These are unsupported and will possible never be supported due to \
+                    language restrictions."
+                );
+            }
         }
+
+        assert_eq!(
+            offset % alignment,
+            0,
+            "struct's natural alignment is `{alignment}`; however size of struct is `{offset}` which isn't aligned."
+        );
     }
 }
 
