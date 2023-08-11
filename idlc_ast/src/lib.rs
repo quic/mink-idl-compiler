@@ -11,7 +11,7 @@ use pest::{
 
 #[derive(pest_derive::Parser, Debug)]
 #[grammar = "../grammar/idl.pest"]
-pub struct Parser;
+pub(crate) struct Parser;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
