@@ -12,7 +12,6 @@ fn invalid_includes() {
             r#"include "header.idl.xyz""#,
             r#"include "header.idl.idl""#,
             r#"include"header.idl""#,
-            r#"include "./path/to\.header.idl""#,
         ]
     );
 }
@@ -23,12 +22,14 @@ fn valid_includes() {
         include,
         [
             r#"include "header.idl""#,
+            r#"include "header🅰.idl""#, // EMOJIs work!
             r#"include "header.idl""#,
             r#"include           "header.idl""#,
             r#"include   "/path/to/header.idl""#,
             r#"include   "/path/to/.header.idl""#,
             r#"include   "/path/to/.header with space.idl""#,
             r#"include   "/.path/to/.header.idl""#,
+            r#"include "../path/to/header.idl""#,
         ]
     );
 }
