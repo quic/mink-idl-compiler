@@ -25,13 +25,13 @@ impl Visitor<'_> for Includes<'_> {
     }
 
     fn visit_include(&mut self, include: &'_ str) {
+        let current = self.current.take().unwrap();
+        self.graph.add_edge(current.clone(), include.to_string());
+        self.cycle = self.graph.cycle();
         if self.cycle.is_some() {
             return;
         }
 
-        let current = self.current.take().unwrap();
-        self.graph.add_edge(current.clone(), include.to_string());
-        self.cycle = self.graph.cycle();
         let Ok(inc_ast) = self.ast_store.get_or_insert(include) else { cannot_find_dep("Cannot load AST, file not found") };
         walk_all(self, &inc_ast);
         self.current = Some(current);
