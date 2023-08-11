@@ -22,7 +22,7 @@ impl<T: Hash + Eq + Clone> Graph<T> {
     }
 
     pub fn toposort(&self) -> Result<Ordering<T>, Cycle<T>> {
-        let nodes = self.nodes.keys().len();
+        let nodes = self.nodes.len();
         let mut visited = HashSet::with_capacity(nodes);
         let mut branch = Vec::with_capacity(nodes);
         let mut order = Vec::with_capacity(nodes);
