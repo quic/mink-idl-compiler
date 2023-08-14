@@ -13,9 +13,37 @@ use idlc_ast_passes::{includes, struct_verifier, ASTStore, CompilerPass, Error};
 ///
 /// The C-compiler for example returns `nested too deeply`, rust detects cyclic
 /// imports nicer.
-struct Args {
-    /// Path of IDL to dump AST for
-    path: String,
+struct Cli {
+    /// Input IDL file
+    file: std::path::PathBuf,
+
+    #[arg(short, value_name = "FILE")]
+    /// Output file name
+    output: Option<std::path::PathBuf>,
+
+    #[arg(long, conflicts_with_all = ["java", "rust"])]
+    /// Generate skeleton header (instead of stub header).
+    skel: bool,
+
+    #[arg(long, group = "lang", default_value_t = true)]
+    /// Generate c header. This is the default language.
+    c: bool,
+
+    #[arg(long, group = "lang")]
+    /// Generate c++ header
+    cpp: bool,
+
+    #[arg(long, group = "lang")]
+    /// Generate Java
+    java: bool,
+
+    #[arg(long, group = "lang")]
+    /// Generate Rust
+    rust: bool,
+
+    #[arg(short = 'I', long = "include", value_name = "DIR")]
+    /// Add DIR to include path. Can be passed multiple times.
+    include_paths: Option<Vec<std::path::PathBuf>>,
 
     #[arg(long, value_enum)]
     /// Dump various phases of the compiler and exit.
@@ -45,17 +73,19 @@ enum Dumpable {
 
 fn main() {
     use clap::Parser as ClapParser;
-    let args = Args::parse();
+    let args = Cli::parse();
     if let Some(dump) = args.dump {
         match dump {
-            Dumpable::Pst => idlc_ast::dump_pst(&args.path),
-            Dumpable::Ast => idlc_ast::dump(&args.path),
+            Dumpable::Pst => idlc_ast::dump_pst(&args.file),
+            Dumpable::Ast => idlc_ast::dump(&args.file),
         }
         std::process::exit(0);
     }
 
     let ast_store = ASTStore::new();
-    let ast = ast_store.get_or_insert(&args.path).unwrap();
+    let ast = ast_store
+        .get_or_insert(&args.file.into_os_string().into_string().unwrap())
+        .unwrap();
 
     println!("Checking for unresolved includes...");
     let ordering = check(includes::Includes::new(&ast_store).run_pass(&ast));
