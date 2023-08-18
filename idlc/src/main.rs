@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use idlc_ast::{visitor::Visitor, Node, Struct};
 
-use idlc_ast_passes::{includes, struct_verifier, ASTStore, CompilerPass, Error};
+use idlc_ast_passes::{cycles, includes, struct_verifier, ASTStore, CompilerPass, Error};
 
 #[derive(clap::Parser)]
 #[command(author, version, about = None, long_about)]
@@ -88,8 +88,14 @@ fn main() {
         .unwrap();
 
     println!("Checking for unresolved includes...");
-    let ordering = check(includes::Includes::new(&ast_store).run_pass(&ast));
+    _ = check(includes::Includes::new(&ast_store).run_pass(&ast));
+
+    println!("Checking for struct cycles");
+    let struct_ordering = check(cycles::Cycles::new(&ast_store).run_pass(&ast));
 
     println!("Checking for struct sizes");
-    check(struct_verifier::StructVerifier::new(&ast_store).run_pass(&ast));
+    check(struct_verifier::StructVerifier::run_pass(
+        &ast_store,
+        &struct_ordering,
+    ));
 }

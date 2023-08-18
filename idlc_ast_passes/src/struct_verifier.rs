@@ -9,85 +9,73 @@
 //! FIXME: Currently maxes out on [`MAX_SIZE`] which doesn't denote a cycle and could just be a huge struct.
 //! Ideally we want to detect cycles using the toposort.
 
-use std::collections::VecDeque;
+use std::collections::HashMap;
 
-use idlc_ast::{
-    visitor::{walk_all, Visitor},
-    Node, Struct, Type,
-};
+use idlc_ast::Type;
 
-use super::{ASTStore, CompilerPass};
+use super::ASTStore;
 
-const MAX_SIZE: usize = 1024;
+type Size = usize;
+type Alignment = usize;
 
-#[derive(Debug, Clone)]
-pub struct StructVerifier<'ast> {
-    ast_store: &'ast ASTStore,
+#[derive(Debug, Clone, Copy)]
+pub struct StructVerifier;
+
+#[derive(Debug, Clone, thiserror::Error)]
+pub enum Error {
+    #[error("struct member `{member}` in `{parent}` was not aligned to required alignment `{alignment}`; offset is `{offset}`")]
+    StructMemberNotAligned {
+        member: String,
+        parent: String,
+        alignment: usize,
+        offset: usize,
+    },
+    #[error("struct `{parent}` is not aligned to it's natural alignment `{alignment}`; size is `{size}`")]
+    StructNotAligned {
+        parent: String,
+        alignment: usize,
+        size: usize,
+    },
 }
 
-impl<'ast> StructVerifier<'ast> {
-    pub fn new(ast_store: &'ast ASTStore) -> Self {
-        Self { ast_store }
-    }
-}
+impl StructVerifier {
+    pub fn run_pass(ast_store: &ASTStore, toposort: &[String]) -> Result<(), Error> {
+        let mut store: HashMap<String, (Size, Alignment)> = HashMap::new();
+        for r#struct in toposort {
+            let node = ast_store.struct_lookup(r#struct).unwrap();
+            let mut size = 0;
+            let mut alignment = 0;
+            for field in &node.fields {
+                let (ty, count) = field.r#type();
+                let count = count.get() as usize;
 
-impl<'ast> Visitor<'ast> for StructVerifier<'ast> {
-    fn visit_struct(&mut self, r#struct: &'ast Struct) {
-        let mut stack = VecDeque::new();
-        stack.extend(r#struct.fields.iter().cloned());
-        let mut offset = 0;
-        let mut alignment = 0;
-        while let Some(element) = stack.pop_front() {
-            offset += match &element.val.0 {
-                Type::Primitive(p) => {
-                    assert_eq!(
-                        offset % p.alignment(),
-                        0,
-                        "struct `{}`; [sub-]field `{}` didn't match alignment requirements of `{}`",
-                        r#struct.ident,
-                        &element.ident,
-                        p.alignment()
-                    );
-                    alignment = alignment.max(p.alignment());
-                    p.size()
+                let (i_size, i_alignment) = match ty {
+                    Type::Primitive(p) => (p.size(), p.alignment()),
+                    Type::Custom(c) => *store.get(c.as_str()).unwrap(),
+                };
+                if size % i_alignment != 0 {
+                    return Err(Error::StructMemberNotAligned {
+                        member: field.ident.to_string(),
+                        parent: r#struct.to_string(),
+                        alignment: i_alignment,
+                        offset: size,
+                    });
                 }
-                Type::Custom(c) => {
-                    let custom = self
-                        .ast_store
-                        .symbol_lookup(c)
-                        .unwrap_or_else(|| panic!("Symbol {c} not found"));
-                    for _ in 0..element.val.1.get() {
-                        for field in &custom.fields {
-                            stack.push_front(field.clone());
-                        }
-                    }
-                    0
-                }
-            };
 
-            if offset >= MAX_SIZE {
-                panic!(
-                    "Struct sizes are limited @ {MAX_SIZE}. Possible recursive structures? \
-                    These are unsupported and will possible never be supported due to \
-                    language restrictions."
-                );
+                size += i_size * count;
+                alignment = alignment.max(i_alignment);
             }
+
+            if size % alignment != 0 {
+                return Err(Error::StructNotAligned {
+                    parent: r#struct.to_string(),
+                    alignment,
+                    size,
+                });
+            }
+            store.insert(r#struct.clone(), (size, alignment));
         }
 
-        assert_eq!(
-            offset % alignment,
-            0,
-            "struct's natural alignment is `{alignment}`; however size of struct is `{offset}` which isn't aligned."
-        );
-    }
-}
-
-impl<'ast> CompilerPass<'ast> for StructVerifier<'ast> {
-    type Output = ();
-
-    fn run_pass(&'ast mut self, ast: &'ast Node) -> Result<Self::Output, super::Error> {
-        walk_all(self, ast);
-        // TODO: Actually report errors instead of panicking!
         Ok(())
     }
 }

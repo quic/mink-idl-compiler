@@ -17,13 +17,19 @@
 
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use idlc_ast::{Ident, Node, Struct};
+use idlc_ast::{Ident, Interface, Node, Struct};
 
 /// Compilation unit is split into a hashmap here.
 #[derive(Default, Debug)]
 pub struct ASTStore {
     ast_store: RefCell<HashMap<String, Rc<Node>>>,
-    symbol_map: RefCell<HashMap<String, Struct>>,
+    symbols: RefCell<HashMap<Symbol, Rc<Node>>>,
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+enum Symbol {
+    Struct(String),
+    Interface(String),
 }
 
 impl ASTStore {
@@ -32,35 +38,62 @@ impl ASTStore {
     }
 
     #[inline]
-    fn gather_symbols_from_ast(ast: &Node, map: &mut HashMap<String, Struct>) {
+    fn gather_symbols_from_ast(ast: &Node, map: &mut HashMap<Symbol, Rc<Node>>) {
         let Node::CompilationUnit(_, nodes) = ast else { unreachable!("ICE: Cannot find root node in AST from file. {ast:?}") };
         for node in nodes {
-            if let Node::Struct(s) = node.as_ref() {
-                if let Some(prev) = map.insert(s.ident.to_string(), s.clone()) {
-                    panic!(
-                        "Duplicate symbol detected, previously defined @ {:?}, defined again @ {:?}",
-                        prev.ident.span, s.ident.span
-                    );
-                }
-            }
+            assert_eq!(
+                match node.as_ref() {
+                    Node::Struct(s) =>
+                        map.insert(Symbol::Struct(s.ident.to_string()), Rc::clone(node)),
+                    Node::Interface(i) => {
+                        map.insert(Symbol::Interface(i.ident.to_string()), Rc::clone(node))
+                    }
+                    _ => None,
+                },
+                None,
+                "Duplicate symbol detected!"
+            );
         }
     }
 
-    pub fn get_or_insert(&self, file_path: &str) -> Result<Rc<Node>, Error> {
+    pub fn get_or_insert(&self, file_path: &str) -> Option<Rc<Node>> {
         if !self.ast_store.borrow().contains_key(file_path) {
             let node =
                 Node::from_file(file_path).expect("ICE: Cannot find root node in AST from file.");
-            Self::gather_symbols_from_ast(&node, &mut self.symbol_map.borrow_mut());
+            Self::gather_symbols_from_ast(&node, &mut self.symbols.borrow_mut());
             self.ast_store
                 .borrow_mut()
                 .insert(file_path.to_string(), Rc::new(node));
         }
 
-        Ok(unsafe { Rc::clone(self.ast_store.borrow().get(file_path).unwrap_unchecked()) })
+        Some(Rc::clone(self.ast_store.borrow().get(file_path).unwrap()))
     }
 
-    pub fn symbol_lookup(&self, name: &str) -> Option<Struct> {
-        self.symbol_map.borrow().get(name).cloned()
+    pub fn insert(&self, name: &str, node: &Rc<Node>) {
+        Self::gather_symbols_from_ast(node, &mut self.symbols.borrow_mut());
+        self.ast_store
+            .borrow_mut()
+            .insert(name.to_string(), Rc::clone(node));
+    }
+
+    pub fn struct_lookup(&self, name: &str) -> Option<Rc<Struct>> {
+        self.symbols
+            .borrow()
+            .get(&Symbol::Struct(name.to_string()))
+            .map(|node| {
+                let Node::Struct(s) = node.as_ref() else {unreachable!("ICE: Struct node expected.")};
+                Rc::new(s.clone())
+            })
+    }
+
+    pub fn iface_lookup(&self, name: &str) -> Option<Rc<Interface>> {
+        self.symbols
+            .borrow()
+            .get(&Symbol::Interface(name.to_string()))
+            .map(|node| {
+                let Node::Interface(i) = node.as_ref() else {unreachable!("ICE: Interface node expected.")};
+                Rc::new(i.clone())
+            })
     }
 }
 
@@ -80,10 +113,14 @@ pub enum Error {
     AstParse(#[from] idlc_ast::Error),
     #[error("Duplicate definition of '{}'", occ1.ident)]
     DuplicateDefinition { occ1: Ident, occ2: Ident },
-    #[error("Couldn't find defintions of the following symbols: {0:?}")]
-    UnresolvedSymbols(std::collections::HashSet<String>),
+    #[error("Couldn't find defintions for the symbol `{0}`")]
+    UnresolvedSymbol(String),
+    #[error("Struct requirements not met: `{0}`")]
+    StructVerifier(#[from] struct_verifier::Error),
 }
 
 mod graph;
+
+pub mod cycles;
 pub mod includes;
 pub mod struct_verifier;

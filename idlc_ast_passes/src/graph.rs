@@ -5,7 +5,7 @@ use std::hash::Hash;
 
 #[derive(Debug, Clone)]
 pub struct Graph<T: Hash + Eq + Clone> {
-    nodes: HashMap<T, Vec<T>>,
+    nodes: HashMap<T, HashSet<T>>,
 }
 pub type Ordering<T> = Vec<T>;
 pub type Cycle<T> = Vec<T>;
@@ -18,7 +18,11 @@ impl<T: Hash + Eq + Clone> Graph<T> {
     }
 
     pub fn add_edge(&mut self, from: T, to: T) {
-        self.nodes.entry(from).or_default().push(to);
+        self.nodes.entry(from).or_default().insert(to);
+    }
+
+    pub fn add_node(&mut self, node: T) {
+        self.nodes.entry(node).or_default();
     }
 
     pub fn toposort(&self) -> Result<Ordering<T>, Cycle<T>> {
