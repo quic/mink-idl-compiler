@@ -8,6 +8,8 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RUSTDOCFLAGS: -D warnings
 
 jobs:
   build:
@@ -15,13 +17,26 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build
-      run: cargo check --all-targets
-    - name: Tests
-      run: cargo test 
-    - name: Lints
-      run: cargo clippy --all-targets -- -W clippy::all
+      run: cargo clippy --all-targets -- -D clippy::all -D unused
+
+  format:
+    runs-on: [ self-hosted ]
+    steps:
+    - uses: actions/checkout@v3
     - name: Formatting
       run: cargo fmt --check
+
+  documentation:
+    runs-on: [ self-hosted ]
+    steps:
+    - uses: actions/checkout@v3
     - name: Documentation
       run: cargo doc --document-private-items
-      
+
+  tests:
+    needs: build
+    runs-on: [ self-hosted ]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Run tests
+      run: cargo test
