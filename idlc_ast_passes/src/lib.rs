@@ -39,7 +39,9 @@ impl ASTStore {
 
     #[inline]
     fn gather_symbols_from_ast(ast: &Node, map: &mut HashMap<Symbol, Rc<Node>>) {
-        let Node::CompilationUnit(_, nodes) = ast else { unreachable!("ICE: Cannot find root node in AST from file. {ast:?}") };
+        let Node::CompilationUnit(_, nodes) = ast else {
+            unreachable!("ICE: Cannot find root node in AST from file. {ast:?}")
+        };
         for node in nodes {
             assert_eq!(
                 match node.as_ref() {
@@ -81,7 +83,9 @@ impl ASTStore {
             .borrow()
             .get(&Symbol::Struct(name.to_string()))
             .map(|node| {
-                let Node::Struct(s) = node.as_ref() else {unreachable!("ICE: Struct node expected.")};
+                let Node::Struct(s) = node.as_ref() else {
+                    unreachable!("ICE: Struct node expected.")
+                };
                 Rc::new(s.clone())
             })
     }
@@ -91,7 +95,9 @@ impl ASTStore {
             .borrow()
             .get(&Symbol::Interface(name.to_string()))
             .map(|node| {
-                let Node::Interface(i) = node.as_ref() else {unreachable!("ICE: Interface node expected.")};
+                let Node::Interface(i) = node.as_ref() else {
+                    unreachable!("ICE: Interface node expected.")
+                };
                 Rc::new(i.clone())
             })
     }

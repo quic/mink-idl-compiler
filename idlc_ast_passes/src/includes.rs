@@ -32,7 +32,9 @@ impl Visitor<'_> for Includes<'_> {
             return;
         }
 
-        let Some(inc_ast) = self.ast_store.get_or_insert(include) else { cannot_find_dep("Cannot load AST, file not found") };
+        let Some(inc_ast) = self.ast_store.get_or_insert(include) else {
+            cannot_find_dep("Cannot load AST, file not found")
+        };
         walk_all(self, &inc_ast);
         self.current = Some(current);
     }

@@ -5,9 +5,6 @@
 //!
 //! Also ensures recursive structs don't exist by holding a visited set for the
 //! DFS search.
-//!
-//! FIXME: Currently maxes out on [`MAX_SIZE`] which doesn't denote a cycle and could just be a huge struct.
-//! Ideally we want to detect cycles using the toposort.
 
 use std::collections::HashMap;
 
