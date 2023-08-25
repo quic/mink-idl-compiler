@@ -39,7 +39,7 @@ fn primitive_types() {
     let widths = [8, 16, 32, 64];
     for width in widths {
         valid!(
-            primitive_types,
+            primitive_type,
             [&format!("int{width}"), &format!("uint{width}"),]
         );
     }
