@@ -15,93 +15,7 @@
 //! 4. Creating a dependency tree data structure that contain symbols required
 //!    from each external include.
 
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
-
-use idlc_ast::{Ident, Interface, Node, Struct};
-
-/// Compilation unit is split into a hashmap here.
-#[derive(Default, Debug)]
-pub struct ASTStore {
-    ast_store: RefCell<HashMap<String, Rc<Node>>>,
-    symbols: RefCell<HashMap<Symbol, Rc<Node>>>,
-}
-
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
-enum Symbol {
-    Struct(String),
-    Interface(String),
-}
-
-impl ASTStore {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    #[inline]
-    fn gather_symbols_from_ast(ast: &Node, map: &mut HashMap<Symbol, Rc<Node>>) {
-        let Node::CompilationUnit(_, nodes) = ast else {
-            unreachable!("ICE: Cannot find root node in AST from file. {ast:?}")
-        };
-        for node in nodes {
-            assert_eq!(
-                match node.as_ref() {
-                    Node::Struct(s) =>
-                        map.insert(Symbol::Struct(s.ident.to_string()), Rc::clone(node)),
-                    Node::Interface(i) => {
-                        map.insert(Symbol::Interface(i.ident.to_string()), Rc::clone(node))
-                    }
-                    _ => None,
-                },
-                None,
-                "Duplicate symbol detected!"
-            );
-        }
-    }
-
-    pub fn get_or_insert(&self, file_path: &str) -> Option<Rc<Node>> {
-        if !self.ast_store.borrow().contains_key(file_path) {
-            let node =
-                Node::from_file(file_path).expect("ICE: Cannot find root node in AST from file.");
-            Self::gather_symbols_from_ast(&node, &mut self.symbols.borrow_mut());
-            self.ast_store
-                .borrow_mut()
-                .insert(file_path.to_string(), Rc::new(node));
-        }
-
-        Some(Rc::clone(self.ast_store.borrow().get(file_path).unwrap()))
-    }
-
-    pub fn insert(&self, name: &str, node: &Rc<Node>) {
-        Self::gather_symbols_from_ast(node, &mut self.symbols.borrow_mut());
-        self.ast_store
-            .borrow_mut()
-            .insert(name.to_string(), Rc::clone(node));
-    }
-
-    pub fn struct_lookup(&self, name: &str) -> Option<Rc<Struct>> {
-        self.symbols
-            .borrow()
-            .get(&Symbol::Struct(name.to_string()))
-            .map(|node| {
-                let Node::Struct(s) = node.as_ref() else {
-                    unreachable!("ICE: Struct node expected.")
-                };
-                Rc::new(s.clone())
-            })
-    }
-
-    pub fn iface_lookup(&self, name: &str) -> Option<Rc<Interface>> {
-        self.symbols
-            .borrow()
-            .get(&Symbol::Interface(name.to_string()))
-            .map(|node| {
-                let Node::Interface(i) = node.as_ref() else {
-                    unreachable!("ICE: Interface node expected.")
-                };
-                Rc::new(i.clone())
-            })
-    }
-}
+use idlc_ast::{Ident, Node};
 
 pub trait CompilerPass<'ast> {
     type Output;
@@ -125,8 +39,7 @@ pub enum Error {
     StructVerifier(#[from] struct_verifier::Error),
 }
 
-mod graph;
-
 pub mod cycles;
-pub mod includes;
+pub mod dependency_resolver;
+mod graph;
 pub mod struct_verifier;

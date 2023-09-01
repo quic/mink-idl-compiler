@@ -5,7 +5,7 @@ use super::{
 
 #[allow(unused_variables)]
 pub trait Visitor<'ast>: Sized {
-    fn visit_include(&mut self, include: &'ast str) {}
+    fn visit_include(&mut self, include: &'ast std::path::Path) {}
 
     fn visit_const(&mut self, constant: &'ast Const) {
         walk_const(self, constant);
@@ -41,7 +41,7 @@ pub trait Visitor<'ast>: Sized {
     fn visit_error(&mut self, error: &'ast Ident) {}
     fn visit_doc(&mut self, doc: &'ast Documentation) {}
     fn visit_fn_param(&mut self, param: &'ast Param) {}
-    fn visit_root_ident(&mut self, root_ident: &'ast str) {}
+    fn visit_root_ident(&mut self, root_ident: &'ast std::path::Path) {}
 }
 
 pub fn walk_const<'a, V: Visitor<'a>>(visitor: &mut V, constant: &'a Const) {

@@ -5,16 +5,16 @@ use idlc_ast::{
     Type,
 };
 
-use crate::{graph::Graph, ASTStore, CompilerPass};
+use crate::{dependency_resolver::DependencyResolver, graph::Graph, CompilerPass};
 
 pub struct Cycles<'ast> {
     struct_graph: Graph<String>,
     iface_graph: Graph<String>,
-    ast_store: &'ast ASTStore,
+    ast_store: &'ast DependencyResolver,
 }
 
 impl<'ast> Cycles<'ast> {
-    pub fn new(ast_store: &'ast ASTStore) -> Self {
+    pub fn new(ast_store: &'ast DependencyResolver) -> Self {
         Self {
             ast_store,
             struct_graph: Graph::new(),

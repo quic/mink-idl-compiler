@@ -2,7 +2,11 @@
 mod tests;
 pub mod visitor;
 
-use std::{num::NonZeroU16, path::Path, rc::Rc};
+use std::{
+    num::NonZeroU16,
+    path::{Path, PathBuf},
+    rc::Rc,
+};
 
 use pest::{
     iterators::{Pair, Pairs},
@@ -119,7 +123,7 @@ type Count = NonZeroU16;
 /// branches.
 pub enum Node {
     /// Denotes an `include "foo.idl"`
-    Include(String),
+    Include(PathBuf),
     /// Denotes a `const <type> <ident> = <val>;` decl.
     Const(Const),
     /// Denotes a structure with arbitrary amount of fields.
@@ -130,7 +134,7 @@ pub enum Node {
     /// allow the full features of a [`Node`]
     Interface(Interface),
     /// Root of the tree
-    CompilationUnit(String, Vec<Rc<Node>>),
+    CompilationUnit(PathBuf, Vec<Rc<Node>>),
 }
 impl Node {
     pub fn ident(&self) -> Option<&Ident> {
@@ -313,17 +317,17 @@ impl Node {
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self, Error> {
         let content = std::fs::read_to_string(&path)
             .map_err(|e| Error::Io(e, path.as_ref().display().to_string()))?;
-        Self::from_string(path.as_ref().display().to_string(), content)
+        Self::from_string(path.as_ref().to_path_buf(), content)
     }
 
-    pub fn from_string<S: AsRef<str>>(root: String, s: S) -> Result<Self, Error> {
+    pub fn from_string<S: AsRef<str>>(root: PathBuf, s: S) -> Result<Self, Error> {
         let pst = Parser::parse(Rule::idl, s.as_ref())?;
         Ok(Node::from((root, pst)))
     }
 }
 
-impl<'a> From<(String, Pairs<'a, Rule>)> for Node {
-    fn from(mut compile_unit: (String, Pairs<'a, Rule>)) -> Self {
+impl<'a> From<(PathBuf, Pairs<'a, Rule>)> for Node {
+    fn from(mut compile_unit: (PathBuf, Pairs<'a, Rule>)) -> Self {
         let idl = ast_unwrap!(compile_unit.1.next());
         assert_eq!(idl.as_rule(), Rule::idl);
         let mut nodes = Vec::new();
@@ -336,7 +340,7 @@ impl<'a> From<(String, Pairs<'a, Rule>)> for Node {
             match inner.as_rule() {
                 Rule::include => {
                     let path = ast_unwrap!(inner.into_inner().next());
-                    nodes.push(Rc::new(Node::Include(path.as_str().to_string())));
+                    nodes.push(Rc::new(Node::Include(PathBuf::from(path.as_str()))));
                 }
                 Rule::r#struct => {
                     let mut struct_pst = inner.into_inner();

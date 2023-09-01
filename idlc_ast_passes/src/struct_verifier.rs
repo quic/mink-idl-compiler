@@ -10,7 +10,7 @@ use std::collections::HashMap;
 
 use idlc_ast::Type;
 
-use super::ASTStore;
+use crate::dependency_resolver::DependencyResolver;
 
 type Size = usize;
 type Alignment = usize;
@@ -36,7 +36,7 @@ pub enum Error {
 }
 
 impl StructVerifier {
-    pub fn run_pass(ast_store: &ASTStore, toposort: &[String]) -> Result<(), Error> {
+    pub fn run_pass(ast_store: &DependencyResolver, toposort: &[String]) -> Result<(), Error> {
         let mut store: HashMap<String, (Size, Alignment)> = HashMap::new();
         for r#struct in toposort {
             let node = ast_store.struct_lookup(r#struct).unwrap();

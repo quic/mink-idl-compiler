@@ -5,7 +5,9 @@ use std::collections::HashMap;
 
 use idlc_ast::{visitor::Visitor, Node, Struct};
 
-use idlc_ast_passes::{cycles, includes, struct_verifier, ASTStore, CompilerPass, Error};
+use idlc_ast_passes::{
+    cycles, dependency_resolver::DependencyResolver, struct_verifier, CompilerPass, Error,
+};
 
 #[derive(clap::Parser)]
 #[command(author, version, about = None, long_about)]
@@ -82,13 +84,21 @@ fn main() {
         std::process::exit(0);
     }
 
-    let ast_store = ASTStore::new();
-    let ast = ast_store
-        .get_or_insert(&args.file.into_os_string().into_string().unwrap())
-        .unwrap();
+    // Change current dir based on the location of the input file.
+    let input_file = &args.file.canonicalize().expect("Invalid input file.");
+    let dir_path = input_file
+        .parent()
+        .expect("Failed to find the location of the input file");
+
+    let mut include_paths = args.include_paths.clone().unwrap_or_default();
+    include_paths.push(dir_path.to_path_buf());
+
+    let mut ast_store = DependencyResolver::with_includes(&include_paths);
+
+    let ast = ast_store.get_or_insert(input_file).unwrap();
 
     println!("Checking for unresolved includes...");
-    _ = check(includes::Includes::new(&ast_store).run_pass(&ast));
+    _ = check(ast_store.run_pass(&ast));
 
     println!("Checking for struct cycles");
     let struct_ordering = check(cycles::Cycles::new(&ast_store).run_pass(&ast));

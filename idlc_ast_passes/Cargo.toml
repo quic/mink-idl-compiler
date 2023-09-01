@@ -10,3 +10,6 @@ description = "Contains compiler passes over raw AST"
 [dependencies]
 "idlc_ast" = { path="../idlc_ast" }
 thiserror = "1.0.47"
+
+[dev-dependencies]
+serial_test = "*"

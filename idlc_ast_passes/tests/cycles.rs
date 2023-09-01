@@ -6,11 +6,13 @@ use idlc_ast::Node;
 use idlc_ast_passes::cycles::Cycles;
 use idlc_ast_passes::*;
 
+use crate::dependency_resolver::DependencyResolver;
+
 fn verify(idl: &'static str) -> Result<Vec<String>, crate::Error> {
-    let store = ASTStore::new();
-    let name = "cycles.idl";
-    let node = Rc::new(Node::from_string(name.to_string(), idl).unwrap());
-    store.insert(name, &node);
+    let store = DependencyResolver::new();
+    let name = std::path::PathBuf::from("cycles.idl");
+    let node = Rc::new(Node::from_string(name.to_path_buf(), idl).unwrap());
+    store.insert_canonical(&name, &node);
     let mut verifier = Cycles::new(&store);
     verifier.run_pass(node.as_ref())
 }
