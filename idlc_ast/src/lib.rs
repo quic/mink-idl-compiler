@@ -8,14 +8,10 @@ use std::{
     rc::Rc,
 };
 
-use pest::{
-    iterators::{Pair, Pairs},
-    Parser as PestParser,
-};
+use pest::iterators::{Pair, Pairs};
 
-#[derive(pest_derive::Parser, Debug)]
-#[grammar = "../grammar/idl.pest"]
-pub(crate) struct Parser;
+mod idl_parser;
+use idl_parser::Rule;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -321,7 +317,7 @@ impl Node {
     }
 
     pub fn from_string<S: AsRef<str>>(root: PathBuf, s: S) -> Result<Self, Error> {
-        let pst = Parser::parse(Rule::idl, s.as_ref())?;
+        let pst = idl_parser::parse(s.as_ref())?;
         Ok(Node::from((root, pst)))
     }
 }
@@ -540,7 +536,7 @@ pub fn dump_pst<P: AsRef<Path>>(path: P) {
 
     let inp = std::fs::read_to_string(path).unwrap();
     let now = Instant::now();
-    let pst = Parser::parse(Rule::idl, &inp);
+    let pst = idl_parser::parse(&inp);
     let duration = now.elapsed();
     match pst {
         Ok(pst) => println!("{pst:#?}"),

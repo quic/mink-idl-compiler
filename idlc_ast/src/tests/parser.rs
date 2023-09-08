@@ -1,5 +1,5 @@
 use super::{invalid, valid};
-use pest::Parser as PestParser;
+use pest::Parser;
 
 #[test]
 fn invalid_includes() {
