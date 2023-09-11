@@ -164,11 +164,11 @@ impl DependencyResolver {
             include_path = file_path
                 .canonicalize()
                 .expect("Failed to canonicalize path.");
-            let node = Node::from_file(include_path.clone()).unwrap_or_else(|e| {
+            let node = idlc_ast::from_file(include_path.clone()).unwrap_or_else(|e| {
                 println!("Parsing failed: \n{e}\n");
                 std::process::exit(0);
             });
-            Self::insert_canonical(self, &include_path, &Rc::new(node.clone()));
+            Self::insert_canonical(self, &include_path, &node);
         }
 
         Some(Rc::clone(

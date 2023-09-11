@@ -1,4 +1,4 @@
-use super::{
+use crate::{
     Const, Count, Documentation, Function, Ident, Interface, InterfaceNode, Node, Param, Primitive,
     Struct, StructField, Type,
 };

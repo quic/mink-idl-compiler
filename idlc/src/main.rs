@@ -3,7 +3,7 @@
 
 use std::collections::HashMap;
 
-use idlc_ast::{visitor::Visitor, Node, Struct};
+use idlc_ast::{dump, visitor::Visitor};
 
 use idlc_ast_passes::{
     cycles, dependency_resolver::DependencyResolver, struct_verifier, CompilerPass, Error,
@@ -78,7 +78,7 @@ fn main() {
     let args = Cli::parse();
     if let Some(dump) = args.dump {
         match dump {
-            Dumpable::Pst => idlc_ast::dump_pst(&args.file),
+            Dumpable::Pst => idlc_ast::pst::dump(&args.file),
             Dumpable::Ast => idlc_ast::dump(&args.file),
         }
         std::process::exit(0);

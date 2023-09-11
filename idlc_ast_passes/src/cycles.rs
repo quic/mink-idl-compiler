@@ -1,8 +1,8 @@
 use std::rc::Rc;
 
 use idlc_ast::{
+    ast::Type,
     visitor::{walk_all, Visitor},
-    Type,
 };
 
 use crate::{dependency_resolver::DependencyResolver, graph::Graph, CompilerPass};

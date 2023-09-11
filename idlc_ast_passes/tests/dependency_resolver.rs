@@ -4,9 +4,6 @@
 /// Without serial execution, writing the contents in files could cause race conditions.
 use idlc_ast_passes::dependency_resolver::DependencyResolver;
 use idlc_ast_passes::*;
-use std::rc::Rc;
-
-use idlc_ast::Node;
 
 use serial_test::serial;
 
@@ -45,15 +42,15 @@ fn verify_memory(
 ) -> Result<Vec<String>, idlc_ast_passes::Error> {
     let mut store = DependencyResolver::new();
     let name = std::path::PathBuf::from(file_name_a);
-    let node = Rc::new(Node::from_string(name.to_path_buf(), a_idl).unwrap());
+    let node = idlc_ast::from_string(name.to_path_buf(), a_idl).unwrap();
     store.insert_canonical(&name, &node);
 
     let name2 = std::path::PathBuf::from(file_name_b);
-    let node2 = Rc::new(Node::from_string(name2.to_path_buf(), b_idl).unwrap());
+    let node2 = idlc_ast::from_string(name2.to_path_buf(), b_idl).unwrap();
     store.insert_canonical(&name2, &node2);
 
     let name3 = std::path::PathBuf::from(file_name_c);
-    let node3 = Rc::new(Node::from_string(name3.to_path_buf(), c_idl).unwrap());
+    let node3 = idlc_ast::from_string(name3.to_path_buf(), c_idl).unwrap();
     store.insert_canonical(&name3, &node3);
 
     let ast = store.get_ast(&name).unwrap();
