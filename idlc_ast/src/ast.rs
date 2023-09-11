@@ -7,10 +7,15 @@ pub type Count = NonZeroU16;
 
 #[derive(Debug, Clone, PartialEq)]
 /// AST structure for an IDL.
-///
-/// The layout is defined as a tree with a root node named
-/// [`Node::CompilationUnit`] and all it's children may or may not contain
-/// branches.
+pub struct Ast {
+    /// Tag denoting the AST name.
+    pub tag: PathBuf,
+    /// Nodes for the AST tree.
+    pub nodes: Vec<Rc<Node>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+/// enum for the different types of nodes in the AST.
 pub enum Node {
     /// Denotes an `include "foo.idl"`
     Include(PathBuf),
@@ -23,8 +28,6 @@ pub enum Node {
     /// These subnodes are limited to what [`InterfaceNode`] defines and doesn't
     /// allow the full features of a [`Node`]
     Interface(Interface),
-    /// Root of the tree
-    CompilationUnit(PathBuf, Vec<Rc<Node>>),
 }
 impl Node {
     pub fn ident(&self) -> Option<&Ident> {
@@ -42,7 +45,6 @@ impl Node {
             Node::Const(_) => "const",
             Node::Struct(_) => "struct",
             Node::Interface(_) => "interface",
-            Node::CompilationUnit(_, _) => "Unit",
         }
     }
 }

@@ -1,6 +1,6 @@
-use crate::{
-    Const, Count, Documentation, Function, Ident, Interface, InterfaceNode, Node, Param, Primitive,
-    Struct, StructField, Type,
+use super::{
+    Ast, Const, Count, Documentation, Function, Ident, Interface, InterfaceNode, Node, Param,
+    Primitive, Struct, StructField, Type,
 };
 
 #[allow(unused_variables)]
@@ -98,18 +98,14 @@ pub fn walk_fn<'a, V: Visitor<'a>>(visitor: &mut V, function: &'a Function) {
     }
 }
 
-pub fn walk_all<'a, V: Visitor<'a>>(visitor: &mut V, root: &'a Node) {
-    let Node::CompilationUnit(root_ident, nodes) = root else {
-        unreachable!("ICE: walk_all was called without root being the starting node.")
-    };
-    visitor.visit_root_ident(root_ident);
-    for node in nodes {
+pub fn walk_all<'a, V: Visitor<'a>>(visitor: &mut V, ast: &'a Ast) {
+    visitor.visit_root_ident(ast.tag.as_path());
+    for node in &ast.nodes {
         match node.as_ref() {
             Node::Include(i) => visitor.visit_include(i),
             Node::Const(c) => visitor.visit_const(c),
             Node::Struct(s) => visitor.visit_struct(s),
             Node::Interface(i) => visitor.visit_interface(i),
-            _ => unreachable!("ICE: node had a variant that wasn't expected."),
         }
     }
 }

@@ -10,7 +10,7 @@ fn verify(idl: &'static str) -> Result<Vec<String>, crate::Error> {
     let node = idlc_ast::from_string(name.to_path_buf(), idl).unwrap();
     store.insert_canonical(&name, &node);
     let mut verifier = Cycles::new(&store);
-    verifier.run_pass(node.as_ref())
+    verifier.run_pass(&node)
 }
 
 #[test]

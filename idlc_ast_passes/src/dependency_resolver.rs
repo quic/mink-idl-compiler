@@ -11,7 +11,7 @@ use std::{
     rc::Rc,
 };
 
-use idlc_ast::{Interface, Node, Struct};
+use idlc_ast::{Ast, Interface, Node, Struct};
 
 use idlc_ast::visitor::{walk_all, Visitor};
 
@@ -19,7 +19,7 @@ use idlc_ast::visitor::{walk_all, Visitor};
 /// Compilation unit is split into a hashmap here.
 #[derive(Debug)]
 pub struct DependencyResolver {
-    ast_store: RefCell<HashMap<PathBuf, Rc<Node>>>,
+    ast_store: RefCell<HashMap<PathBuf, Rc<Ast>>>,
     symbols: RefCell<HashMap<Symbol, Rc<Node>>>,
     current: Option<PathBuf>,
     cycle: Option<Cycle<String>>,
@@ -59,7 +59,7 @@ impl Visitor<'_> for DependencyResolver {
 impl CompilerPass<'_> for DependencyResolver {
     type Output = Vec<String>;
 
-    fn run_pass(&'_ mut self, ast: &'_ idlc_ast::Node) -> Result<Self::Output, crate::Error> {
+    fn run_pass(&'_ mut self, ast: &'_ idlc_ast::Ast) -> Result<Self::Output, crate::Error> {
         self.check_includes(ast)
     }
 }
@@ -83,7 +83,7 @@ impl DependencyResolver {
 
     /// returns the AST corresponding to the given path
     /// returns None if no such AST exists
-    pub fn get_ast(&self, path: &Path) -> Option<Rc<Node>> {
+    pub fn get_ast(&self, path: &Path) -> Option<Rc<Ast>> {
         Some(Rc::clone(
             self.ast_store.borrow().get(&path.to_path_buf()).unwrap(),
         ))
@@ -126,7 +126,7 @@ impl DependencyResolver {
         selected_path.to_path_buf()
     }
 
-    fn check_includes(&mut self, ast: &'_ idlc_ast::Node) -> Result<Vec<String>, crate::Error> {
+    fn check_includes(&mut self, ast: &'_ idlc_ast::Ast) -> Result<Vec<String>, crate::Error> {
         walk_all(self, ast);
         if let Some(cycle) = self.cycle.take() {
             return Err(crate::Error::CyclicalInclude(cycle));
@@ -136,11 +136,8 @@ impl DependencyResolver {
     }
 
     #[inline]
-    fn gather_symbols_from_ast(ast: &Node, map: &mut HashMap<Symbol, Rc<Node>>) {
-        let Node::CompilationUnit(_, nodes) = ast else {
-            unreachable!("ICE: Cannot find root node in AST from file. {ast:?}")
-        };
-        for node in nodes {
+    fn gather_symbols_from_ast(ast: &Ast, map: &mut HashMap<Symbol, Rc<Node>>) {
+        for node in &ast.nodes {
             assert_eq!(
                 match node.as_ref() {
                     Node::Struct(s) =>
@@ -158,7 +155,7 @@ impl DependencyResolver {
 
     /// returns the AST corresponding to the given path
     /// if doesn't exist, inserts it into the store and returns it
-    pub fn get_or_insert(&self, file_path: &Path) -> Option<Rc<Node>> {
+    pub fn get_or_insert(&self, file_path: &Path) -> Option<Rc<Ast>> {
         let mut include_path = PathBuf::from(file_path);
         if !self.ast_store.borrow().contains_key(file_path) {
             include_path = file_path
@@ -177,11 +174,11 @@ impl DependencyResolver {
     }
 
     ///  inserts canonicalized path into the AST store along with its AST
-    pub fn insert_canonical(&self, canonical: &Path, node: &Rc<Node>) {
-        Self::gather_symbols_from_ast(node, &mut self.symbols.borrow_mut());
+    pub fn insert_canonical(&self, canonical: &Path, ast: &Ast) {
+        Self::gather_symbols_from_ast(ast, &mut self.symbols.borrow_mut());
         self.ast_store
             .borrow_mut()
-            .insert(canonical.to_path_buf(), Rc::clone(node));
+            .insert(canonical.to_path_buf(), ast.clone().into());
     }
 
     /// returns the interface corresponding to the given name

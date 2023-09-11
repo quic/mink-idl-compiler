@@ -15,12 +15,12 @@
 //! 4. Creating a dependency tree data structure that contain symbols required
 //!    from each external include.
 
-use idlc_ast::{Ident, Node};
+use idlc_ast::{Ast, Ident};
 
 pub trait CompilerPass<'ast> {
     type Output;
 
-    fn run_pass(&'ast mut self, ast: &'ast Node) -> Result<Self::Output, Error>;
+    fn run_pass(&'ast mut self, ast: &'ast Ast) -> Result<Self::Output, Error>;
 }
 
 #[derive(thiserror::Error, Debug)]

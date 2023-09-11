@@ -259,7 +259,7 @@ fn parse_interface(pair: Pair<Rule>) -> Rc<Node> {
     }))
 }
 
-pub fn parse(input: &str) -> Result<Vec<Rc<Node>>, Error> {
+pub fn parse_to_ast(input: &str) -> Result<Vec<Rc<Node>>, Error> {
     let mut pairs = IDLParser::parse(Rule::idl, input)?;
     let mut nodes = Vec::new();
 
@@ -281,7 +281,7 @@ pub fn dump<P: AsRef<std::path::Path>>(path: P) {
 
     let inp = std::fs::read_to_string(path).unwrap();
     let now = Instant::now();
-    let pst = parse(&inp);
+    let pst = IDLParser::parse(Rule::idl, &inp);
     let duration = now.elapsed();
     match pst {
         Ok(pst) => println!("{pst:#?}"),

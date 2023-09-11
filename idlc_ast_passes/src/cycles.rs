@@ -69,7 +69,7 @@ impl<'ast> CompilerPass<'ast> for Cycles<'ast> {
     /// Returns the topological sort of the struct members to create a dependency chain for struct parsing.
     ///
     /// This is not needed for interfaces as no AST passes are done for interfaces.
-    fn run_pass(&'ast mut self, ast: &'ast idlc_ast::Node) -> Result<Self::Output, crate::Error> {
+    fn run_pass(&'ast mut self, ast: &'ast idlc_ast::Ast) -> Result<Self::Output, crate::Error> {
         walk_all(self, ast);
         self.iface_graph
             .toposort()
