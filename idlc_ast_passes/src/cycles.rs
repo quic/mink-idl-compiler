@@ -5,18 +5,18 @@ use idlc_ast::{
     visitor::{walk_all, Visitor},
 };
 
-use crate::{dependency_resolver::DependencyResolver, graph::Graph, CompilerPass};
+use crate::{graph::Graph, idl_store::IDLStore, CompilerPass};
 
 pub struct Cycles<'ast> {
     struct_graph: Graph<String>,
     iface_graph: Graph<String>,
-    ast_store: &'ast DependencyResolver,
+    idl_store: &'ast IDLStore,
 }
 
 impl<'ast> Cycles<'ast> {
-    pub fn new(ast_store: &'ast DependencyResolver) -> Self {
+    pub fn new(idl_store: &'ast IDLStore) -> Self {
         Self {
-            ast_store,
+            idl_store,
             struct_graph: Graph::new(),
             iface_graph: Graph::new(),
         }
@@ -28,7 +28,7 @@ impl<'ast> Cycles<'ast> {
         }
 
         if let Some(base) = &iface.base {
-            let base = self.ast_store.iface_lookup(base).unwrap();
+            let base = self.idl_store.iface_lookup(base).unwrap();
             self.iface_graph
                 .add_edge(iface.ident.to_string(), base.ident.to_string());
             self.visit_iface_recurse(base);
@@ -42,7 +42,7 @@ impl<'ast> Cycles<'ast> {
 
         for field in &r#struct.fields {
             if let Type::Custom(c) = &field.r#type().0 {
-                let custom = self.ast_store.struct_lookup(c).unwrap();
+                let custom = self.idl_store.struct_lookup(c).unwrap();
                 self.struct_graph
                     .add_edge(r#struct.ident.to_string(), custom.ident.to_string());
                 self.visit_struct_recurse(custom);

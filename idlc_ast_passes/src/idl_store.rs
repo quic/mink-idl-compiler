@@ -18,7 +18,7 @@ use idlc_ast::visitor::{walk_all, Visitor};
 /// DependencyResolver structure
 /// Compilation unit is split into a hashmap here.
 #[derive(Debug)]
-pub struct DependencyResolver {
+pub struct IDLStore {
     ast_store: RefCell<HashMap<PathBuf, Rc<Ast>>>,
     symbols: RefCell<HashMap<Symbol, Rc<Node>>>,
     current: Option<PathBuf>,
@@ -33,7 +33,7 @@ enum Symbol {
     Interface(String),
 }
 
-impl Visitor<'_> for DependencyResolver {
+impl Visitor<'_> for IDLStore {
     fn visit_root_ident(&mut self, root_ident: &'_ Path) {
         self.current = Some(root_ident.to_path_buf());
     }
@@ -56,7 +56,7 @@ impl Visitor<'_> for DependencyResolver {
     }
 }
 
-impl CompilerPass<'_> for DependencyResolver {
+impl CompilerPass<'_> for IDLStore {
     type Output = Vec<String>;
 
     fn run_pass(&'_ mut self, ast: &'_ idlc_ast::Ast) -> Result<Self::Output, crate::Error> {
@@ -64,7 +64,7 @@ impl CompilerPass<'_> for DependencyResolver {
     }
 }
 
-impl DependencyResolver {
+impl IDLStore {
     /// takes the vector of include paths as an argument which will be saved in include_paths field
     pub fn with_includes(include_paths: &[PathBuf]) -> Self {
         Self {

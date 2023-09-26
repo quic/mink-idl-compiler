@@ -1,10 +1,10 @@
 //! Tests to check alignment and size requirements for structs
 use idlc_ast_passes::*;
 
-use crate::dependency_resolver::DependencyResolver;
+use crate::idl_store::IDLStore;
 
 fn verify(idl: &'static str) -> Result<(), idlc_ast_passes::Error> {
-    let store = DependencyResolver::new();
+    let store = IDLStore::new();
     let name = std::path::PathBuf::from("struct-verifier.idl");
     let node = idlc_ast::from_string(name.to_path_buf(), idl).unwrap();
     store.insert_canonical(&name, &node);

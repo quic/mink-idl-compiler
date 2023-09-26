@@ -2,7 +2,7 @@
 /// This module containes tests that require serial execution.
 ///
 /// Without serial execution, writing the contents in files could cause race conditions.
-use idlc_ast_passes::dependency_resolver::DependencyResolver;
+use idlc_ast_passes::idl_store::IDLStore;
 use idlc_ast_passes::*;
 
 use serial_test::serial;
@@ -23,7 +23,7 @@ fn verify(
     if !include_paths.is_empty() {
         include_paths_vec.push(std::path::Path::new(include_paths).to_path_buf());
     }
-    let mut store = DependencyResolver::with_includes(&include_paths_vec);
+    let mut store = IDLStore::with_includes(&include_paths_vec);
     let input_file = std::path::Path::new(file_name_a)
         .canonicalize()
         .expect("Invalid input file.");
@@ -40,7 +40,7 @@ fn verify_memory(
     file_name_c: &'static str,
     c_idl: &'static str,
 ) -> Result<Vec<String>, idlc_ast_passes::Error> {
-    let mut store = DependencyResolver::new();
+    let mut store = IDLStore::new();
     let name = std::path::PathBuf::from(file_name_a);
     let node = idlc_ast::from_string(name.to_path_buf(), a_idl).unwrap();
     store.insert_canonical(&name, &node);

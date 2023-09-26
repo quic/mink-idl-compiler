@@ -40,6 +40,6 @@ pub enum Error {
 }
 
 pub mod cycles;
-pub mod dependency_resolver;
 mod graph;
+pub mod idl_store;
 pub mod struct_verifier;

@@ -5,9 +5,7 @@ use std::collections::HashMap;
 
 use idlc_ast::{dump, visitor::Visitor};
 
-use idlc_ast_passes::{
-    cycles, dependency_resolver::DependencyResolver, struct_verifier, CompilerPass, Error,
-};
+use idlc_ast_passes::{cycles, idl_store::IDLStore, struct_verifier, CompilerPass, Error};
 
 #[derive(clap::Parser)]
 #[command(author, version, about = None, long_about)]
@@ -93,19 +91,19 @@ fn main() {
     let mut include_paths = args.include_paths.clone().unwrap_or_default();
     include_paths.push(dir_path.to_path_buf());
 
-    let mut ast_store = DependencyResolver::with_includes(&include_paths);
+    let mut idl = IDLStore::with_includes(&include_paths);
 
-    let ast = ast_store.get_or_insert(input_file).unwrap();
+    let ast = idl.get_or_insert(input_file).unwrap();
 
-    println!("Checking for unresolved includes...");
-    _ = check(ast_store.run_pass(&ast));
+    println!("Resolving includes...");
+    _ = check(idl.run_pass(&ast));
 
     println!("Checking for struct cycles");
-    let struct_ordering = check(cycles::Cycles::new(&ast_store).run_pass(&ast));
+    let struct_ordering = check(cycles::Cycles::new(&idl).run_pass(&ast));
 
     println!("Checking for struct sizes");
     check(struct_verifier::StructVerifier::run_pass(
-        &ast_store,
+        &idl,
         &struct_ordering,
     ));
 }
