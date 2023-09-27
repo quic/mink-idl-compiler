@@ -120,11 +120,24 @@ impl<'a> From<Pair<'a, Rule>> for Param {
     }
 }
 
+impl From<Pair<'_, Rule>> for Type {
+    fn from(value: Pair<'_, Rule>) -> Self {
+        if let Ok(primitive) = Primitive::try_from(value.as_str()) {
+            Self::Primitive(primitive)
+        } else {
+            Self::Custom(Ident {
+                span: Span::from(value.as_span()),
+                ident: value.as_str().to_string(),
+            })
+        }
+    }
+}
+
 impl From<Pair<'_, Rule>> for ParamTypeIn {
     fn from(rule: Pair<Rule>) -> Self {
         debug_assert_eq!(rule.as_rule(), Rule::param_type);
         let mut inner = rule.into_inner();
-        let r#type = Type::from(ast_unwrap!(inner.next()).as_str());
+        let r#type = Type::from(ast_unwrap!(inner.next()));
         if let Type::Custom(r#type) = &r#type {
             if r#type == "buffer" {
                 return ParamTypeIn::Array(Type::Primitive(Primitive::Uint8));
@@ -143,7 +156,7 @@ impl From<Pair<'_, Rule>> for ParamTypeOut {
     fn from(rule: Pair<Rule>) -> Self {
         debug_assert_eq!(rule.as_rule(), Rule::param_type);
         let mut inner = rule.into_inner();
-        let r#type = Type::from(ast_unwrap!(inner.next()).as_str());
+        let r#type = Type::from(ast_unwrap!(inner.next()));
         if let Type::Custom(r#type) = &r#type {
             if r#type == "buffer" {
                 return ParamTypeOut::Array(Type::Primitive(Primitive::Uint8));
@@ -191,7 +204,7 @@ fn parse_struct(pair: Pair<Rule>) -> Rc<Node> {
         match rule.as_rule() {
             Rule::struct_field => {
                 let mut iter = rule.into_inner();
-                let r#type = Type::from(ast_unwrap!(iter.next()).as_str());
+                let r#type = Type::from(ast_unwrap!(iter.next()));
                 let next = ast_unwrap!(iter.next());
                 let (elem, ident) = match next.as_rule() {
                     Rule::array => {

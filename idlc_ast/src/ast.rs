@@ -142,17 +142,7 @@ impl StructField {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Type {
     Primitive(Primitive),
-    Custom(String),
-}
-
-impl From<&str> for Type {
-    fn from(value: &str) -> Self {
-        if let Ok(primitive) = Primitive::try_from(value) {
-            Self::Primitive(primitive)
-        } else {
-            Self::Custom(value.to_string())
-        }
-    }
+    Custom(Ident),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

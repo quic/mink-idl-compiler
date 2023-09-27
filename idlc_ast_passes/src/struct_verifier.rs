@@ -48,7 +48,7 @@ impl StructVerifier {
 
                 let (i_size, i_alignment) = match ty {
                     Type::Primitive(p) => (p.size(), p.alignment()),
-                    Type::Custom(c) => *store.get(c.as_str()).unwrap(),
+                    Type::Custom(c) => *store.get(&c.ident).unwrap(),
                 };
                 if size % i_alignment != 0 {
                     return Err(Error::StructMemberNotAligned {
