@@ -7,6 +7,10 @@ use idlc_ast::{dump, visitor::Visitor};
 
 use idlc_ast_passes::{cycles, idl_store::IDLStore, struct_verifier, CompilerPass, Error};
 
+use idlc_mir::mir;
+
+use std::time::Instant;
+
 #[derive(clap::Parser)]
 #[command(author, version, about = None, long_about)]
 /// Parse .idl files into AST.
@@ -69,16 +73,20 @@ enum Dumpable {
     Pst,
     /// Abstract Syntax Tree
     Ast,
+    /// Mid-level Intermediate Representation
+    Mir,
 }
 
 fn main() {
     use clap::Parser as ClapParser;
     let args = Cli::parse();
-    if let Some(dump) = args.dump {
-        match dump {
-            Dumpable::Pst => idlc_ast::pst::dump(&args.file),
-            Dumpable::Ast => idlc_ast::dump(&args.file),
-        }
+
+    let dump = args.dump;
+    if dump == Some(Dumpable::Pst) {
+        idlc_ast::pst::dump(&args.file);
+        std::process::exit(0);
+    } else if dump == Some(Dumpable::Ast) {
+        idlc_ast::dump(&args.file);
         std::process::exit(0);
     }
 
@@ -106,4 +114,14 @@ fn main() {
         &idl,
         &struct_ordering,
     ));
+
+    let now = Instant::now();
+    let mir = mir::parse_to_mir(&ast, &mut idl);
+    let duration = now.elapsed();
+
+    if dump == Some(Dumpable::Mir) {
+        idlc_mir::dump(mir);
+        eprintln!("`dump_mir` completed in {duration:?}");
+        std::process::exit(0);
+    }
 }

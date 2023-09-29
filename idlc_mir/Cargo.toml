@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 idlc_ast = { path = "../idlc_ast" }
+idlc_ast_passes = { path="../idlc_ast_passes" }
