@@ -210,3 +210,14 @@ fn struct_interface_same_name_ordered() {
         "#,
     );
 }
+
+#[test]
+#[should_panic(expected = "Duplicate symbol detected")]
+fn duplicate_consts() {
+    _ = verify(
+        r#"
+        const uint8 FOO = 10;
+        const uint32 FOO = 32;
+        "#,
+    );
+}

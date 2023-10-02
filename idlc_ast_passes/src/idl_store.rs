@@ -31,6 +31,7 @@ pub struct IDLStore {
 enum Symbol {
     Struct(String),
     Interface(String),
+    Const(String),
 }
 
 impl Visitor<'_> for IDLStore {
@@ -148,6 +149,9 @@ impl IDLStore {
                             Rc::new(Node::Struct(Struct::new_object(&i.ident))),
                         )
                         .or(map.insert(Symbol::Interface(i.ident.to_string()), Rc::clone(node)))
+                    }
+                    Node::Const(c) => {
+                        map.insert(Symbol::Const(c.ident.to_string()), Rc::clone(node))
                     }
                     _ => None,
                 },
