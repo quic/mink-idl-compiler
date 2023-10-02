@@ -42,7 +42,9 @@ impl<'ast> Cycles<'ast> {
 
         for field in &r#struct.fields {
             if let Type::Custom(c) = &field.r#type().0 {
-                let custom = self.idl_store.struct_lookup(c).unwrap();
+                let Some(custom) = self.idl_store.struct_lookup(c) else {
+                    panic!("Identifier {:?} not found", c.ident);
+                };
                 self.struct_graph
                     .add_edge(r#struct.ident.to_string(), custom.ident.to_string());
                 self.visit_struct_recurse(custom);

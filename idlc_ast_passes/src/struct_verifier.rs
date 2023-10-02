@@ -6,9 +6,9 @@
 //! Also ensures recursive structs don't exist by holding a visited set for the
 //! DFS search.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
-use idlc_ast::Type;
+use idlc_ast::{Ident, Type};
 
 use crate::idl_store::IDLStore;
 
@@ -33,6 +33,8 @@ pub enum Error {
         alignment: usize,
         size: usize,
     },
+    #[error("struct `{parent}` contains duplicate field names: `{names:?}`")]
+    StructFieldSameName { parent: Ident, names: Vec<Ident> },
 }
 
 impl StructVerifier {
@@ -42,7 +44,19 @@ impl StructVerifier {
             let node = idl_store.struct_lookup(r#struct).unwrap();
             let mut size = 0;
             let mut alignment = 0;
+            let mut fields: HashSet<&Ident> = HashSet::new();
+
             for field in &node.fields {
+                let ident = &field.ident;
+                if let Some(existing) = fields.get(&ident) {
+                    let existing: Ident = (*existing).clone();
+                    return Err(Error::StructFieldSameName {
+                        parent: node.ident.clone(),
+                        names: vec![existing, ident.clone()],
+                    });
+                }
+                fields.insert(ident);
+
                 let (ty, count) = field.r#type();
                 let count = count.get() as usize;
 

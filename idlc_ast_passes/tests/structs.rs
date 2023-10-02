@@ -107,3 +107,106 @@ fn aligned_arr() {
     )
     .is_ok());
 }
+
+#[test]
+fn embedded_object() {
+    assert!(verify(
+        r#"
+        interface Foo {};
+        struct A {
+            Foo f;
+        };"#
+    )
+    .is_ok());
+}
+
+#[test]
+fn embedded_object_custom() {
+    assert!(verify(
+        r#"
+        interface Foo {};
+        struct Custom {
+            uint16 aligned;
+        };
+        struct A {
+            Foo f;
+            Custom[2] aligned;
+            uint32 n;
+        };"#
+    )
+    .is_ok());
+}
+
+#[test]
+fn embedded_object_arr() {
+    assert!(verify(
+        r#"
+        interface Foo {};
+        struct A {
+            Foo[4] f;
+        };"#
+    )
+    .is_ok());
+}
+
+#[test]
+fn structs_out_of_order() {
+    assert!(verify(
+        r#"
+        struct s2 {
+            s1 s;
+            uint8 a;
+        };
+        struct s1 { uint8 a; };"#
+    )
+    .is_ok());
+}
+
+#[test]
+#[should_panic]
+fn unknown_struct_def() {
+    _ = verify(
+        r#"
+        struct s2 {
+            s1 s;
+            uint8 a;
+        };"#,
+    )
+}
+
+#[test]
+fn field_same_name() {
+    assert!(verify(
+        r#"
+        struct s2 {
+            uint8 a;
+            uint8 a;
+        };"#
+    )
+    .is_err());
+}
+
+#[test]
+#[should_panic(expected = "Duplicate symbol detected")]
+fn struct_interface_same_name() {
+    _ = verify(
+        r#"
+        interface IFoo {};
+        struct IFoo {
+            int64 a;
+        };"#,
+    );
+}
+
+#[test]
+#[should_panic(expected = "Duplicate symbol detected")]
+fn struct_interface_same_name_ordered() {
+    _ = verify(
+        r#"
+        struct IFoo {
+            int64 a;
+        };
+        interface IFoo {};
+        "#,
+    );
+}

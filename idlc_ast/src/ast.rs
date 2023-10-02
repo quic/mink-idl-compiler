@@ -55,6 +55,30 @@ pub struct Struct {
     pub fields: Vec<StructField>,
 }
 
+impl Struct {
+    pub fn new_object(ident: &Ident) -> Self {
+        Struct {
+            ident: ident.clone(),
+            fields: vec![
+                StructField {
+                    ident: Ident::new_without_span("invoke".to_string()),
+                    val: (
+                        Type::Primitive(Primitive::Uint64),
+                        NonZeroU16::new(1).unwrap(),
+                    ),
+                },
+                StructField {
+                    ident: Ident::new_without_span("context".to_string()),
+                    val: (
+                        Type::Primitive(Primitive::Uint64),
+                        NonZeroU16::new(1).unwrap(),
+                    ),
+                },
+            ],
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Interface {
     pub ident: Ident,
@@ -200,6 +224,16 @@ impl TryFrom<&str> for Primitive {
 pub struct Ident {
     pub span: Span,
     pub ident: String,
+}
+
+impl Ident {
+    #[inline]
+    pub const fn new_without_span(ident: String) -> Self {
+        Ident {
+            span: Span { start: 0, end: 0 },
+            ident,
+        }
+    }
 }
 impl PartialEq<Ident> for Ident {
     fn eq(&self, other: &Ident) -> bool {

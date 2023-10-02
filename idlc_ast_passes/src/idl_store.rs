@@ -143,7 +143,11 @@ impl IDLStore {
                     Node::Struct(s) =>
                         map.insert(Symbol::Struct(s.ident.to_string()), Rc::clone(node)),
                     Node::Interface(i) => {
-                        map.insert(Symbol::Interface(i.ident.to_string()), Rc::clone(node))
+                        map.insert(
+                            Symbol::Struct(i.ident.to_string()),
+                            Rc::new(Node::Struct(Struct::new_object(&i.ident))),
+                        )
+                        .or(map.insert(Symbol::Interface(i.ident.to_string()), Rc::clone(node)))
                     }
                     _ => None,
                 },
