@@ -9,6 +9,8 @@ use idlc_ast_passes::{cycles, idl_store::IDLStore, struct_verifier, CompilerPass
 
 use idlc_mir::mir;
 
+use idlc_mir_passes::{interface_verifier, MirCompilerPass};
+
 use std::time::Instant;
 
 #[derive(clap::Parser)]
@@ -124,4 +126,7 @@ fn main() {
         eprintln!("`dump_mir` completed in {duration:?}");
         std::process::exit(0);
     }
+
+    println!("Verifying interfaces");
+    check(interface_verifier::InterfaceVerifier::new(&mir).run_pass());
 }

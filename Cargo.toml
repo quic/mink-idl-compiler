@@ -6,6 +6,7 @@ members = [
     "idlc_ast",
     "idlc_ast_passes",
     "idlc_mir",
+    "idlc_mir_passes",
     "idlc_codegen_c",
     "idlc_codegen_cpp",
     "idlc_codegen_java",

@@ -10,3 +10,4 @@ clap = { version = "4.4.6", features = ["derive"] }
 idlc_ast = { path="../idlc_ast" }
 idlc_ast_passes = { path="../idlc_ast_passes" }
 idlc_mir = { path="../idlc_mir" }
+idlc_mir_passes = { path="../idlc_mir_passes" }

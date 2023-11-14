@@ -22,7 +22,7 @@
 //! directly depending on AST and for MIR to produce an interface to shield
 //! codegens from AST changes; AST changes tomorrow which don't require MIR
 //! changes should not require codegen changes
-use idlc_ast::Ast;
+use idlc_ast::{Ast, Ident};
 use idlc_ast_passes::idl_store::IDLStore;
 
 use std::path::{Path, PathBuf};
@@ -51,7 +51,6 @@ pub enum Node {
     Struct(Struct),
     Interface(Interface),
 }
-pub type Ident = String;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Primitive {
@@ -148,13 +147,12 @@ fn parse_const(const_: &idlc_ast::Const) -> Rc<Node> {
 }
 
 fn parse_struct(struct_: &idlc_ast::Struct) -> Rc<Node> {
-    let ident = struct_.ident.to_string();
+    let ident = struct_.ident.clone();
     let mut fields = Vec::<StructField>::new();
     for field in struct_.fields.iter() {
-        let field_ident = field.ident.to_string();
         let val = (Type::from(&field.val.0), field.val.1);
         fields.push(StructField {
-            ident: field_ident,
+            ident: field.ident.clone(),
             val,
         });
     }
@@ -167,7 +165,7 @@ fn parse_interface(
     error_code: &mut i32,
     op_code: &mut u32,
 ) -> Interface {
-    let class = interface_.ident.to_string();
+    let class = interface_.ident.clone();
     let base = interface_.base.as_ref().map(|base| base.to_string());
 
     let mut iface_nodes = Vec::new();
@@ -186,9 +184,8 @@ fn parse_interface(
                 iface_nodes.push(InterfaceNode::Const(Const::from(const_)))
             }
             idlc_ast::InterfaceNode::Error(error) => {
-                let ident = error.ident.to_string();
                 iface_nodes.push(InterfaceNode::Error(Error {
-                    ident,
+                    ident: error.clone(),
                     value: *error_code,
                 }));
                 *error_code = error_code
@@ -200,7 +197,7 @@ fn parse_interface(
                     .doc
                     .as_ref()
                     .map(|idlc_ast::Documentation(s)| s.to_string());
-                let ident = function.ident.to_string();
+                let ident = function.ident.clone();
                 let mut params = Vec::new();
                 for param in function.params.iter() {
                     params.push(Param::from(param));
@@ -276,11 +273,11 @@ impl From<&idlc_ast::Param> for Param {
         match _param {
             idlc_ast::Param::In { r#type, ident } => Param::In {
                 r#type: ParamTypeIn::from(r#type),
-                ident: ident.to_string(),
+                ident: ident.clone(),
             },
             idlc_ast::Param::Out { r#type, ident } => Param::Out {
                 r#type: ParamTypeOut::from(r#type),
-                ident: ident.to_string(),
+                ident: ident.clone(),
             },
         }
     }
@@ -306,7 +303,7 @@ impl From<&idlc_ast::Primitive> for Primitive {
 impl From<&idlc_ast::Const> for Const {
     fn from(const_: &idlc_ast::Const) -> Self {
         Const {
-            ident: const_.ident.to_string(),
+            ident: const_.ident.clone(),
             r#type: Primitive::from(&const_.r#type),
             value: const_.value.to_string(),
         }
@@ -367,31 +364,31 @@ mod tests {
     #[test]
     fn collect_errors_only_of_base() {
         let iface = Interface {
-            ident: "A".to_string(),
+            ident: Ident::new_without_span("A".to_string()),
             base: Some(Rc::new(Interface {
-                ident: "B".to_string(),
+                ident: Ident::new_without_span("B".to_string()),
                 base: Some(Rc::new(Interface {
-                    ident: "C".to_string(),
+                    ident: Ident::new_without_span("C".to_string()),
                     base: None,
                     nodes: vec![
                         InterfaceNode::Error(Error {
-                            ident: "ERROR_1".to_string(),
+                            ident: Ident::new_without_span("ERROR_1".to_string()),
                             value: 10,
                         }),
                         InterfaceNode::Const(Const {
-                            ident: "CONST_1".to_string(),
+                            ident: Ident::new_without_span("CONST_1".to_string()),
                             r#type: Primitive::Uint8,
                             value: "10".to_string(),
                         }),
                     ],
                 })),
                 nodes: vec![InterfaceNode::Error(Error {
-                    ident: "ERROR_SOMETHING_ELSE".to_string(),
+                    ident: Ident::new_without_span("ERROR_SOMETHING_ELSE".to_string()),
                     value: 10,
                 })],
             })),
             nodes: vec![InterfaceNode::Error(Error {
-                ident: "THIS_SHOULDNT_SHOW_UP".to_string(),
+                ident: Ident::new_without_span("THIS_SHOULDNT_SHOW_UP".to_string()),
                 value: 10,
             })],
         };
@@ -400,7 +397,7 @@ mod tests {
                 let InterfaceNode::Error(e) = node else {
                     return None;
                 };
-                Some((iface.ident.as_str(), e))
+                Some((iface.ident.ident.as_str(), e))
             })
         });
         let out: Vec<(&str, &Error)> = error_iterator.collect();
@@ -410,14 +407,14 @@ mod tests {
                 (
                     "B",
                     &Error {
-                        ident: "ERROR_SOMETHING_ELSE".to_string(),
+                        ident: Ident::new_without_span("ERROR_SOMETHING_ELSE".to_string()),
                         value: 10
                     }
                 ),
                 (
                     "C",
                     &Error {
-                        ident: "ERROR_1".to_string(),
+                        ident: Ident::new_without_span("ERROR_1".to_string()),
                         value: 10
                     }
                 )

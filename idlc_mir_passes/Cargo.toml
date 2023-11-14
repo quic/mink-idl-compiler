@@ -1,0 +1,12 @@
+[package]
+name = "idlc_mir_passes"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+idlc_ast = { path = "../idlc_ast" }
+idlc_ast_passes = { path="../idlc_ast_passes" }
+idlc_mir = { path="../idlc_mir" }
+thiserror = "1.0.47"
