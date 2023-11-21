@@ -28,7 +28,7 @@ fn verify(
         .canonicalize()
         .expect("Invalid input file.");
 
-    let ast = store.get_or_insert(&input_file).unwrap();
+    let ast = store.get_or_insert(&input_file);
     store.run_pass(&ast)
 }
 

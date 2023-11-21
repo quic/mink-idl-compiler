@@ -52,7 +52,7 @@ impl Visitor<'_> for IDLStore {
             return;
         }
 
-        let inc_ast = self.get_or_insert(&cano_path).unwrap();
+        let inc_ast = self.get_or_insert(&cano_path);
         walk_all(self, &inc_ast);
         self.current = Some(current);
     }
@@ -176,7 +176,7 @@ impl IDLStore {
 
     /// returns the AST corresponding to the given path
     /// if doesn't exist, inserts it into the store and returns it
-    pub fn get_or_insert(&self, file_path: &Path) -> Option<Rc<Ast>> {
+    pub fn get_or_insert(&self, file_path: &Path) -> Rc<Ast> {
         let mut include_path = PathBuf::from(file_path);
         if !self.ast_store.borrow().contains_key(file_path) {
             include_path = file_path
@@ -188,9 +188,7 @@ impl IDLStore {
             Self::insert_canonical(self, &include_path, &node);
         }
 
-        Some(Rc::clone(
-            self.ast_store.borrow().get(&include_path).unwrap(),
-        ))
+        Rc::clone(self.ast_store.borrow().get(&include_path).unwrap())
     }
 
     ///  inserts canonicalized path into the AST store along with its AST

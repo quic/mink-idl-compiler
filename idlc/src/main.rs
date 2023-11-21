@@ -1,18 +1,25 @@
-// Binary targets might not use all the functions.
-#![allow(unused)]
+//! IDL Compiler (idlc) for the Mink architecture.
+//!
+//! # Architecture
+//! 1. Input IDL is first converted into a Parse Syntax Tree (PST) using [pest](https://github.com/pest-parser/pest/)
+//! 2. PST is converted into an AST in [`idlc_ast`].
+//! 3. AST is extended by adding Mink specific functionality in [`idlc_mir`].
+//!    Cross interface resolution and hierarchy is also resolved here.
+//! 4. MIR is consumed by [`idlc_codegen`] and it's derivatives to create the output file.
+mod errors;
+mod timer;
+use errors::check;
 
-use std::{collections::HashMap, io::Write};
+use std::io::Write;
 
 use idlc_errors::trace;
 
-use idlc_ast::{dump, visitor::Visitor};
-use idlc_ast_passes::{cycles, idl_store::IDLStore, struct_verifier, CompilerPass, Error};
+use idlc_ast_passes::{cycles, idl_store::IDLStore, struct_verifier, CompilerPass};
 
 use idlc_mir::mir;
 use idlc_mir_passes::{interface_verifier, MirCompilerPass};
 
 use idlc_codegen::Generator;
-use std::time::Instant;
 
 #[derive(clap::Parser)]
 #[command(author, version, about = None, long_about)]
@@ -57,15 +64,6 @@ struct Cli {
     dump: Option<Dumpable>,
 }
 
-fn check<T: std::fmt::Debug, E: std::fmt::Display>(r: Result<T, E>) -> T {
-    match r {
-        Ok(t) => t,
-        Err(e) => {
-            idlc_errors::unrecoverable!("{e}");
-        }
-    }
-}
-
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, clap::ValueEnum)]
 enum Dumpable {
     /// Parse Syntax Tree
@@ -99,32 +97,28 @@ fn main() {
     let mut include_paths = args.include_paths.clone().unwrap_or_default();
     include_paths.push(dir_path.to_path_buf());
 
-    let mut idl = IDLStore::with_includes(&include_paths);
+    let mut idl_store = IDLStore::with_includes(&include_paths);
 
-    let ast = idl.get_or_insert(input_file).unwrap();
+    let ast = idl_store.get_or_insert(input_file);
 
     trace!("Running `IncludeChecker` pass");
-    _ = check(idl.run_pass(&ast));
+    _ = check(idl_store.run_pass(&ast));
 
     trace!("Running `FunctionDuplicateParam` pass");
     check(idlc_ast_passes::functions::Functions::new().run_pass(&ast));
 
     trace!("Running `CycleChecking` pass");
-    let struct_ordering = check(cycles::Cycles::new(&idl).run_pass(&ast));
+    let struct_ordering = check(cycles::Cycles::new(&idl_store).run_pass(&ast));
 
     trace!("Running `StructVerifier` pass");
     check(struct_verifier::StructVerifier::run_pass(
-        &idl,
+        &idl_store,
         &struct_ordering,
     ));
 
-    let now = Instant::now();
-    let mir = mir::parse_to_mir(&ast, &mut idl);
-    let duration = now.elapsed();
-
+    let mir = timer::time!(mir::parse_to_mir(&ast, &mut idl_store), "Mir");
     if dump == Some(Dumpable::Mir) {
         idlc_mir::dump(mir);
-        println!("`dump_mir` completed in {duration:?}");
         std::process::exit(0);
     }
 
@@ -134,10 +128,11 @@ fn main() {
     let output = args
         .output
         .unwrap_or_else(|| std::env::current_dir().unwrap());
-    let is_skel = args.skel;
     match (args.c, args.cpp, args.java, args.rust) {
         (true, false, false, true) => {
-            for (name, content) in idlc_codegen_rust::Generator::generate(&mir) {
+            for (name, content) in
+                timer::time!(idlc_codegen_rust::Generator::generate(&mir), "Rust codegen")
+            {
                 let mut file = std::fs::OpenOptions::new()
                     .create(true)
                     .write(true)
