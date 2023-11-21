@@ -1,10 +1,9 @@
 [package]
-name = "idlc_errors"
+name = "idlc_codegen"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-env_logger = "0.10.1"
-log = "0.4.20"
+idlc_mir = { version = "0.1.0", path = "../idlc_mir" }

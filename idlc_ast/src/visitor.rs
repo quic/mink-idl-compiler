@@ -67,6 +67,7 @@ pub fn walk_ty<'a, V: Visitor<'a>>(visitor: &mut V, ty: (&'a Type, Count)) {
     match ty.0 {
         Type::Primitive(p) => visitor.visit_primitive_ty((p, ty.1)),
         Type::Custom(c) => visitor.visit_custom_ty((c, ty.1)),
+        _ => (),
     }
 }
 

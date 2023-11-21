@@ -41,7 +41,7 @@ impl StructVerifier {
     pub fn run_pass(idl_store: &IDLStore, toposort: &[String]) -> Result<(), Error> {
         let mut store: HashMap<String, (Size, Alignment)> = HashMap::new();
         for r#struct in toposort {
-            let node = idl_store.struct_lookup(r#struct).unwrap();
+            let (node, _) = idl_store.struct_lookup(r#struct).unwrap();
             let mut size = 0;
             let mut alignment = 0;
             let mut fields: HashSet<&Ident> = HashSet::new();
@@ -63,6 +63,7 @@ impl StructVerifier {
                 let (i_size, i_alignment) = match ty {
                     Type::Primitive(p) => (p.size(), p.alignment()),
                     Type::Custom(c) => *store.get(&c.ident).unwrap(),
+                    Type::Interface => (Type::interface_size(), Type::interface_align()),
                 };
                 if size % i_alignment != 0 {
                     return Err(Error::StructMemberNotAligned {

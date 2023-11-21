@@ -4,7 +4,7 @@ use idlc_ast_passes::struct_verifier::StructVerifier;
 use idlc_ast_passes::CompilerPass;
 use idlc_mir_passes::MirCompilerPass;
 
-fn verify(a_idl: &str) -> Result<(), idlc_mir_passes::Error> {
+fn verify(a_idl: &str) {
     let mut store = IDLStore::new();
     let name = std::path::PathBuf::from("mir.idl");
     let node = idlc_ast::from_string(name.to_path_buf(), a_idl).unwrap();
@@ -17,49 +17,50 @@ fn verify(a_idl: &str) -> Result<(), idlc_mir_passes::Error> {
     idlc_mir_passes::interface_verifier::InterfaceVerifier::new(&mir).run_pass()
 }
 
+#[should_panic]
 #[test]
 fn duplicated_const() {
-    assert!(verify(
+    verify(
         r#"
         interface IFoo {
             const int32 A = 32;
             const int32 A = 42;
         };
-        "#
-    )
-    .is_err());
+        "#,
+    );
 }
 
+#[should_panic]
 #[test]
 fn duplicated_method() {
-    assert!(verify(
+    verify(
         r#"
         interface IFoo {
             method num();
             method num2();
             method num();
         };
-        "#
-    )
-    .is_err());
+        "#,
+    );
 }
 
+#[should_panic]
 #[test]
 fn duplicated_method_with_different_arg() {
-    assert!(verify(
+    verify(
         r#"
         interface IFoo {
             method num();
             method num(in int32 ai, out int32 ao);
         };
-        "#
-    )
-    .is_err());
+        "#,
+    );
 }
 
+#[should_panic]
 #[test]
 fn duplicated_base_method() {
-    assert!(verify(
+    verify(
         r#"
         interface Foo {
             method num();
@@ -68,27 +69,27 @@ fn duplicated_base_method() {
             method num();
             method num2();
         };
-        "#
-    )
-    .is_err());
+        "#,
+    );
 }
 
+#[should_panic]
 #[test]
 fn duplicated_error() {
-    assert!(verify(
+    verify(
         r#"
         interface IFoo {
             error ERROR_FOO;
             error ERROR_FOO;
         };
-        "#
-    )
-    .is_err());
+        "#,
+    );
 }
 
+#[should_panic]
 #[test]
 fn duplicated_base_error() {
-    assert!(verify(
+    verify(
         r#"
         interface Foo {
             error ERROR_FOO;
@@ -97,56 +98,19 @@ fn duplicated_base_error() {
             error ERROR_FOO;
             error ERROR_IFOO;
         };
-        "#
-    )
-    .is_err());
+        "#,
+    );
 }
 
+#[should_panic]
 #[test]
-fn duplicated_argument_name() {
-    assert!(verify(
+fn duplicated_base_const() {
+    verify(
         r#"
-        interface IFoo {
-            method num(in int32 a, out int32 a);
+        interface Foo {
+            error FOO;
+            const uint8 FOO = 10;
         };
-        "#
-    )
-    .is_err());
-}
-
-#[test]
-fn duplicated_argument_name2() {
-    assert!(verify(
-        r#"
-        interface IFoo {
-            method num(out int32 a, in int32 a);
-        };
-        "#
-    )
-    .is_err());
-}
-
-#[test]
-fn duplicated_argument_name3() {
-    assert!(verify(
-        r#"
-        interface IFoo {
-            method num(in int32 a, in int32 a, out int32 b, out int32 b);
-        };
-        "#
-    )
-    .is_err());
-}
-
-#[test]
-fn unique_argument_name() {
-    assert!(verify(
-        r#"
-        interface IFoo {
-            method num(in int32 a, out int32 b);
-            method num2(in int32 a, out int32 b);
-        };
-        "#
-    )
-    .is_ok());
+        "#,
+    );
 }

@@ -42,7 +42,7 @@ impl<'ast> Cycles<'ast> {
 
         for field in &r#struct.fields {
             if let Type::Custom(c) = &field.r#type().0 {
-                let Some(custom) = self.idl_store.struct_lookup(c) else {
+                let Some((custom, _)) = self.idl_store.struct_lookup(c) else {
                     panic!("Identifier {:?} not found", c.ident);
                 };
                 self.struct_graph

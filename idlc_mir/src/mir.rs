@@ -22,7 +22,8 @@
 //! directly depending on AST and for MIR to produce an interface to shield
 //! codegens from AST changes; AST changes tomorrow which don't require MIR
 //! changes should not require codegen changes
-use idlc_ast::{Ast, Ident};
+use idlc_ast::Ast;
+pub use idlc_ast::Ident;
 use idlc_ast_passes::idl_store::IDLStore;
 
 use std::path::{Path, PathBuf};
@@ -66,6 +67,29 @@ pub enum Primitive {
     Float64,
 }
 
+impl Primitive {
+    #[inline]
+    pub fn size(self) -> usize {
+        match self {
+            Primitive::Uint8 | Primitive::Int8 => 1,
+            Primitive::Uint16 | Primitive::Int16 => 2,
+            Primitive::Uint32 | Primitive::Int32 | Primitive::Float32 => 4,
+            Primitive::Uint64 | Primitive::Int64 | Primitive::Float64 => 8,
+        }
+    }
+}
+
+impl Ord for Primitive {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.size().cmp(&other.size())
+    }
+}
+impl PartialOrd for Primitive {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Const {
     pub ident: Ident,
@@ -77,7 +101,8 @@ pub type Count = std::num::NonZeroU16;
 #[derive(Debug, Clone, PartialEq)]
 pub enum Type {
     Primitive(Primitive),
-    Custom(String),
+    Interface(Option<String>),
+    Struct(Struct),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -90,6 +115,7 @@ pub struct StructField {
 pub struct Struct {
     pub ident: Ident,
     pub fields: Vec<StructField>,
+    pub origin: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -146,17 +172,21 @@ fn parse_const(const_: &idlc_ast::Const) -> Rc<Node> {
     Rc::new(Node::Const(Const::from(const_)))
 }
 
-fn parse_struct(struct_: &idlc_ast::Struct) -> Rc<Node> {
+fn parse_struct(struct_: &idlc_ast::Struct, idl_store: &mut IDLStore) -> Rc<Node> {
     let ident = struct_.ident.clone();
     let mut fields = Vec::<StructField>::new();
     for field in struct_.fields.iter() {
-        let val = (Type::from(&field.val.0), field.val.1);
+        let val = (Type::new(&field.val.0, idl_store), field.val.1);
         fields.push(StructField {
             ident: field.ident.clone(),
             val,
         });
     }
-    Rc::new(Node::Struct(Struct { ident, fields }))
+    Rc::new(Node::Struct(Struct {
+        ident,
+        fields,
+        origin: None,
+    }))
 }
 
 fn parse_interface(
@@ -200,7 +230,7 @@ fn parse_interface(
                 let ident = function.ident.clone();
                 let mut params = Vec::new();
                 for param in function.params.iter() {
-                    params.push(Param::from(param));
+                    params.push(Param::new(param, idl_store));
                 }
                 iface_nodes.push(InterfaceNode::Function(Function {
                     doc,
@@ -230,7 +260,7 @@ pub fn parse_to_mir(ast: &Ast, idl_store: &mut IDLStore) -> Mir {
         match &**node {
             idlc_ast::Node::Include(path) => nodes.push(parse_include(path)),
             idlc_ast::Node::Const(const_) => nodes.push(parse_const(const_)),
-            idlc_ast::Node::Struct(struct_) => nodes.push(parse_struct(struct_)),
+            idlc_ast::Node::Struct(struct_) => nodes.push(parse_struct(struct_, idl_store)),
             idlc_ast::Node::Interface(interface) => {
                 let mut err_code = ERROR_CODE_START;
                 let mut op_code = 0;
@@ -250,33 +280,35 @@ pub fn parse_to_mir(ast: &Ast, idl_store: &mut IDLStore) -> Mir {
     }
 }
 
-impl From<&idlc_ast::ParamTypeIn> for ParamTypeIn {
-    fn from(param_type: &idlc_ast::ParamTypeIn) -> Self {
-        match param_type {
-            idlc_ast::ParamTypeIn::Array(type_) => ParamTypeIn::Array(Type::from(type_)),
-            idlc_ast::ParamTypeIn::Value(type_) => ParamTypeIn::Value(Type::from(type_)),
+impl ParamTypeIn {
+    fn new(src: &idlc_ast::ParamTypeIn, idl_store: &IDLStore) -> Self {
+        match src {
+            idlc_ast::ParamTypeIn::Array(ty) => ParamTypeIn::Array(Type::new(ty, idl_store)),
+            idlc_ast::ParamTypeIn::Value(ty) => ParamTypeIn::Value(Type::new(ty, idl_store)),
         }
     }
 }
 
-impl From<&idlc_ast::ParamTypeOut> for ParamTypeOut {
-    fn from(param_type: &idlc_ast::ParamTypeOut) -> Self {
-        match param_type {
-            idlc_ast::ParamTypeOut::Array(type_) => ParamTypeOut::Array(Type::from(type_)),
-            idlc_ast::ParamTypeOut::Reference(type_) => ParamTypeOut::Reference(Type::from(type_)),
+impl ParamTypeOut {
+    fn new(src: &idlc_ast::ParamTypeOut, idl_store: &IDLStore) -> Self {
+        match src {
+            idlc_ast::ParamTypeOut::Array(ty) => ParamTypeOut::Array(Type::new(ty, idl_store)),
+            idlc_ast::ParamTypeOut::Reference(ty) => {
+                ParamTypeOut::Reference(Type::new(ty, idl_store))
+            }
         }
     }
 }
 
-impl From<&idlc_ast::Param> for Param {
-    fn from(_param: &idlc_ast::Param) -> Self {
-        match _param {
+impl Param {
+    fn new(src: &idlc_ast::Param, idl_store: &IDLStore) -> Self {
+        match src {
             idlc_ast::Param::In { r#type, ident } => Param::In {
-                r#type: ParamTypeIn::from(r#type),
+                r#type: ParamTypeIn::new(r#type, idl_store),
                 ident: ident.clone(),
             },
             idlc_ast::Param::Out { r#type, ident } => Param::Out {
-                r#type: ParamTypeOut::from(r#type),
+                r#type: ParamTypeOut::new(r#type, idl_store),
                 ident: ident.clone(),
             },
         }
@@ -310,11 +342,35 @@ impl From<&idlc_ast::Const> for Const {
     }
 }
 
-impl From<&idlc_ast::Type> for Type {
-    fn from(ty: &idlc_ast::Type) -> Self {
+impl Type {
+    fn new(ty: &idlc_ast::Type, idl_store: &IDLStore) -> Self {
         match ty {
             idlc_ast::Type::Primitive(primitive) => Type::Primitive(Primitive::from(primitive)),
-            idlc_ast::Type::Custom(custom) => Type::Custom(custom.to_string()),
+            idlc_ast::Type::Interface => Type::Interface(None),
+            idlc_ast::Type::Custom(custom) => {
+                let ident = &custom.ident;
+                match idl_store.iface_lookup(ident) {
+                    Some(iface) => Type::Interface(Some(iface.ident.to_string())),
+                    None => match idl_store.struct_lookup(ident) {
+                        Some((r#struct, path)) => {
+                            let mut fields = Vec::new();
+                            for field in r#struct.fields.iter() {
+                                let (ty, count) = &field.val;
+                                fields.push(StructField {
+                                    ident: field.ident.clone(),
+                                    val: (Type::new(ty, idl_store), *count),
+                                })
+                            }
+                            Type::Struct(Struct {
+                                ident: r#struct.ident.clone(),
+                                fields,
+                                origin: Some(path),
+                            })
+                        }
+                        None => panic!("Couldn't find any references of symbol {ident}"),
+                    },
+                }
+            }
         }
     }
 }

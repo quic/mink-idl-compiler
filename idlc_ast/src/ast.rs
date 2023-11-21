@@ -126,10 +126,28 @@ pub enum ParamTypeIn {
     Value(Type),
 }
 
+impl AsRef<Type> for ParamTypeIn {
+    #[inline]
+    fn as_ref(&self) -> &Type {
+        match self {
+            ParamTypeIn::Array(t) | ParamTypeIn::Value(t) => t,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum ParamTypeOut {
     Array(Type),
     Reference(Type),
+}
+
+impl AsRef<Type> for ParamTypeOut {
+    #[inline]
+    fn as_ref(&self) -> &Type {
+        match self {
+            ParamTypeOut::Array(t) | ParamTypeOut::Reference(t) => t,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -139,14 +157,20 @@ pub enum Param {
 }
 
 impl Param {
-    pub fn r#type(&self) -> &Type {
+    #[inline]
+    pub fn ident(&self) -> &Ident {
         match self {
-            Param::In { r#type, ident: _ } => match r#type {
-                ParamTypeIn::Array(t) | ParamTypeIn::Value(t) => t,
-            },
-            Param::Out { r#type, ident: _ } => match r#type {
-                ParamTypeOut::Array(t) | ParamTypeOut::Reference(t) => t,
-            },
+            Param::In { r#type: _, ident } => ident,
+            Param::Out { r#type: _, ident } => ident,
+        }
+    }
+}
+
+impl AsRef<Type> for Param {
+    fn as_ref(&self) -> &Type {
+        match self {
+            Param::In { r#type, ident: _ } => r#type.as_ref(),
+            Param::Out { r#type, ident: _ } => r#type.as_ref(),
         }
     }
 }
@@ -166,7 +190,17 @@ impl StructField {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Type {
     Primitive(Primitive),
+    Interface,
     Custom(Ident),
+}
+impl Type {
+    pub const fn interface_size() -> usize {
+        Primitive::Uint64.size() * 2
+    }
+
+    pub const fn interface_align() -> usize {
+        Type::interface_size()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

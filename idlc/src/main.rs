@@ -1,16 +1,17 @@
 // Binary targets might not use all the functions.
 #![allow(unused)]
 
-use std::collections::HashMap;
+use std::{collections::HashMap, io::Write};
+
+use idlc_errors::trace;
 
 use idlc_ast::{dump, visitor::Visitor};
-
 use idlc_ast_passes::{cycles, idl_store::IDLStore, struct_verifier, CompilerPass, Error};
 
 use idlc_mir::mir;
-
 use idlc_mir_passes::{interface_verifier, MirCompilerPass};
 
+use idlc_codegen::Generator;
 use std::time::Instant;
 
 #[derive(clap::Parser)]
@@ -58,13 +59,9 @@ struct Cli {
 
 fn check<T: std::fmt::Debug, E: std::fmt::Display>(r: Result<T, E>) -> T {
     match r {
-        Ok(t) => {
-            dbg!(&t);
-            t
-        }
+        Ok(t) => t,
         Err(e) => {
-            eprintln!("{e}");
-            panic!();
+            idlc_errors::unrecoverable!("{e}");
         }
     }
 }
@@ -81,6 +78,7 @@ enum Dumpable {
 
 fn main() {
     use clap::Parser as ClapParser;
+    idlc_errors::init();
     let args = Cli::parse();
 
     let dump = args.dump;
@@ -105,13 +103,16 @@ fn main() {
 
     let ast = idl.get_or_insert(input_file).unwrap();
 
-    println!("Resolving includes...");
+    trace!("Running `IncludeChecker` pass");
     _ = check(idl.run_pass(&ast));
 
-    println!("Checking for struct cycles");
+    trace!("Running `FunctionDuplicateParam` pass");
+    check(idlc_ast_passes::functions::Functions::new().run_pass(&ast));
+
+    trace!("Running `CycleChecking` pass");
     let struct_ordering = check(cycles::Cycles::new(&idl).run_pass(&ast));
 
-    println!("Checking for struct sizes");
+    trace!("Running `StructVerifier` pass");
     check(struct_verifier::StructVerifier::run_pass(
         &idl,
         &struct_ordering,
@@ -123,10 +124,29 @@ fn main() {
 
     if dump == Some(Dumpable::Mir) {
         idlc_mir::dump(mir);
-        eprintln!("`dump_mir` completed in {duration:?}");
+        println!("`dump_mir` completed in {duration:?}");
         std::process::exit(0);
     }
 
-    println!("Verifying interfaces");
-    check(interface_verifier::InterfaceVerifier::new(&mir).run_pass());
+    trace!("Verifying interfaces");
+    interface_verifier::InterfaceVerifier::new(&mir).run_pass();
+
+    let output = args
+        .output
+        .unwrap_or_else(|| std::env::current_dir().unwrap());
+    let is_skel = args.skel;
+    match (args.c, args.cpp, args.java, args.rust) {
+        (true, false, false, true) => {
+            for (name, content) in idlc_codegen_rust::Generator::generate(&mir) {
+                let mut file = std::fs::OpenOptions::new()
+                    .create(true)
+                    .write(true)
+                    .truncate(true)
+                    .open(output.join(name))
+                    .unwrap();
+                file.write_all(content.as_bytes()).unwrap();
+            }
+        }
+        _ => unreachable!(),
+    };
 }

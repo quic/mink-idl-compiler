@@ -16,7 +16,7 @@ value          = @{ ("0x" ~ ASCII_HEX_DIGIT+ | "-"? ~ ASCII_DIGIT+ ~ ("." ~ ASCI
 
 array        = @{ ASCII_DIGIT+ }
 struct_field =  { (primitive_type | ident) ~ ("[" ~ array ~ "]")? ~ ident ~ ";" }
-struct       =  { "struct " ~ ident ~ "{" ~ (struct_field)+ ~ "};" }
+struct       =  { "struct " ~ (!"interface" ~ ident) ~ "{" ~ (struct_field)+ ~ "};" }
 
 const = { "const " ~ primitive_type ~ ident ~ "=" ~ value ~ ";" }
 

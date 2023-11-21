@@ -58,7 +58,7 @@ fn op_code_test() {
                 let idlc_mir::InterfaceNode::Function(f) = node else {
                     return None;
                 };
-                Some((f.ident.ident.as_str(), f.id))
+                Some((f.ident.as_ref(), f.id))
             })
         });
         out = fn_iterator.collect();
@@ -116,7 +116,7 @@ fn err_code_test() {
                 let idlc_mir::InterfaceNode::Error(e) = node else {
                     return None;
                 };
-                Some((e.ident.ident.as_str(), e.value))
+                Some((e.ident.as_ref(), e.value))
             })
         });
         out = fn_iterator.collect();

@@ -100,6 +100,7 @@ fn r#struct() {
         r#struct,
         [
             "struct test { uint81[32] test; };",
+            "struct interface {uint8 test;};",
             "struct test { uint8[32] 123test; };",
         ]
     );

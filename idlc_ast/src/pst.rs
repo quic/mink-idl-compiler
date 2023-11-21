@@ -90,7 +90,9 @@ impl<'a> From<(Option<Documentation>, Pair<'a, Rule>)> for InterfaceNode {
                 let ident = ast_unwrap!(inner.next()).into();
                 let mut params = Vec::new();
                 for param in inner {
-                    params.push(Param::from(param));
+                    if param.as_rule() == Rule::param {
+                        params.push(Param::from(param));
+                    }
                 }
                 InterfaceNode::Function(Function { doc, ident, params })
             }
@@ -101,7 +103,6 @@ impl<'a> From<(Option<Documentation>, Pair<'a, Rule>)> for InterfaceNode {
 
 impl<'a> From<Pair<'a, Rule>> for Param {
     fn from(value: Pair<'a, Rule>) -> Self {
-        debug_assert_eq!(value.as_rule(), Rule::param);
         let mut params = value.into_inner();
         let mutability = ast_unwrap!(params.next()).as_str();
         let r#type = ast_unwrap!(params.next());
@@ -124,6 +125,8 @@ impl From<Pair<'_, Rule>> for Type {
     fn from(value: Pair<'_, Rule>) -> Self {
         if let Ok(primitive) = Primitive::try_from(value.as_str()) {
             Self::Primitive(primitive)
+        } else if value.as_str() == "interface" {
+            Self::Interface
         } else {
             Self::Custom(Ident {
                 span: Span::from(value.as_span()),
@@ -245,10 +248,13 @@ fn parse_interface(pair: Pair<Rule>) -> Rc<Node> {
     let mut interface = pair.into_inner();
     let mut pairs = ast_unwrap!(interface.next()).into_inner();
     let ident = ast_unwrap!(pairs.next()).as_str().to_string();
-    let base = pairs.next().map(|base| Ident {
-        span: base.as_span().into(),
-        ident: base.as_str().to_string(),
-    });
+    let base = pairs
+        .next()
+        .filter(|base| base.as_rule() == Rule::ident)
+        .map(|base| Ident {
+            span: base.as_span().into(),
+            ident: base.as_str().to_string(),
+        });
 
     let mut iface_nodes = Vec::new();
     let mut comment: Option<Documentation> = None;

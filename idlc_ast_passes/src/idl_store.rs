@@ -14,13 +14,14 @@ use std::{
 use idlc_ast::{Ast, Interface, Node, Struct};
 
 use idlc_ast::visitor::{walk_all, Visitor};
+use idlc_errors::warn;
 
 /// DependencyResolver structure
 /// Compilation unit is split into a hashmap here.
 #[derive(Debug)]
 pub struct IDLStore {
     ast_store: RefCell<HashMap<PathBuf, Rc<Ast>>>,
-    symbols: RefCell<HashMap<Symbol, Rc<Node>>>,
+    symbols: RefCell<HashMap<Symbol, (Rc<Node>, PathBuf)>>,
     current: Option<PathBuf>,
     cycle: Option<Cycle<String>>,
     graph: Graph<String>,
@@ -115,14 +116,14 @@ impl IDLStore {
         let selected_path = set_found_files.iter().next().expect("File not found");
 
         if set_found_files.len() > 1 {
-            eprintln!(
-                "Warning: Found multiple files with the same name '{}' in different paths: ",
+            warn!(
+                "Found multiple files with the same name '{}' in different paths: ",
                 path.display()
             );
             for f in &set_found_files {
-                eprintln!("{}", f.display());
+                warn!("{}", f.display());
             }
-            eprintln!("Selecting '{}'", selected_path.display());
+            warn!("Selecting '{}'", selected_path.display());
         }
         selected_path.to_path_buf()
     }
@@ -137,21 +138,33 @@ impl IDLStore {
     }
 
     #[inline]
-    fn gather_symbols_from_ast(ast: &Ast, map: &mut HashMap<Symbol, Rc<Node>>) {
+    fn gather_symbols_from_ast(ast: &Ast, map: &mut HashMap<Symbol, (Rc<Node>, PathBuf)>) {
+        let tag = &ast.tag;
         for node in &ast.nodes {
             assert_eq!(
                 match node.as_ref() {
-                    Node::Struct(s) =>
-                        map.insert(Symbol::Struct(s.ident.to_string()), Rc::clone(node)),
+                    Node::Struct(s) => map.insert(
+                        Symbol::Struct(s.ident.to_string()),
+                        (Rc::clone(node), tag.to_path_buf())
+                    ),
                     Node::Interface(i) => {
                         map.insert(
                             Symbol::Struct(i.ident.to_string()),
-                            Rc::new(Node::Struct(Struct::new_object(&i.ident))),
+                            (
+                                Rc::new(Node::Struct(Struct::new_object(&i.ident))),
+                                tag.to_path_buf(),
+                            ),
                         )
-                        .or(map.insert(Symbol::Interface(i.ident.to_string()), Rc::clone(node)))
+                        .or(map.insert(
+                            Symbol::Interface(i.ident.to_string()),
+                            (Rc::clone(node), tag.to_path_buf()),
+                        ))
                     }
                     Node::Const(c) => {
-                        map.insert(Symbol::Const(c.ident.to_string()), Rc::clone(node))
+                        map.insert(
+                            Symbol::Const(c.ident.to_string()),
+                            (Rc::clone(node), tag.to_path_buf()),
+                        )
                     }
                     _ => None,
                 },
@@ -170,8 +183,7 @@ impl IDLStore {
                 .canonicalize()
                 .expect("Failed to canonicalize path.");
             let node = idlc_ast::from_file(include_path.clone()).unwrap_or_else(|e| {
-                println!("Parsing failed: \n{e}\n");
-                std::process::exit(0);
+                idlc_errors::unrecoverable!("Parsing failed: \n{e}\n");
             });
             Self::insert_canonical(self, &include_path, &node);
         }
@@ -190,15 +202,15 @@ impl IDLStore {
     }
 
     /// returns the interface corresponding to the given name
-    pub fn struct_lookup(&self, name: &str) -> Option<Rc<Struct>> {
+    pub fn struct_lookup(&self, name: &str) -> Option<(Rc<Struct>, PathBuf)> {
         self.symbols
             .borrow()
             .get(&Symbol::Struct(name.to_string()))
-            .map(|node| {
+            .map(|(node, tag)| {
                 let Node::Struct(s) = node.as_ref() else {
                     unreachable!("ICE: Struct node expected.")
                 };
-                Rc::new(s.clone())
+                (Rc::new(s.clone()), tag.to_path_buf())
             })
     }
 
@@ -207,7 +219,7 @@ impl IDLStore {
         self.symbols
             .borrow()
             .get(&Symbol::Interface(name.to_string()))
-            .map(|node| {
+            .map(|(node, _)| {
                 let Node::Interface(i) = node.as_ref() else {
                     unreachable!("ICE: Interface node expected.")
                 };

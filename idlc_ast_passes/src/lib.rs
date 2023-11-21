@@ -39,7 +39,9 @@ pub enum Error {
     StructVerifier(#[from] struct_verifier::Error),
 }
 
-pub mod cycles;
 mod graph;
+
+pub mod cycles;
+pub mod functions;
 pub mod idl_store;
 pub mod struct_verifier;
