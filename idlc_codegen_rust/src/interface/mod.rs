@@ -25,7 +25,10 @@ pub fn emit_interface(interface: &Interface) -> String {
                 let signature = functions::signature::Signature::new(f);
                 let counts = idlc_codegen::counts::Counter::new(f);
                 let primitive_packer = functions::serialization::PackedPrimitives::new(f);
-                let documentation = functions::documentation::emit(f);
+                let documentation = idlc_codegen::documentation::Documentation::new(
+                    f,
+                    idlc_codegen::documentation::DocumentationStyle::Rust,
+                );
 
                 implementations.push(functions::implementation::emit(
                     f,

@@ -1,4 +1,3 @@
-pub(super) mod documentation;
 pub(super) mod serialization;
 pub(super) mod signature;
 

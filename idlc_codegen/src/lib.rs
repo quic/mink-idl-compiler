@@ -1,6 +1,8 @@
 pub mod counts;
+pub mod documentation;
 pub mod functions;
 pub mod serialization;
+
 use std::path::PathBuf;
 
 // FIXME: This probably doesn't even need to contain the first part of the tuple
