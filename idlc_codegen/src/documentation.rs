@@ -6,6 +6,15 @@ pub enum DocumentationStyle {
 }
 
 impl DocumentationStyle {
+    fn apply_replacements(self, doc: &str) -> std::borrow::Cow<'_, str> {
+        // Rust uses Markdown so we need to replace `[` or intra-doc links break
+        if self == DocumentationStyle::Rust && (doc.contains(']') || doc.contains(']')) {
+            std::borrow::Cow::Owned(doc.replace(']', "\\]").replace('[', "\\["))
+        } else {
+            std::borrow::Cow::Borrowed(doc)
+        }
+    }
+
     const fn start(self) -> Option<&'static str> {
         match self {
             DocumentationStyle::Rust => None,
@@ -73,7 +82,7 @@ impl Documentation {
             documentation += style.prefix();
             if !docstring.is_empty() {
                 documentation.push(' ');
-                documentation.push_str(docstring.trim());
+                documentation.push_str(&style.apply_replacements(docstring.trim()));
             }
             documentation.push('\n');
         }
@@ -92,6 +101,7 @@ mod tests {
     const DOCUMENTATION: &str = r#"* Hello this is a sample documentation
       I can even contain no asterisk in the beginning and this is style a valid idl doc style
     *
+    * @param[out]
     * New Lines must be preserved and convention interleaving should work too!"#;
 
     #[test]
@@ -103,6 +113,7 @@ mod tests {
             r#"/// Hello this is a sample documentation
 /// I can even contain no asterisk in the beginning and this is style a valid idl doc style
 ///
+/// @param\[out\]
 /// New Lines must be preserved and convention interleaving should work too!
 "#
         );
@@ -117,6 +128,7 @@ mod tests {
 * Hello this is a sample documentation
 * I can even contain no asterisk in the beginning and this is style a valid idl doc style
 *
+* @param[out]
 * New Lines must be preserved and convention interleaving should work too!
 */
 "#
@@ -133,6 +145,7 @@ mod tests {
 * Hello this is a sample documentation
 * I can even contain no asterisk in the beginning and this is style a valid idl doc style
 *
+* @param[out]
 * New Lines must be preserved and convention interleaving should work too!
 */
 "#
