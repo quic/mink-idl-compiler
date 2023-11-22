@@ -5,7 +5,7 @@ use crate::types::change_primitive;
 pub fn emit_struct(r#struct: &Struct) -> String {
     let mut result = String::new();
     result.push_str("#[repr(C)]\n");
-    result.push_str("#[derive(Debug, Clone, Copy, PartialEq, Hash)]\n");
+    result.push_str("#[derive(Debug, Clone, Copy, PartialEq)]\n");
     result.push_str(&format!("pub struct {} {{\n", r#struct.ident));
 
     for field in &r#struct.fields {
