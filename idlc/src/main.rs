@@ -101,20 +101,25 @@ fn main() {
 
     let ast = idl_store.get_or_insert(input_file);
 
-    trace!("Running `IncludeChecker` pass");
-    _ = check(idl_store.run_pass(&ast));
+    timer::time!(check(idl_store.run_pass(&ast)), "`IncludeChecker` pass");
 
-    trace!("Running `FunctionDuplicateParam` pass");
-    check(idlc_ast_passes::functions::Functions::new().run_pass(&ast));
+    timer::time!(
+        check(idlc_ast_passes::functions::Functions::new().run_pass(&ast)),
+        "`FunctionDuplicateParam` pass"
+    );
 
-    trace!("Running `CycleChecking` pass");
-    let struct_ordering = check(cycles::Cycles::new(&idl_store).run_pass(&ast));
+    let struct_ordering = timer::time!(
+        check(cycles::Cycles::new(&idl_store).run_pass(&ast)),
+        "`CycleCheck` pass"
+    );
 
-    trace!("Running `StructVerifier` pass");
-    check(struct_verifier::StructVerifier::run_pass(
-        &idl_store,
-        &struct_ordering,
-    ));
+    timer::time!(
+        check(struct_verifier::StructVerifier::run_pass(
+            &idl_store,
+            &struct_ordering,
+        )),
+        "`StructVerifier` pass"
+    );
 
     let mir = timer::time!(mir::parse_to_mir(&ast, &mut idl_store), "Mir");
     if dump == Some(Dumpable::Mir) {
