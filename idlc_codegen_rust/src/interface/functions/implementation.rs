@@ -129,7 +129,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         self.args.push(format!(
             r#"{ARG} {{
                 bi: {INPUT_BUFFER} {{
-                    ptr: std::ptr::addr_of!({ident}).cast(),
+                    ptr: ({ident} as *const {ty}).cast(),
                     size: std::mem::size_of::<{ty}>(),
                 }}
             }}"#
