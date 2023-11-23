@@ -84,7 +84,13 @@ impl<'a> Param<'a> {
                 r#type: idlc_mir::ParamTypeOut::Array(Type::Primitive(Primitive::Uint8)),
                 ident: idlc_mir::Ident::new_without_span(String::new()),
             };
-            let idx = params.iter().position(|x| x >= &me).map(|x| x - 1);
+            let idx = out.iter().position(|x| {
+                if let Param::Params(p) = *x {
+                    p >= &me
+                } else {
+                    false
+                }
+            });
 
             out.insert(
                 idx.unwrap_or(out.len()),
