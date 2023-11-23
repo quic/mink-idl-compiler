@@ -84,10 +84,7 @@ impl<'a> Param<'a> {
                 r#type: idlc_mir::ParamTypeOut::Array(Type::Primitive(Primitive::Uint8)),
                 ident: idlc_mir::Ident::new_without_span(String::new()),
             };
-            let idx = params
-                .iter()
-                .position(|x| x >= &me)
-                .map(|x| x.saturating_sub(1));
+            let idx = params.iter().position(|x| x >= &me).map(|x| x - 1);
 
             out.insert(
                 idx.unwrap_or(out.len()),
