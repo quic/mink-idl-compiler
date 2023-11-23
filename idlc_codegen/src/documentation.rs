@@ -8,7 +8,7 @@ pub enum DocumentationStyle {
 impl DocumentationStyle {
     fn apply_replacements(self, doc: &str) -> std::borrow::Cow<'_, str> {
         // Rust uses Markdown so we need to replace `[` or intra-doc links break
-        if self == DocumentationStyle::Rust && (doc.contains(']') || doc.contains(']')) {
+        if self == Self::Rust && (doc.contains(']') || doc.contains(']')) {
             std::borrow::Cow::Owned(doc.replace(']', "\\]").replace('[', "\\["))
         } else {
             std::borrow::Cow::Borrowed(doc)
@@ -17,28 +17,28 @@ impl DocumentationStyle {
 
     const fn start(self) -> Option<&'static str> {
         match self {
-            DocumentationStyle::Rust => None,
-            DocumentationStyle::C => Some("/*"),
-            DocumentationStyle::Java => Some("/**"),
+            Self::Rust => None,
+            Self::C => Some("/*"),
+            Self::Java => Some("/**"),
         }
     }
 
     const fn end(self) -> Option<&'static str> {
         match self {
-            DocumentationStyle::Rust => None,
-            DocumentationStyle::C | DocumentationStyle::Java => Some("*/"),
+            Self::Rust => None,
+            Self::C | Self::Java => Some("*/"),
         }
     }
 
     const fn prefix(self) -> &'static str {
         match self {
-            DocumentationStyle::Rust => "///",
-            DocumentationStyle::C | DocumentationStyle::Java => "*",
+            Self::Rust => "///",
+            Self::C | Self::Java => "*",
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Documentation(String);
 impl std::fmt::Display for Documentation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -61,11 +61,10 @@ impl AsRef<str> for Documentation {
 
 impl Documentation {
     pub fn new(function: &idlc_mir::Function, style: DocumentationStyle) -> Self {
-        if let Some(doc) = &function.doc {
-            Documentation::new_with_idlc_doc(doc, style)
-        } else {
-            Documentation(String::new())
-        }
+        function.doc.as_ref().map_or_else(
+            || Self(String::new()),
+            |doc| Self::new_with_idlc_doc(doc, style),
+        )
     }
 
     fn new_with_idlc_doc(doc: &str, style: DocumentationStyle) -> Self {

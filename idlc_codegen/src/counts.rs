@@ -75,7 +75,7 @@ impl Counter {
     }
 
     #[inline]
-    pub fn total(&self) -> u32 {
+    pub const fn total(&self) -> u32 {
         (self.input_buffers + self.input_objects + self.output_buffers + self.output_objects) as u32
     }
 }

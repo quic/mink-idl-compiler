@@ -69,12 +69,12 @@ pub enum Primitive {
 
 impl Primitive {
     #[inline]
-    pub fn size(self) -> usize {
+    pub const fn size(self) -> usize {
         match self {
-            Primitive::Uint8 | Primitive::Int8 => 1,
-            Primitive::Uint16 | Primitive::Int16 => 2,
-            Primitive::Uint32 | Primitive::Int32 | Primitive::Float32 => 4,
-            Primitive::Uint64 | Primitive::Int64 | Primitive::Float64 => 8,
+            Self::Uint8 | Self::Int8 => 1,
+            Self::Uint16 | Self::Int16 => 2,
+            Self::Uint32 | Self::Int32 | Self::Float32 => 4,
+            Self::Uint64 | Self::Int64 | Self::Float64 => 8,
         }
     }
 }
@@ -90,7 +90,7 @@ impl PartialOrd for Primitive {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Const {
     pub ident: Ident,
     pub r#type: Primitive,
@@ -125,7 +125,7 @@ pub struct Interface {
     pub nodes: Vec<InterfaceNode>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum InterfaceNode {
     Const(Const),
     Function(Function),
@@ -153,10 +153,10 @@ impl Param {
     #[inline]
     pub const fn r#type(&self) -> &Type {
         match self {
-            Param::In { r#type, ident: _ } => match r#type {
+            Self::In { r#type, ident: _ } => match r#type {
                 ParamTypeIn::Array(t) | ParamTypeIn::Value(t) => t,
             },
-            Param::Out { r#type, ident: _ } => match r#type {
+            Self::Out { r#type, ident: _ } => match r#type {
                 ParamTypeOut::Array(t) | ParamTypeOut::Reference(t) => t,
             },
         }
@@ -165,7 +165,7 @@ impl Param {
     #[inline]
     pub const fn ident(&self) -> &Ident {
         match self {
-            Param::In { r#type: _, ident } | Param::Out { r#type: _, ident } => ident,
+            Self::In { r#type: _, ident } | Self::Out { r#type: _, ident } => ident,
         }
     }
 
@@ -173,7 +173,7 @@ impl Param {
     pub const fn is_input(&self) -> bool {
         matches!(
             self,
-            Param::In {
+            Self::In {
                 r#type: _,
                 ident: _
             }
@@ -184,7 +184,7 @@ impl Param {
     pub const fn is_output(&self) -> bool {
         matches!(
             self,
-            Param::Out {
+            Self::Out {
                 r#type: _,
                 ident: _
             }
@@ -194,10 +194,10 @@ impl Param {
     pub const fn is_array(&self) -> bool {
         matches!(
             self,
-            Param::In {
+            Self::In {
                 r#type: ParamTypeIn::Array(_),
                 ident: _,
-            } | Param::Out {
+            } | Self::Out {
                 r#type: ParamTypeOut::Array(_),
                 ident: _,
             }
@@ -224,11 +224,11 @@ impl Ord for Param {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         match (self, other) {
             (
-                Param::In {
+                Self::In {
                     r#type: _,
                     ident: _,
                 },
-                Param::Out {
+                Self::Out {
                     r#type: _,
                     ident: _,
                 },
@@ -238,11 +238,11 @@ impl Ord for Param {
                 (Type::Interface(_), _) => std::cmp::Ordering::Greater,
             },
             (
-                Param::Out {
+                Self::Out {
                     r#type: _,
                     ident: _,
                 },
-                Param::In {
+                Self::In {
                     r#type: _,
                     ident: _,
                 },
@@ -262,7 +262,7 @@ impl Ord for Param {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Function {
     pub doc: Option<String>,
     pub ident: Ident,
@@ -270,7 +270,7 @@ pub struct Function {
     pub id: u32,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Error {
     pub ident: Ident,
     pub value: i32,
@@ -284,7 +284,7 @@ fn parse_const(const_: &idlc_ast::Const) -> Rc<Node> {
     Rc::new(Node::Const(Const::from(const_)))
 }
 
-fn parse_struct(struct_: &idlc_ast::Struct, idl_store: &mut IDLStore) -> Rc<Node> {
+fn parse_struct(struct_: &idlc_ast::Struct, idl_store: &IDLStore) -> Rc<Node> {
     let ident = struct_.ident.clone();
     let mut fields = Vec::<StructField>::new();
     for field in struct_.fields.iter() {
@@ -395,8 +395,8 @@ pub fn parse_to_mir(ast: &Ast, idl_store: &mut IDLStore) -> Mir {
 impl ParamTypeIn {
     fn new(src: &idlc_ast::ParamTypeIn, idl_store: &IDLStore) -> Self {
         match src {
-            idlc_ast::ParamTypeIn::Array(ty) => ParamTypeIn::Array(Type::new(ty, idl_store)),
-            idlc_ast::ParamTypeIn::Value(ty) => ParamTypeIn::Value(Type::new(ty, idl_store)),
+            idlc_ast::ParamTypeIn::Array(ty) => Self::Array(Type::new(ty, idl_store)),
+            idlc_ast::ParamTypeIn::Value(ty) => Self::Value(Type::new(ty, idl_store)),
         }
     }
 }
@@ -404,10 +404,8 @@ impl ParamTypeIn {
 impl ParamTypeOut {
     fn new(src: &idlc_ast::ParamTypeOut, idl_store: &IDLStore) -> Self {
         match src {
-            idlc_ast::ParamTypeOut::Array(ty) => ParamTypeOut::Array(Type::new(ty, idl_store)),
-            idlc_ast::ParamTypeOut::Reference(ty) => {
-                ParamTypeOut::Reference(Type::new(ty, idl_store))
-            }
+            idlc_ast::ParamTypeOut::Array(ty) => Self::Array(Type::new(ty, idl_store)),
+            idlc_ast::ParamTypeOut::Reference(ty) => Self::Reference(Type::new(ty, idl_store)),
         }
     }
 }
@@ -415,11 +413,11 @@ impl ParamTypeOut {
 impl Param {
     fn new(src: &idlc_ast::Param, idl_store: &IDLStore) -> Self {
         match src {
-            idlc_ast::Param::In { r#type, ident } => Param::In {
+            idlc_ast::Param::In { r#type, ident } => Self::In {
                 r#type: ParamTypeIn::new(r#type, idl_store),
                 ident: ident.clone(),
             },
-            idlc_ast::Param::Out { r#type, ident } => Param::Out {
+            idlc_ast::Param::Out { r#type, ident } => Self::Out {
                 r#type: ParamTypeOut::new(r#type, idl_store),
                 ident: ident.clone(),
             },
@@ -430,23 +428,23 @@ impl Param {
 impl From<&idlc_ast::Primitive> for Primitive {
     fn from(prim: &idlc_ast::Primitive) -> Self {
         match prim {
-            idlc_ast::Primitive::Uint8 => Primitive::Uint8,
-            idlc_ast::Primitive::Uint16 => Primitive::Uint16,
-            idlc_ast::Primitive::Uint32 => Primitive::Uint32,
-            idlc_ast::Primitive::Uint64 => Primitive::Uint64,
-            idlc_ast::Primitive::Int8 => Primitive::Int8,
-            idlc_ast::Primitive::Int16 => Primitive::Int16,
-            idlc_ast::Primitive::Int32 => Primitive::Int32,
-            idlc_ast::Primitive::Int64 => Primitive::Int64,
-            idlc_ast::Primitive::Float32 => Primitive::Float32,
-            idlc_ast::Primitive::Float64 => Primitive::Float64,
+            idlc_ast::Primitive::Uint8 => Self::Uint8,
+            idlc_ast::Primitive::Uint16 => Self::Uint16,
+            idlc_ast::Primitive::Uint32 => Self::Uint32,
+            idlc_ast::Primitive::Uint64 => Self::Uint64,
+            idlc_ast::Primitive::Int8 => Self::Int8,
+            idlc_ast::Primitive::Int16 => Self::Int16,
+            idlc_ast::Primitive::Int32 => Self::Int32,
+            idlc_ast::Primitive::Int64 => Self::Int64,
+            idlc_ast::Primitive::Float32 => Self::Float32,
+            idlc_ast::Primitive::Float64 => Self::Float64,
         }
     }
 }
 
 impl From<&idlc_ast::Const> for Const {
     fn from(const_: &idlc_ast::Const) -> Self {
-        Const {
+        Self {
             ident: const_.ident.clone(),
             r#type: Primitive::from(&const_.r#type),
             value: const_.value.to_string(),
@@ -457,23 +455,22 @@ impl From<&idlc_ast::Const> for Const {
 impl Type {
     fn new(ty: &idlc_ast::Type, idl_store: &IDLStore) -> Self {
         match ty {
-            idlc_ast::Type::Primitive(primitive) => Type::Primitive(Primitive::from(primitive)),
-            idlc_ast::Type::Interface => Type::Interface(None),
+            idlc_ast::Type::Primitive(primitive) => Self::Primitive(Primitive::from(primitive)),
+            idlc_ast::Type::Interface => Self::Interface(None),
             idlc_ast::Type::Custom(custom) => {
                 let ident = &custom.ident;
-                match idl_store.iface_lookup(ident) {
-                    Some(iface) => Type::Interface(Some(iface.ident.to_string())),
-                    None => match idl_store.struct_lookup(ident) {
+                idl_store.iface_lookup(ident).map_or_else(
+                    || match idl_store.struct_lookup(ident) {
                         Some((r#struct, path)) => {
                             let mut fields = Vec::new();
                             for field in r#struct.fields.iter() {
                                 let (ty, count) = &field.val;
                                 fields.push(StructField {
                                     ident: field.ident.clone(),
-                                    val: (Type::new(ty, idl_store), *count),
+                                    val: (Self::new(ty, idl_store), *count),
                                 })
                             }
-                            Type::Struct(Struct {
+                            Self::Struct(Struct {
                                 ident: r#struct.ident.clone(),
                                 fields,
                                 origin: Some(path),
@@ -481,7 +478,8 @@ impl Type {
                         }
                         None => panic!("Couldn't find any references of symbol {ident}"),
                     },
-                }
+                    |iface| Self::Interface(Some(iface.ident.to_string())),
+                )
             }
         }
     }
@@ -518,7 +516,7 @@ impl<'a> Iterator for InterfaceIterator<'a> {
 
 impl Interface {
     #[inline]
-    pub fn iter(&self) -> InterfaceIterator {
+    pub const fn iter(&self) -> InterfaceIterator {
         InterfaceIterator {
             interface: Some(self),
         }

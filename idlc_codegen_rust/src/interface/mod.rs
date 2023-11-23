@@ -4,7 +4,7 @@ use idlc_mir::{Interface, InterfaceNode};
 
 mod error;
 mod functions;
-pub(super) mod mink_primitives;
+pub mod mink_primitives;
 mod variable_names;
 
 pub fn emit_interface(interface: &Interface) -> String {

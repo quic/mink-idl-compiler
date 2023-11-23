@@ -44,7 +44,7 @@ macro_rules! ast_unwrap {
 
 impl From<pest::Span<'_>> for Span {
     fn from(value: pest::Span) -> Self {
-        Span {
+        Self {
             start: value.start(),
             end: value.end(),
         }
@@ -68,7 +68,7 @@ impl<'a> From<Pairs<'a, Rule>> for Const {
         let r#type = Primitive::try_from(ast_unwrap!(inner.next()).as_str());
         let ident = ast_unwrap!(inner.next()).into();
         let value = ast_unwrap!(inner.next()).as_str().to_string();
-        Const {
+        Self {
             ident,
             r#type: ast_unwrap!(r#type),
             value,
@@ -80,11 +80,11 @@ impl<'a> From<(Option<Documentation>, Pair<'a, Rule>)> for InterfaceNode {
     fn from(pair: (Option<Documentation>, Pair<'a, Rule>)) -> Self {
         let (doc, pair) = pair;
         match pair.as_rule() {
-            Rule::error => InterfaceNode::Error(Ident {
+            Rule::error => Self::Error(Ident {
                 span: pair.as_span().into(),
                 ident: pair.into_inner().as_str().to_string(),
             }),
-            Rule::r#const => InterfaceNode::Const(Const::from(pair.into_inner())),
+            Rule::r#const => Self::Const(Const::from(pair.into_inner())),
             Rule::function => {
                 let mut inner = pair.into_inner();
                 let ident = ast_unwrap!(inner.next()).into();
@@ -94,7 +94,7 @@ impl<'a> From<(Option<Documentation>, Pair<'a, Rule>)> for InterfaceNode {
                         params.push(Param::from(param));
                     }
                 }
-                InterfaceNode::Function(Function { doc, ident, params })
+                Self::Function(Function { doc, ident, params })
             }
             _ => unreachable!(),
         }
@@ -110,11 +110,11 @@ impl<'a> From<Pair<'a, Rule>> for Param {
         match mutability {
             "in" => {
                 let r#type = ParamTypeIn::from(r#type);
-                Param::In { r#type, ident }
+                Self::In { r#type, ident }
             }
             "out" => {
                 let r#type = ParamTypeOut::from(r#type);
-                Param::Out { r#type, ident }
+                Self::Out { r#type, ident }
             }
             _ => unreachable!(),
         }
@@ -123,16 +123,19 @@ impl<'a> From<Pair<'a, Rule>> for Param {
 
 impl From<Pair<'_, Rule>> for Type {
     fn from(value: Pair<'_, Rule>) -> Self {
-        if let Ok(primitive) = Primitive::try_from(value.as_str()) {
-            Self::Primitive(primitive)
-        } else if value.as_str() == "interface" {
-            Self::Interface
-        } else {
-            Self::Custom(Ident {
-                span: Span::from(value.as_span()),
-                ident: value.as_str().to_string(),
-            })
-        }
+        Primitive::try_from(value.as_str()).map_or_else(
+            |_| {
+                if value.as_str() == "interface" {
+                    Self::Interface
+                } else {
+                    Self::Custom(Ident {
+                        span: Span::from(value.as_span()),
+                        ident: value.as_str().to_string(),
+                    })
+                }
+            },
+            Self::Primitive,
+        )
     }
 }
 
@@ -143,15 +146,15 @@ impl From<Pair<'_, Rule>> for ParamTypeIn {
         let r#type = Type::from(ast_unwrap!(inner.next()));
         if let Type::Custom(r#type) = &r#type {
             if r#type == "buffer" {
-                return ParamTypeIn::Array(Type::Primitive(Primitive::Uint8));
+                return Self::Array(Type::Primitive(Primitive::Uint8));
             }
         }
 
         if let Some(pair) = inner.next() {
             debug_assert_eq!(pair.as_rule(), Rule::param_arr);
-            ParamTypeIn::Array(r#type)
+            Self::Array(r#type)
         } else {
-            ParamTypeIn::Value(r#type)
+            Self::Value(r#type)
         }
     }
 }
@@ -162,15 +165,15 @@ impl From<Pair<'_, Rule>> for ParamTypeOut {
         let r#type = Type::from(ast_unwrap!(inner.next()));
         if let Type::Custom(r#type) = &r#type {
             if r#type == "buffer" {
-                return ParamTypeOut::Array(Type::Primitive(Primitive::Uint8));
+                return Self::Array(Type::Primitive(Primitive::Uint8));
             }
         }
 
         if let Some(pair) = inner.next() {
             debug_assert_eq!(pair.as_rule(), Rule::param_arr);
-            ParamTypeOut::Array(r#type)
+            Self::Array(r#type)
         } else {
-            ParamTypeOut::Reference(r#type)
+            Self::Reference(r#type)
         }
     }
 }
@@ -187,7 +190,7 @@ impl<'a> TryFrom<Pair<'a, Rule>> for Documentation {
             Rule::DOCUMENTATION => {
                 let raw = comment.as_str();
                 let window = raw[3..raw.len() - 2].trim();
-                Ok(Documentation(window.to_string()))
+                Ok(Self(window.to_string()))
             }
             _ => unreachable!(),
         }

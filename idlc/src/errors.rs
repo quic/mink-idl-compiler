@@ -1,5 +1,5 @@
 #[inline]
-pub(crate) fn check<T, E: std::fmt::Display>(r: Result<T, E>) -> T {
+pub fn check<T, E: std::fmt::Display>(r: Result<T, E>) -> T {
     match r {
         Ok(t) => t,
         Err(e) => {

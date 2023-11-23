@@ -9,8 +9,7 @@ pub struct InterfaceVerifier<'mir> {
 }
 
 impl<'mir> InterfaceVerifier<'mir> {
-    /// Constructor for InterfaceVerifier
-    pub fn new(mir: &'mir idlc_mir::Mir) -> Self {
+    pub const fn new(mir: &'mir idlc_mir::Mir) -> Self {
         Self { mir }
     }
 }

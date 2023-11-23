@@ -89,11 +89,9 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
         use crate::interface::mink_primitives::{INTERFACES_BASE, OBJECT};
         use std::borrow::Cow;
 
-        let ty = if let Some(ty) = ty {
+        let ty = ty.map_or(Cow::Borrowed(OBJECT), |ty| {
             Cow::Owned(format!("{INTERFACES_BASE}::{}::{ty}", ty.to_lowercase()))
-        } else {
-            Cow::Borrowed(OBJECT)
-        };
+        });
 
         self.push_inputs(ident, format!("Option<&{ty}>"));
     }
@@ -126,11 +124,9 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
         use crate::interface::mink_primitives::{INTERFACES_BASE, OBJECT};
         use std::borrow::Cow;
 
-        let ty = if let Some(ty) = ty {
+        let ty = ty.map_or(Cow::Borrowed(OBJECT), |ty| {
             Cow::Owned(format!("{INTERFACES_BASE}::{}::{ty}", ty.to_lowercase()))
-        } else {
-            Cow::Borrowed(OBJECT)
-        };
+        });
         self.push_outputs(ident, format!("Option<{ty}>"));
     }
 }

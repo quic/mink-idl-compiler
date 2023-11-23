@@ -5,7 +5,7 @@ use crate::Error;
 /// Maximum allowed size for a struct array [`u16::MAX`]
 pub type Count = NonZeroU16;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 /// AST structure for an IDL.
 pub struct Ast {
     /// Tag denoting the AST name.
@@ -14,7 +14,7 @@ pub struct Ast {
     pub nodes: Vec<Rc<Node>>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 /// enum for the different types of nodes in the AST.
 pub enum Node {
     /// Denotes an `include "foo.idl"`
@@ -30,26 +30,26 @@ pub enum Node {
     Interface(Interface),
 }
 impl Node {
-    pub fn ident(&self) -> Option<&Ident> {
+    pub const fn ident(&self) -> Option<&Ident> {
         match self {
-            Node::Const(c) => Some(&c.ident),
-            Node::Struct(s) => Some(&s.ident),
-            Node::Interface(i) => Some(&i.ident),
+            Self::Const(c) => Some(&c.ident),
+            Self::Struct(s) => Some(&s.ident),
+            Self::Interface(i) => Some(&i.ident),
             _ => None,
         }
     }
 
-    pub fn r#type(&self) -> &'static str {
+    pub const fn r#type(&self) -> &'static str {
         match self {
-            Node::Include(_) => "include",
-            Node::Const(_) => "const",
-            Node::Struct(_) => "struct",
-            Node::Interface(_) => "interface",
+            Self::Include(_) => "include",
+            Self::Const(_) => "const",
+            Self::Struct(_) => "struct",
+            Self::Interface(_) => "interface",
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Struct {
     pub ident: Ident,
     pub fields: Vec<StructField>,
@@ -57,7 +57,7 @@ pub struct Struct {
 
 impl Struct {
     pub fn new_object(ident: &Ident) -> Self {
-        Struct {
+        Self {
             ident: ident.clone(),
             fields: vec![
                 StructField {
@@ -79,32 +79,32 @@ impl Struct {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Interface {
     pub ident: Ident,
     pub base: Option<Ident>,
     pub nodes: Vec<InterfaceNode>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct Documentation(pub String);
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum InterfaceNode {
     Const(Const),
     Function(Function),
     Error(Ident),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Function {
     pub doc: Option<Documentation>,
     pub ident: Ident,
     pub params: Vec<Param>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Const {
     pub ident: Ident,
     pub r#type: Primitive,
@@ -112,15 +112,15 @@ pub struct Const {
 }
 
 impl Const {
-    pub fn r#type(&self) -> &Primitive {
+    pub const fn r#type(&self) -> &Primitive {
         &self.r#type
     }
-    pub fn value(&self) -> &String {
+    pub const fn value(&self) -> &String {
         &self.value
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ParamTypeIn {
     Array(Type),
     Value(Type),
@@ -130,12 +130,12 @@ impl AsRef<Type> for ParamTypeIn {
     #[inline]
     fn as_ref(&self) -> &Type {
         match self {
-            ParamTypeIn::Array(t) | ParamTypeIn::Value(t) => t,
+            Self::Array(t) | Self::Value(t) => t,
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ParamTypeOut {
     Array(Type),
     Reference(Type),
@@ -145,12 +145,12 @@ impl AsRef<Type> for ParamTypeOut {
     #[inline]
     fn as_ref(&self) -> &Type {
         match self {
-            ParamTypeOut::Array(t) | ParamTypeOut::Reference(t) => t,
+            Self::Array(t) | Self::Reference(t) => t,
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Param {
     In { r#type: ParamTypeIn, ident: Ident },
     Out { r#type: ParamTypeOut, ident: Ident },
@@ -158,10 +158,10 @@ pub enum Param {
 
 impl Param {
     #[inline]
-    pub fn ident(&self) -> &Ident {
+    pub const fn ident(&self) -> &Ident {
         match self {
-            Param::In { r#type: _, ident } => ident,
-            Param::Out { r#type: _, ident } => ident,
+            Self::In { r#type: _, ident } => ident,
+            Self::Out { r#type: _, ident } => ident,
         }
     }
 }
@@ -169,25 +169,25 @@ impl Param {
 impl AsRef<Type> for Param {
     fn as_ref(&self) -> &Type {
         match self {
-            Param::In { r#type, ident: _ } => r#type.as_ref(),
-            Param::Out { r#type, ident: _ } => r#type.as_ref(),
+            Self::In { r#type, ident: _ } => r#type.as_ref(),
+            Self::Out { r#type, ident: _ } => r#type.as_ref(),
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StructField {
     pub ident: Ident,
     pub val: (Type, Count),
 }
 
 impl StructField {
-    pub fn r#type(&self) -> &(Type, Count) {
+    pub const fn r#type(&self) -> &(Type, Count) {
         &self.val
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Type {
     Primitive(Primitive),
     Interface,
@@ -199,7 +199,7 @@ impl Type {
     }
 
     pub const fn interface_align() -> usize {
-        Type::interface_size()
+        Self::interface_size()
     }
 }
 
@@ -220,10 +220,10 @@ pub enum Primitive {
 impl Primitive {
     pub const fn size(self) -> usize {
         match self {
-            Primitive::Uint8 | Primitive::Int8 => 1,
-            Primitive::Uint16 | Primitive::Int16 => 2,
-            Primitive::Uint32 | Primitive::Int32 | Primitive::Float32 => 4,
-            Primitive::Uint64 | Primitive::Int64 | Primitive::Float64 => 8,
+            Self::Uint8 | Self::Int8 => 1,
+            Self::Uint16 | Self::Int16 => 2,
+            Self::Uint32 | Self::Int32 | Self::Float32 => 4,
+            Self::Uint64 | Self::Int64 | Self::Float64 => 8,
         }
     }
 
@@ -263,14 +263,14 @@ pub struct Ident {
 impl Ident {
     #[inline]
     pub const fn new_without_span(ident: String) -> Self {
-        Ident {
+        Self {
             span: Span { start: 0, end: 0 },
             ident,
         }
     }
 }
-impl PartialEq<Ident> for Ident {
-    fn eq(&self, other: &Ident) -> bool {
+impl PartialEq<Self> for Ident {
+    fn eq(&self, other: &Self) -> bool {
         self.ident == other.ident
     }
 }

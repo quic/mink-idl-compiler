@@ -3,7 +3,7 @@ use idlc_codegen::{Descriptor, Generator};
 use idlc_errors::trace;
 use idlc_mir::mir;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Language {
     Rust,
 }
@@ -32,7 +32,7 @@ impl Language {
         let mir = mir::parse_to_mir(&ast, &mut idl_store);
 
         match self {
-            Language::Rust => Ok(idlc_codegen_rust::Generator::generate(&mir)),
+            Self::Rust => Ok(idlc_codegen_rust::Generator::generate(&mir)),
         }
     }
 }

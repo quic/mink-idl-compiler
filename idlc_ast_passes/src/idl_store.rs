@@ -155,10 +155,12 @@ impl IDLStore {
                                 tag.to_path_buf(),
                             ),
                         )
-                        .or(map.insert(
-                            Symbol::Interface(i.ident.to_string()),
-                            (Rc::clone(node), tag.to_path_buf()),
-                        ))
+                        .or_else(|| {
+                            map.insert(
+                                Symbol::Interface(i.ident.to_string()),
+                                (Rc::clone(node), tag.to_path_buf()),
+                            )
+                        })
                     }
                     Node::Const(c) => {
                         map.insert(

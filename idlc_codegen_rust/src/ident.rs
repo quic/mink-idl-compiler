@@ -8,7 +8,7 @@ impl<'a> std::fmt::Display for EscapedIdent<'a> {
 
 impl<'a> EscapedIdent<'a> {
     #[inline]
-    pub fn new(ident: &'a idlc_mir::Ident) -> Self {
+    pub const fn new(ident: &'a idlc_mir::Ident) -> Self {
         EscapedIdent(ident)
     }
 }
