@@ -7,7 +7,7 @@ use idlc_mir::mir;
 fn create_mir(a_idl: &str) -> mir::Mir {
     let mut store = IDLStore::new();
     let name = std::path::PathBuf::from("mir.idl");
-    let node = idlc_ast::from_string(name.to_path_buf(), a_idl).unwrap();
+    let node = idlc_ast::from_string(name.clone(), a_idl).unwrap();
     store.insert_canonical(&name, &node);
 
     let ast = store.get_ast(&name).unwrap();
@@ -19,7 +19,7 @@ fn create_mir(a_idl: &str) -> mir::Mir {
 #[test]
 fn op_code_test() {
     let mir = create_mir(
-        r#"
+        r"
             const uint32 A = 0;
 
             struct s1 {
@@ -48,7 +48,7 @@ fn op_code_test() {
             interface iface5 : iface4 {
                 method num5();
             };
-        "#,
+        ",
     );
     let node = &**mir.nodes.last().unwrap();
     let mut out: Vec<(&str, u32)> = vec![];
@@ -76,13 +76,13 @@ fn op_code_test() {
             ("num2_2", 2,),
             ("num", 0,),
         ]
-    )
+    );
 }
 
 #[test]
 fn err_code_test() {
     let mir = create_mir(
-        r#"
+        r"
             interface iface {
                 error ERROR_ONE;
             };
@@ -106,7 +106,7 @@ fn err_code_test() {
                 error ERROR_FIVE_1;
                 error ERROR_FIVE_2;
             };
-        "#,
+        ",
     );
     let node = &**mir.nodes.last().unwrap();
     let mut out: Vec<(&str, i32)> = vec![];
@@ -134,5 +134,5 @@ fn err_code_test() {
             ("ERROR_TWO_2", 12,),
             ("ERROR_ONE", 10,),
         ]
-    )
+    );
 }

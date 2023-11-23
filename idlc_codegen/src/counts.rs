@@ -29,7 +29,7 @@ impl super::functions::ParameterVisitor for Counter {
 
     #[inline]
     fn visit_input_struct(&mut self, _: &Ident, _: &Struct) {
-        self.input_buffers += 1
+        self.input_buffers += 1;
     }
 
     #[inline]
@@ -64,6 +64,7 @@ impl super::functions::ParameterVisitor for Counter {
 }
 
 impl Counter {
+    #[must_use]
     pub fn new(function: &idlc_mir::Function) -> Self {
         let mut me = Self::default();
         super::functions::visit_params(function, &mut me);
@@ -75,6 +76,7 @@ impl Counter {
     }
 
     #[inline]
+    #[must_use]
     pub const fn total(&self) -> u32 {
         (self.input_buffers + self.input_objects + self.output_buffers + self.output_objects) as u32
     }

@@ -16,7 +16,7 @@ use idlc_ast::{Ast, Interface, Node, Struct};
 use idlc_ast::visitor::{walk_all, Visitor};
 use idlc_errors::warn;
 
-/// DependencyResolver structure
+/// `DependencyResolver` structure
 /// Compilation unit is split into a hashmap here.
 #[derive(Debug)]
 pub struct IDLStore {
@@ -67,7 +67,8 @@ impl CompilerPass<'_> for IDLStore {
 }
 
 impl IDLStore {
-    /// takes the vector of include paths as an argument which will be saved in include_paths field
+    /// takes the vector of include paths as an argument which will be saved in `include_paths` field
+    #[must_use]
     pub fn with_includes(include_paths: &[PathBuf]) -> Self {
         Self {
             ast_store: RefCell::new(HashMap::new()),
@@ -79,6 +80,7 @@ impl IDLStore {
         }
     }
 
+    #[must_use]
     pub fn new() -> Self {
         Self::with_includes(&[])
     }
@@ -125,7 +127,7 @@ impl IDLStore {
             }
             warn!("Selecting '{}'", selected_path.display());
         }
-        selected_path.to_path_buf()
+        selected_path.clone()
     }
 
     fn check_includes(&mut self, ast: &'_ idlc_ast::Ast) -> Result<Vec<String>, crate::Error> {
@@ -145,27 +147,27 @@ impl IDLStore {
                 match node.as_ref() {
                     Node::Struct(s) => map.insert(
                         Symbol::Struct(s.ident.to_string()),
-                        (Rc::clone(node), tag.to_path_buf())
+                        (Rc::clone(node), tag.clone())
                     ),
                     Node::Interface(i) => {
                         map.insert(
                             Symbol::Struct(i.ident.to_string()),
                             (
                                 Rc::new(Node::Struct(Struct::new_object(&i.ident))),
-                                tag.to_path_buf(),
+                                tag.clone(),
                             ),
                         )
                         .or_else(|| {
                             map.insert(
                                 Symbol::Interface(i.ident.to_string()),
-                                (Rc::clone(node), tag.to_path_buf()),
+                                (Rc::clone(node), tag.clone()),
                             )
                         })
                     }
                     Node::Const(c) => {
                         map.insert(
                             Symbol::Const(c.ident.to_string()),
-                            (Rc::clone(node), tag.to_path_buf()),
+                            (Rc::clone(node), tag.clone()),
                         )
                     }
                     _ => None,
@@ -210,7 +212,7 @@ impl IDLStore {
                 let Node::Struct(s) = node.as_ref() else {
                     unreachable!("ICE: Struct node expected.")
                 };
-                (Rc::new(s.clone()), tag.to_path_buf())
+                (Rc::new(s.clone()), tag.clone())
             })
     }
 

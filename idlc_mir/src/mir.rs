@@ -69,6 +69,7 @@ pub enum Primitive {
 
 impl Primitive {
     #[inline]
+    #[must_use]
     pub const fn size(self) -> usize {
         match self {
             Self::Uint8 | Self::Int8 => 1,
@@ -151,6 +152,7 @@ pub enum Param {
 }
 impl Param {
     #[inline]
+    #[must_use]
     pub const fn r#type(&self) -> &Type {
         match self {
             Self::In { r#type, ident: _ } => match r#type {
@@ -163,6 +165,7 @@ impl Param {
     }
 
     #[inline]
+    #[must_use]
     pub const fn ident(&self) -> &Ident {
         match self {
             Self::In { r#type: _, ident } | Self::Out { r#type: _, ident } => ident,
@@ -170,6 +173,7 @@ impl Param {
     }
 
     #[inline]
+    #[must_use]
     pub const fn is_input(&self) -> bool {
         matches!(
             self,
@@ -181,6 +185,7 @@ impl Param {
     }
 
     #[inline]
+    #[must_use]
     pub const fn is_output(&self) -> bool {
         matches!(
             self,
@@ -191,6 +196,7 @@ impl Param {
         )
     }
 
+    #[must_use]
     pub const fn is_array(&self) -> bool {
         matches!(
             self,
@@ -204,10 +210,12 @@ impl Param {
         )
     }
 
+    #[must_use]
     pub const fn is_primitive(&self) -> bool {
         matches!(self.r#type(), Type::Primitive(_))
     }
 
+    #[must_use]
     pub const fn is_primitive_value(&self) -> bool {
         !self.is_array() && self.is_primitive()
     }
@@ -234,7 +242,7 @@ impl Ord for Param {
                 },
             ) => match (self.r#type(), other.r#type()) {
                 (Type::Interface(_), Type::Interface(_)) => std::cmp::Ordering::Less,
-                (Type::Primitive(_), _) | (Type::Struct(_), _) => std::cmp::Ordering::Less,
+                (Type::Primitive(_) | Type::Struct(_), _) => std::cmp::Ordering::Less,
                 (Type::Interface(_), _) => std::cmp::Ordering::Greater,
             },
             (
@@ -248,8 +256,9 @@ impl Ord for Param {
                 },
             ) => match (self.r#type(), other.r#type()) {
                 (Type::Interface(_), _) => std::cmp::Ordering::Greater,
-                (Type::Primitive(_), Type::Interface(_))
-                | (Type::Struct(_), Type::Interface(_)) => std::cmp::Ordering::Less,
+                (Type::Primitive(_) | Type::Struct(_), Type::Interface(_)) => {
+                    std::cmp::Ordering::Less
+                }
                 _ => std::cmp::Ordering::Greater,
             },
             _ => match (self.r#type(), other.r#type()) {
@@ -287,7 +296,7 @@ fn parse_const(const_: &idlc_ast::Const) -> Rc<Node> {
 fn parse_struct(struct_: &idlc_ast::Struct, idl_store: &IDLStore) -> Rc<Node> {
     let ident = struct_.ident.clone();
     let mut fields = Vec::<StructField>::new();
-    for field in struct_.fields.iter() {
+    for field in &struct_.fields {
         let val = (Type::new(&field.val.0, idl_store), field.val.1);
         fields.push(StructField {
             ident: field.ident.clone(),
@@ -308,7 +317,10 @@ fn parse_interface(
     op_code: &mut u32,
 ) -> Interface {
     let class = interface_.ident.clone();
-    let base = interface_.base.as_ref().map(|base| base.to_string());
+    let base = interface_
+        .base
+        .as_ref()
+        .map(std::string::ToString::to_string);
 
     let mut iface_nodes = Vec::new();
     let base_node = base.map(|x| {
@@ -320,10 +332,10 @@ fn parse_interface(
         )
     });
 
-    for node in interface_.nodes.iter() {
+    for node in &interface_.nodes {
         match node {
             idlc_ast::InterfaceNode::Const(const_) => {
-                iface_nodes.push(InterfaceNode::Const(Const::from(const_)))
+                iface_nodes.push(InterfaceNode::Const(Const::from(const_)));
             }
             idlc_ast::InterfaceNode::Error(error) => {
                 iface_nodes.push(InterfaceNode::Error(Error {
@@ -341,7 +353,7 @@ fn parse_interface(
                     .map(|idlc_ast::Documentation(s)| s.to_string());
                 let ident = function.ident.clone();
                 let mut params = Vec::new();
-                for param in function.params.iter() {
+                for param in &function.params {
                     params.push(Param::new(param, idl_store));
                 }
                 iface_nodes.push(InterfaceNode::Function(Function {
@@ -463,12 +475,12 @@ impl Type {
                     || match idl_store.struct_lookup(ident) {
                         Some((r#struct, path)) => {
                             let mut fields = Vec::new();
-                            for field in r#struct.fields.iter() {
+                            for field in &r#struct.fields {
                                 let (ty, count) = &field.val;
                                 fields.push(StructField {
                                     ident: field.ident.clone(),
                                     val: (Self::new(ty, idl_store), *count),
-                                })
+                                });
                             }
                             Self::Struct(Struct {
                                 ident: r#struct.ident.clone(),
@@ -516,6 +528,7 @@ impl<'a> Iterator for InterfaceIterator<'a> {
 
 impl Interface {
     #[inline]
+    #[must_use]
     pub const fn iter(&self) -> InterfaceIterator {
         InterfaceIterator {
             interface: Some(self),

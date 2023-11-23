@@ -1,7 +1,7 @@
 use convert_case::Casing;
 
 pub fn emit(errors: &[&idlc_mir::mir::Error]) -> String {
-    let prologue = r#"
+    let prologue = r"
 #[repr(transparent)]
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Error(crate::object::Error);
@@ -26,7 +26,7 @@ impl std::fmt::Display for Error {
     }
 }
 impl std::error::Error for Error {}
-"#;
+";
     let mut match_arms = String::new();
     let mut defines = String::new();
     for error in errors {

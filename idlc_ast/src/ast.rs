@@ -30,6 +30,7 @@ pub enum Node {
     Interface(Interface),
 }
 impl Node {
+    #[must_use]
     pub const fn ident(&self) -> Option<&Ident> {
         match self {
             Self::Const(c) => Some(&c.ident),
@@ -39,6 +40,7 @@ impl Node {
         }
     }
 
+    #[must_use]
     pub const fn r#type(&self) -> &'static str {
         match self {
             Self::Include(_) => "include",
@@ -56,6 +58,7 @@ pub struct Struct {
 }
 
 impl Struct {
+    #[must_use]
     pub fn new_object(ident: &Ident) -> Self {
         Self {
             ident: ident.clone(),
@@ -112,9 +115,11 @@ pub struct Const {
 }
 
 impl Const {
+    #[must_use]
     pub const fn r#type(&self) -> &Primitive {
         &self.r#type
     }
+    #[must_use]
     pub const fn value(&self) -> &String {
         &self.value
     }
@@ -158,6 +163,7 @@ pub enum Param {
 
 impl Param {
     #[inline]
+    #[must_use]
     pub const fn ident(&self) -> &Ident {
         match self {
             Self::In { r#type: _, ident } => ident,
@@ -182,6 +188,7 @@ pub struct StructField {
 }
 
 impl StructField {
+    #[must_use]
     pub const fn r#type(&self) -> &(Type, Count) {
         &self.val
     }
@@ -194,10 +201,12 @@ pub enum Type {
     Custom(Ident),
 }
 impl Type {
+    #[must_use]
     pub const fn interface_size() -> usize {
         Primitive::Uint64.size() * 2
     }
 
+    #[must_use]
     pub const fn interface_align() -> usize {
         Self::interface_size()
     }
@@ -218,6 +227,7 @@ pub enum Primitive {
 }
 
 impl Primitive {
+    #[must_use]
     pub const fn size(self) -> usize {
         match self {
             Self::Uint8 | Self::Int8 => 1,
@@ -227,6 +237,7 @@ impl Primitive {
         }
     }
 
+    #[must_use]
     pub const fn alignment(self) -> usize {
         // All primitive types are required to be aligned to it's size.
         self.size()
@@ -262,6 +273,7 @@ pub struct Ident {
 
 impl Ident {
     #[inline]
+    #[must_use]
     pub const fn new_without_span(ident: String) -> Self {
         Self {
             span: Span { start: 0, end: 0 },

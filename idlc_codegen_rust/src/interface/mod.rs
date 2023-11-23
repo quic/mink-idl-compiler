@@ -8,7 +8,10 @@ pub mod mink_primitives;
 mod variable_names;
 
 pub fn emit_interface(interface: &Interface) -> String {
-    use mink_primitives::*;
+    use mink_primitives::{
+        ARG, CONTEXT, COUNTS, GENERIC_ERROR, INVOKE_FN, OBJECT, OP_ID, OP_RELEASE, OP_RETAIN,
+        WRAPPER,
+    };
     let ident = &interface.ident;
     let mut trait_functions = Vec::new();
     let mut implementations = Vec::new();
@@ -56,8 +59,8 @@ pub fn emit_interface(interface: &Interface) -> String {
             .for_each(|f| {
                 let signature = functions::signature::Signature::new(f);
                 let counts = idlc_codegen::counts::Counter::new(f);
-                invoke_arms.push(functions::invoke::emit(f, &signature, &counts))
-            })
+                invoke_arms.push(functions::invoke::emit(f, &signature, &counts));
+            });
     });
 
     let mut trait_functions = trait_functions.join(";");
@@ -74,11 +77,7 @@ pub fn emit_interface(interface: &Interface) -> String {
         .map(|x| format!("I{} +", x.ident.as_ref()))
         .unwrap_or_default();
 
-    let upcast_target = interface
-        .base
-        .as_ref()
-        .map(|x| x.ident.as_ref())
-        .unwrap_or(OBJECT);
+    let upcast_target = interface.base.as_ref().map_or(OBJECT, |x| x.ident.as_ref());
 
     let wrapper = format!("{WRAPPER}::Wrapper::<dyn I{ident}>");
 

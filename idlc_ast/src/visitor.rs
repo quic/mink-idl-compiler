@@ -47,7 +47,7 @@ pub trait Visitor<'ast>: Sized {
 pub fn walk_const<'a, V: Visitor<'a>>(visitor: &mut V, constant: &'a Const) {
     visitor.visit_ident(&constant.ident);
     visitor.visit_primitive_ty((&constant.r#type, Count::new(1).unwrap()));
-    visitor.visit_expr(&constant.value)
+    visitor.visit_expr(&constant.value);
 }
 
 pub fn walk_struct<'a, V: Visitor<'a>>(visitor: &mut V, r#struct: &'a Struct) {

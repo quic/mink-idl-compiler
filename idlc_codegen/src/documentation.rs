@@ -60,6 +60,7 @@ impl AsRef<str> for Documentation {
 }
 
 impl Documentation {
+    #[must_use]
     pub fn new(function: &idlc_mir::Function, style: DocumentationStyle) -> Self {
         function.doc.as_ref().map_or_else(
             || Self(String::new()),
@@ -97,11 +98,11 @@ impl Documentation {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const DOCUMENTATION: &str = r#"* Hello this is a sample documentation
+    const DOCUMENTATION: &str = r"* Hello this is a sample documentation
       I can even contain no asterisk in the beginning and this is style a valid idl doc style
     *
     * @param[out]
-    * New Lines must be preserved and convention interleaving should work too!"#;
+    * New Lines must be preserved and convention interleaving should work too!";
 
     #[test]
     fn rust() {
@@ -109,12 +110,12 @@ mod tests {
             Documentation::new_with_idlc_doc(DOCUMENTATION, DocumentationStyle::Rust);
         assert_eq!(
             documentation.as_ref(),
-            r#"/// Hello this is a sample documentation
+            r"/// Hello this is a sample documentation
 /// I can even contain no asterisk in the beginning and this is style a valid idl doc style
 ///
 /// @param\[out\]
 /// New Lines must be preserved and convention interleaving should work too!
-"#
+"
         );
     }
 
@@ -123,14 +124,14 @@ mod tests {
         let documentation = Documentation::new_with_idlc_doc(DOCUMENTATION, DocumentationStyle::C);
         assert_eq!(
             documentation.as_ref(),
-            r#"/*
+            r"/*
 * Hello this is a sample documentation
 * I can even contain no asterisk in the beginning and this is style a valid idl doc style
 *
 * @param[out]
 * New Lines must be preserved and convention interleaving should work too!
 */
-"#
+"
         );
     }
 
@@ -140,14 +141,14 @@ mod tests {
             Documentation::new_with_idlc_doc(DOCUMENTATION, DocumentationStyle::Java);
         assert_eq!(
             documentation.as_ref(),
-            r#"/**
+            r"/**
 * Hello this is a sample documentation
 * I can even contain no asterisk in the beginning and this is style a valid idl doc style
 *
 * @param[out]
 * New Lines must be preserved and convention interleaving should work too!
 */
-"#
+"
         );
     }
 }

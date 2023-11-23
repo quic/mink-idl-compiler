@@ -7,26 +7,26 @@ use idlc_mir_passes::MirCompilerPass;
 fn verify(a_idl: &str) {
     let mut store = IDLStore::new();
     let name = std::path::PathBuf::from("mir.idl");
-    let node = idlc_ast::from_string(name.to_path_buf(), a_idl).unwrap();
+    let node = idlc_ast::from_string(name.clone(), a_idl).unwrap();
     store.insert_canonical(&name, &node);
 
     let ast = store.get_ast(&name).unwrap();
     let struct_ordering = Cycles::new(&store).run_pass(&ast).unwrap();
     let _ = StructVerifier::run_pass(&store, &struct_ordering);
     let mir = idlc_mir::parse_to_mir(&ast, &mut store);
-    idlc_mir_passes::interface_verifier::InterfaceVerifier::new(&mir).run_pass()
+    idlc_mir_passes::interface_verifier::InterfaceVerifier::new(&mir).run_pass();
 }
 
 #[should_panic]
 #[test]
 fn duplicated_const() {
     verify(
-        r#"
+        r"
         interface IFoo {
             const int32 A = 32;
             const int32 A = 42;
         };
-        "#,
+        ",
     );
 }
 
@@ -34,13 +34,13 @@ fn duplicated_const() {
 #[test]
 fn duplicated_method() {
     verify(
-        r#"
+        r"
         interface IFoo {
             method num();
             method num2();
             method num();
         };
-        "#,
+        ",
     );
 }
 
@@ -48,12 +48,12 @@ fn duplicated_method() {
 #[test]
 fn duplicated_method_with_different_arg() {
     verify(
-        r#"
+        r"
         interface IFoo {
             method num();
             method num(in int32 ai, out int32 ao);
         };
-        "#,
+        ",
     );
 }
 
@@ -61,7 +61,7 @@ fn duplicated_method_with_different_arg() {
 #[test]
 fn duplicated_base_method() {
     verify(
-        r#"
+        r"
         interface Foo {
             method num();
         };
@@ -69,7 +69,7 @@ fn duplicated_base_method() {
             method num();
             method num2();
         };
-        "#,
+        ",
     );
 }
 
@@ -77,12 +77,12 @@ fn duplicated_base_method() {
 #[test]
 fn duplicated_error() {
     verify(
-        r#"
+        r"
         interface IFoo {
             error ERROR_FOO;
             error ERROR_FOO;
         };
-        "#,
+        ",
     );
 }
 
@@ -90,7 +90,7 @@ fn duplicated_error() {
 #[test]
 fn duplicated_base_error() {
     verify(
-        r#"
+        r"
         interface Foo {
             error ERROR_FOO;
         };
@@ -98,7 +98,7 @@ fn duplicated_base_error() {
             error ERROR_FOO;
             error ERROR_IFOO;
         };
-        "#,
+        ",
     );
 }
 
@@ -106,11 +106,11 @@ fn duplicated_base_error() {
 #[test]
 fn duplicated_base_const() {
     verify(
-        r#"
+        r"
         interface Foo {
             error FOO;
             const uint8 FOO = 10;
         };
-        "#,
+        ",
     );
 }

@@ -2,13 +2,14 @@ use std::collections::HashSet;
 
 use crate::MirCompilerPass;
 
-use idlc_mir::*;
+use idlc_mir::{InterfaceNode, Node};
 
 pub struct InterfaceVerifier<'mir> {
     mir: &'mir idlc_mir::Mir,
 }
 
 impl<'mir> InterfaceVerifier<'mir> {
+    #[must_use]
     pub const fn new(mir: &'mir idlc_mir::Mir) -> Self {
         Self { mir }
     }
@@ -28,7 +29,7 @@ impl<'mir> MirCompilerPass<'_> for InterfaceVerifier<'mir> {
             let mut consts = CollisionDetector::new(src);
             let mut functions = CollisionDetector::new(src);
 
-            for from in src.iter() {
+            for from in src {
                 for node in &from.nodes {
                     match node {
                         InterfaceNode::Const(c) => consts.add_ident(&c.ident, from),

@@ -7,7 +7,7 @@ use crate::idl_store::IDLStore;
 fn verify(idl: &'static str) -> Result<Vec<String>, crate::Error> {
     let store = IDLStore::new();
     let name = std::path::PathBuf::from("cycles.idl");
-    let node = idlc_ast::from_string(name.to_path_buf(), idl).unwrap();
+    let node = idlc_ast::from_string(name.clone(), idl).unwrap();
     store.insert_canonical(&name, &node);
     let mut verifier = Cycles::new(&store);
     verifier.run_pass(&node)
@@ -17,7 +17,7 @@ fn verify(idl: &'static str) -> Result<Vec<String>, crate::Error> {
 fn cyclic_struct() {
     assert!(matches!(
         verify(
-            r#"
+            r"
         struct A {
             B b;
         };
@@ -28,7 +28,7 @@ fn cyclic_struct() {
 
         struct C {
             A a;
-        };"#
+        };"
         ),
         Err(Error::CyclicalInclude(_))
     ));
@@ -38,7 +38,7 @@ fn cyclic_struct() {
 fn cyclic_iface() {
     assert!(matches!(
         verify(
-            r#"
+            r"
         interface A : B {
         };
 
@@ -46,7 +46,7 @@ fn cyclic_iface() {
         };
 
         interface C : A{
-        };"#
+        };"
         ),
         Err(Error::CyclicalInclude(_))
     ));
@@ -56,7 +56,7 @@ fn cyclic_iface() {
 fn ordering_struct() {
     assert_eq!(
         verify(
-            r#"
+            r"
             struct A {
                 B b;
                 C c;
@@ -75,7 +75,7 @@ fn ordering_struct() {
             struct B {
                 uint32 test;
             };
-        "#
+        "
         )
         .unwrap(),
         ["B", "C", "D", "A"]

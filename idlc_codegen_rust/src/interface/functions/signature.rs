@@ -58,13 +58,13 @@ impl Signature {
     #[inline]
     fn push_inputs(&mut self, ident: &Ident, ty: impl ToString) {
         let ident = EscapedIdent::new(ident);
-        self.inputs.push((ident.to_string(), ty.to_string()))
+        self.inputs.push((ident.to_string(), ty.to_string()));
     }
 
     #[inline]
     fn push_outputs(&mut self, ident: &Ident, ty: impl ToString) {
         let ident = EscapedIdent::new(ident);
-        self.outputs.push((ident.to_string(), ty.to_string()))
+        self.outputs.push((ident.to_string(), ty.to_string()));
     }
 }
 

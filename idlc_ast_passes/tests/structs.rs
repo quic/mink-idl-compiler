@@ -6,7 +6,7 @@ use crate::idl_store::IDLStore;
 fn verify(idl: &'static str) -> Result<(), idlc_ast_passes::Error> {
     let store = IDLStore::new();
     let name = std::path::PathBuf::from("struct-verifier.idl");
-    let node = idlc_ast::from_string(name.to_path_buf(), idl).unwrap();
+    let node = idlc_ast::from_string(name.clone(), idl).unwrap();
     store.insert_canonical(&name, &node);
     let mut cycles = cycles::Cycles::new(&store);
     let toposort = cycles.run_pass(&node)?;
@@ -18,12 +18,12 @@ fn verify(idl: &'static str) -> Result<(), idlc_ast_passes::Error> {
 #[test]
 fn unaligned_no_custom() {
     assert!(verify(
-        r#"
+        r"
         struct Unaligned {
             uint8 start;
             uint16 unaligned;
             float32 still_works;
-        };"#
+        };"
     )
     .is_err());
 }
@@ -31,7 +31,7 @@ fn unaligned_no_custom() {
 #[test]
 fn unaligned() {
     assert!(verify(
-        r#"
+        r"
         struct Custom {
             uint16 aligned;
         };
@@ -39,7 +39,7 @@ fn unaligned() {
             uint8 start;
             Custom aligned;
             float32 still_works;
-        };"#
+        };"
     )
     .is_err());
 }
@@ -47,7 +47,7 @@ fn unaligned() {
 #[test]
 fn unaligned_arrays() {
     assert!(verify(
-        r#"
+        r"
         struct Custom {
             uint16 aligned;
         };
@@ -55,7 +55,7 @@ fn unaligned_arrays() {
             uint8 start;
             Custom[2] aligned;
             float32 still_works;
-        };"#
+        };"
     )
     .is_err());
 }
@@ -63,13 +63,13 @@ fn unaligned_arrays() {
 #[test]
 fn aligned_no_custom() {
     assert!(verify(
-        r#"
+        r"
         struct Aligned {
             uint8 start;
             uint8 padding;
             uint16 aligned;
             float32 still_works;
-        };"#
+        };"
     )
     .is_ok());
 }
@@ -77,7 +77,7 @@ fn aligned_no_custom() {
 #[test]
 fn aligned() {
     assert!(verify(
-        r#"
+        r"
         struct Custom {
             uint16 aligned;
         };
@@ -86,7 +86,7 @@ fn aligned() {
             uint8 padding;
             Custom aligned;
             float32 still_works;
-        };"#
+        };"
     )
     .is_ok());
 }
@@ -94,7 +94,7 @@ fn aligned() {
 #[test]
 fn aligned_arr() {
     assert!(verify(
-        r#"
+        r"
         struct Custom {
             uint16 aligned;
         };
@@ -103,7 +103,7 @@ fn aligned_arr() {
             uint8[2] padding;
             Custom[35] aligned;
             float32 still_works;
-        };"#
+        };"
     )
     .is_ok());
 }
@@ -111,11 +111,11 @@ fn aligned_arr() {
 #[test]
 fn embedded_object() {
     assert!(verify(
-        r#"
+        r"
         interface Foo {};
         struct A {
             Foo f;
-        };"#
+        };"
     )
     .is_ok());
 }
@@ -123,7 +123,7 @@ fn embedded_object() {
 #[test]
 fn embedded_object_custom() {
     assert!(verify(
-        r#"
+        r"
         interface Foo {};
         struct Custom {
             uint16 aligned;
@@ -132,7 +132,7 @@ fn embedded_object_custom() {
             Foo f;
             Custom[2] aligned;
             uint32 n;
-        };"#
+        };"
     )
     .is_ok());
 }
@@ -140,11 +140,11 @@ fn embedded_object_custom() {
 #[test]
 fn embedded_object_arr() {
     assert!(verify(
-        r#"
+        r"
         interface Foo {};
         struct A {
             Foo[4] f;
-        };"#
+        };"
     )
     .is_ok());
 }
@@ -152,12 +152,12 @@ fn embedded_object_arr() {
 #[test]
 fn structs_out_of_order() {
     assert!(verify(
-        r#"
+        r"
         struct s2 {
             s1 s;
             uint8 a;
         };
-        struct s1 { uint8 a; };"#
+        struct s1 { uint8 a; };"
     )
     .is_ok());
 }
@@ -166,22 +166,22 @@ fn structs_out_of_order() {
 #[should_panic]
 fn unknown_struct_def() {
     _ = verify(
-        r#"
+        r"
         struct s2 {
             s1 s;
             uint8 a;
-        };"#,
-    )
+        };",
+    );
 }
 
 #[test]
 fn field_same_name() {
     assert!(verify(
-        r#"
+        r"
         struct s2 {
             uint8 a;
             uint8 a;
-        };"#
+        };"
     )
     .is_err());
 }
@@ -190,11 +190,11 @@ fn field_same_name() {
 #[should_panic(expected = "Duplicate symbol detected")]
 fn struct_interface_same_name() {
     _ = verify(
-        r#"
+        r"
         interface IFoo {};
         struct IFoo {
             int64 a;
-        };"#,
+        };",
     );
 }
 
@@ -202,12 +202,12 @@ fn struct_interface_same_name() {
 #[should_panic(expected = "Duplicate symbol detected")]
 fn struct_interface_same_name_ordered() {
     _ = verify(
-        r#"
+        r"
         struct IFoo {
             int64 a;
         };
         interface IFoo {};
-        "#,
+        ",
     );
 }
 
@@ -215,9 +215,9 @@ fn struct_interface_same_name_ordered() {
 #[should_panic(expected = "Duplicate symbol detected")]
 fn duplicate_consts() {
     _ = verify(
-        r#"
+        r"
         const uint8 FOO = 10;
         const uint32 FOO = 32;
-        "#,
+        ",
     );
 }

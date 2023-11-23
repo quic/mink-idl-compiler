@@ -8,6 +8,7 @@ pub struct Functions;
 
 impl Functions {
     #[inline]
+    #[must_use]
     pub const fn new() -> Self {
         Self
     }

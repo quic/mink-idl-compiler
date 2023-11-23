@@ -139,7 +139,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
             r#"{ARG} {{
                 o: std::mem::ManuallyDrop::new({ident}.map(|o| unsafe {{ std::mem::transmute_copy(o) }} ))
             }}"#
-        ))
+        ));
     }
 
     fn visit_output_primitive_buffer(&mut self, ident: &Ident, ty: &idlc_mir::Primitive) {
@@ -224,7 +224,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
             r#"{ARG} {{
                 o: std::mem::ManuallyDrop::new(None)
             }}"#
-        ))
+        ));
     }
 }
 

@@ -150,11 +150,11 @@ fn function() {
             "method bar();",
             "method bar(in interface x,    out interface y);",
             "method bar(in IHWKey x,    out IHWKeyFactory2 y);",
-            r#"method bar(in uint32 req,
-                          out uint32 rsp);"#,
-            r#"method bar(in uint32 req,
+            r"method bar(in uint32 req,
+                          out uint32 rsp);",
+            r"method bar(in uint32 req,
                           out uint32 foo,
-                          out uint32 bar);"#,
+                          out uint32 bar);",
         ]
     );
 

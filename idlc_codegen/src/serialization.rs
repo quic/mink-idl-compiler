@@ -53,6 +53,7 @@ impl super::functions::ParameterVisitor for PackedPrimitives {
 }
 
 impl PackedPrimitives {
+    #[must_use]
     pub fn new(function: &idlc_mir::Function) -> Self {
         let mut me = Self::default();
         super::functions::visit_params(function, &mut me);
@@ -63,44 +64,54 @@ impl PackedPrimitives {
         me
     }
 
+    #[must_use]
     pub fn inputs_by_idents(&self) -> impl ExactSizeIterator<Item = (&idlc_mir::Ident, Primitive)> {
         self.inputs.iter().map(|pair| (&pair.ident, pair.ty))
     }
 
+    #[must_use]
     pub fn inputs_by_index(&self) -> impl ExactSizeIterator<Item = (usize, Primitive)> + '_ {
         self.inputs.iter().map(|pair| (pair.nth_param, pair.ty))
     }
 
+    #[must_use]
     pub fn input_types(&self) -> impl ExactSizeIterator<Item = Primitive> + '_ {
         self.inputs.iter().map(|pair| pair.ty)
     }
 
+    #[must_use]
     pub fn n_inputs(&self) -> usize {
         self.inputs.len()
     }
 
+    #[must_use]
     pub const fn packed_input_size(&self) -> usize {
         self.input_size
     }
 
+    #[must_use]
     pub fn outputs_by_idents(
         &self,
     ) -> impl ExactSizeIterator<Item = (&idlc_mir::Ident, Primitive)> {
         self.outputs.iter().map(|pair| (&pair.ident, pair.ty))
     }
 
+    #[must_use]
     pub fn outputs_by_index(&self) -> impl ExactSizeIterator<Item = (usize, Primitive)> + '_ {
         self.outputs.iter().map(|pair| (pair.nth_param, pair.ty))
     }
 
+    #[must_use]
     pub fn output_types(&self) -> impl ExactSizeIterator<Item = Primitive> + '_ {
         self.outputs.iter().map(|pair| pair.ty)
     }
 
+    #[must_use]
     pub fn n_outputs(&self) -> usize {
         self.outputs.len()
     }
 
+    #[must_use]
     pub const fn packed_output_size(&self) -> usize {
         self.output_size
     }

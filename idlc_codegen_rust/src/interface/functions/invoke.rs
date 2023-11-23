@@ -69,7 +69,7 @@ impl Invoke {
             *{ident}_lenout = {ident}_lenout.saturating_mul(std::mem::size_of::<{ty}>());
             assert!(*{ident}_lenout <= {ident}_orig);
             "#
-        ))
+        ));
     }
 }
 
@@ -140,7 +140,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         let ident = EscapedIdent::new(ident);
         self.pre.push(format!(
             "let {ident} = std::mem::transmute({ARGS}[{idx}].o.as_ref());"
-        ))
+        ));
     }
 
     fn visit_output_primitive_buffer(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::Primitive) {
@@ -208,7 +208,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         let ident = EscapedIdent::new(ident);
         self.post.push(format!(
             "{ARGS}[{idx}].o = std::mem::ManuallyDrop::new(std::mem::transmute({ident}));\n"
-        ))
+        ));
     }
 }
 

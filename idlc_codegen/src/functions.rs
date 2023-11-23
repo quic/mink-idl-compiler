@@ -28,7 +28,7 @@ enum Param<'a> {
 
 impl<'a> Param<'a> {
     fn visit<V: ParameterVisitor>(params: impl Iterator<Item = Param<'a>>, visitor: &mut V) {
-        for param in params.into_iter() {
+        for param in params {
             match param {
                 Param::InputBundledPrimitives(b) => visitor.visit_input_bundled(b),
                 Param::OutputBundledPrimitives(b) => visitor.visit_output_bundled(b),
@@ -104,7 +104,7 @@ impl<'a> Param<'a> {
 
 #[inline]
 pub fn visit_params<V: ParameterVisitor>(function: &Function, visitor: &mut V) {
-    Param::visit(function.params.iter().map(Param::Params), visitor)
+    Param::visit(function.params.iter().map(Param::Params), visitor);
 }
 
 #[inline]
@@ -113,5 +113,5 @@ pub fn visit_params_sorted<V: ParameterVisitor>(function: &Function, visitor: &m
     params.sort();
     let packed_primitives = super::serialization::PackedPrimitives::new(function);
     let with_bundling = Param::new(&params, &packed_primitives);
-    Param::visit(with_bundling.into_iter(), visitor)
+    Param::visit(with_bundling.into_iter(), visitor);
 }
