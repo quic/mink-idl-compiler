@@ -1,6 +1,8 @@
 use crate::interface::mink_primitives::GENERIC_ERROR;
-use crate::interface::variable_names::invoke::ARGS;
-use crate::types::change_primitive;
+use crate::{
+    interface::variable_names::invoke::{ARGS, BI_STRUCT, BO_STRUCT},
+    types::change_primitive,
+};
 
 use crate::{ident::EscapedIdent, types::namespaced_struct};
 
@@ -15,48 +17,10 @@ pub struct Invoke {
 }
 
 impl Invoke {
-    pub fn new(
-        function: &idlc_mir::Function,
-        packer: &super::serialization::PackedPrimitives,
-    ) -> Self {
-        use crate::interface::variable_names::invoke::{BI_STRUCT, BO_STRUCT};
+    pub fn new(function: &idlc_mir::Function) -> Self {
         let mut me = Self::default();
 
-        if let Some(TransportBuffer { definition, size }) = packer.bi_definition() {
-            let idx = me.idx();
-            me.pre.push(definition);
-            me.pre.push(format!(
-                r#"
-            if {ARGS}[{idx}].bi.size != {size} {{
-                return std::mem::transmute({GENERIC_ERROR}::INVALID);
-            }}
-            "#,
-            ));
-            let idents = super::signature::iter_to_string(packer.bi_idents());
-            me.pre.push(format!(
-                "let {BI_STRUCT}({idents}) = std::ptr::read(args[0].bi.ptr.cast::<{BI_STRUCT}>());"
-            ));
-        }
-
-        if let Some(TransportBuffer { definition, size }) = packer.bo_definition() {
-            let idx = me.idx();
-            me.pre.push(definition);
-            me.pre.push(format!(
-                r#"
-            if {ARGS}[{idx}].b.size != {size} {{
-                return std::mem::transmute({GENERIC_ERROR}::INVALID);
-            }}
-            "#,
-            ));
-            let idents = super::signature::iter_to_string(packer.bo_idents());
-            me.post.push(format!(
-                r#"
-            std::ptr::write({ARGS}[{idx}].b.ptr.cast::<{BO_STRUCT}>(), {BO_STRUCT}({idents}));
-            "#
-            ));
-        }
-
-        idlc_codegen::functions::visit_params(function, &mut me);
+        idlc_codegen::functions::visit_params_sorted(function, &mut me);
         me
     }
 
@@ -118,6 +82,44 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         self.generate_for_input_buffer(EscapedIdent::new(ident), &namespaced_struct(ty));
     }
 
+    fn visit_input_primitive(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::Primitive) {
+        let ty: &str = change_primitive(ty);
+        let ident = EscapedIdent::new(ident);
+        let idx = self.idx();
+        self.pre.push(format!(
+            r#"if {ARGS}[{idx}].bi.size != std::mem::size_of::<{ty}>() {{
+            return std::mem::transmute({GENERIC_ERROR}::INVALID);
+        }}"#
+        ));
+
+        self.pre.push(format!(
+            "let {ident} = *{ARGS}[{idx}].bi.ptr.cast::<{ty}>();"
+        ));
+    }
+
+    fn visit_input_bundled(
+        &mut self,
+        packed_primitives: &idlc_codegen::serialization::PackedPrimitives,
+    ) {
+        let packer = super::serialization::PackedPrimitives::new(packed_primitives);
+        let Some(TransportBuffer { definition, size }) = packer.bi_definition() else {
+            unreachable!()
+        };
+        let idx = self.idx();
+        let idents = super::signature::iter_to_string(packer.bi_idents());
+        self.pre.push(definition);
+        self.pre.push(format!(
+            r#"
+            if {ARGS}[{idx}].bi.size != {size} {{
+                return std::mem::transmute({GENERIC_ERROR}::INVALID);
+            }}
+            "#,
+        ));
+        self.pre.push(format!(
+            "let {BI_STRUCT}({idents}) = std::ptr::read(args[0].bi.ptr.cast::<{BI_STRUCT}>());"
+        ));
+    }
+
     fn visit_input_struct(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::Struct) {
         let ty: &str = &namespaced_struct(ty);
         let ident = EscapedIdent::new(ident);
@@ -162,6 +164,45 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
             .push(format!("*{ARGS}[{idx}].b.ptr.cast::<{ty}>() = {ident};\n"));
     }
 
+    fn visit_output_primitive(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::Primitive) {
+        let ty = change_primitive(ty);
+        let ident = EscapedIdent::new(ident);
+        let idx = self.idx();
+        self.pre.push(format!(
+            r#"if {ARGS}[{idx}].b.size != std::mem::size_of::<{ty}>() {{
+            return std::mem::transmute({GENERIC_ERROR}::SIZE_OUT);
+        }}"#
+        ));
+        self.post
+            .push(format!("*{ARGS}[{idx}].b.ptr.cast::<{ty}>() = {ident};\n"));
+    }
+
+    fn visit_output_bundled(
+        &mut self,
+        packed_primitives: &idlc_codegen::serialization::PackedPrimitives,
+    ) {
+        let packer = super::serialization::PackedPrimitives::new(packed_primitives);
+        let Some(TransportBuffer { definition, size }) = packer.bo_definition() else {
+            unreachable!()
+        };
+
+        let idx = self.idx();
+        self.pre.push(definition);
+        self.pre.push(format!(
+            r#"
+            if {ARGS}[{idx}].b.size != {size} {{
+                return std::mem::transmute({GENERIC_ERROR}::INVALID);
+            }}
+            "#,
+        ));
+        let idents = super::signature::iter_to_string(packer.bo_idents());
+        self.post.push(format!(
+            r#"
+            std::ptr::write({ARGS}[{idx}].b.ptr.cast::<{BO_STRUCT}>(), {BO_STRUCT}({idents}));
+            "#
+        ));
+    }
+
     fn visit_output_object(&mut self, ident: &idlc_mir::Ident, _: Option<&str>) {
         let idx = self.idx();
         let ident = EscapedIdent::new(ident);
@@ -175,7 +216,6 @@ pub fn emit(
     function: &idlc_mir::Function,
     signature: &super::signature::Signature,
     counts: &idlc_codegen::counts::Counter,
-    packer: &super::serialization::PackedPrimitives,
 ) -> String {
     use crate::interface::mink_primitives::{ERROR_STRUCT, OK, PACK_COUNTS};
     use crate::interface::variable_names::invoke::{CONTEXT, COUNTS};
@@ -189,7 +229,7 @@ pub fn emit(
         counts.input_objects,
         counts.output_objects,
     );
-    let params = Invoke::new(function, packer);
+    let params = Invoke::new(function);
     let pre = params.pre();
     let post = params.post();
 

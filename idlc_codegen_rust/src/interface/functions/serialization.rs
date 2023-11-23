@@ -7,25 +7,19 @@ pub struct TransportBuffer {
 }
 
 #[derive(Debug)]
-pub struct PackedPrimitives(idlc_codegen::serialization::PackedPrimitives);
+pub struct PackedPrimitives<'a>(&'a idlc_codegen::serialization::PackedPrimitives);
 
-impl From<idlc_codegen::serialization::PackedPrimitives> for PackedPrimitives {
-    fn from(value: idlc_codegen::serialization::PackedPrimitives) -> Self {
-        Self(value)
-    }
-}
-
-impl PackedPrimitives {
+impl<'a> PackedPrimitives<'a> {
     #[inline]
-    pub fn new(f: &idlc_mir::Function) -> Self {
-        Self(idlc_codegen::serialization::PackedPrimitives::new(f))
+    pub const fn new(packer: &'a idlc_codegen::serialization::PackedPrimitives) -> Self {
+        Self(packer)
     }
 
     pub fn bi_definition(&self) -> Option<TransportBuffer> {
         self.generate_struct(self.0.input_types(), "BI", self.0.packed_input_size())
     }
 
-    pub fn bi_idents(&self) -> impl Iterator<Item = String> + '_ {
+    pub fn bi_idents(&self) -> impl ExactSizeIterator<Item = String> + '_ {
         self.0
             .inputs_by_idents()
             .map(|(ident, _)| EscapedIdent::new(ident).to_string())
@@ -35,7 +29,7 @@ impl PackedPrimitives {
         self.generate_struct(self.0.output_types(), "BO", self.0.packed_output_size())
     }
 
-    pub fn bo_idents(&self) -> impl Iterator<Item = String> + '_ {
+    pub fn bo_idents(&self) -> impl ExactSizeIterator<Item = String> + '_ {
         self.0
             .outputs_by_idents()
             .map(|(ident, _)| EscapedIdent::new(ident).to_string())

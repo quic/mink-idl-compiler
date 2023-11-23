@@ -21,52 +21,10 @@ pub struct Implementation {
 }
 
 impl Implementation {
-    pub fn new(
-        function: &idlc_mir::Function,
-        packer: &super::serialization::PackedPrimitives,
-    ) -> Self {
+    pub fn new(function: &idlc_mir::Function) -> Self {
         let mut me = Self::default();
-        if let Some(TransportBuffer { definition, size }) = packer.bi_definition() {
-            let idents = super::signature::iter_to_string(packer.bi_idents());
-            me.initializations.push(format!(
-                r#"
-            {definition}
-            let mut bi = {BI_STRUCT}({idents});
-            "#
-            ));
-            me.args.push(format!(
-                r#"{ARG} {{
-                bi: {INPUT_BUFFER} {{
-                    ptr: std::ptr::addr_of!(bi).cast(),
-                    size: {size},
-                }}
-            }}
-            "#
-            ));
-        }
 
-        if let Some(TransportBuffer { definition, size }) = packer.bo_definition() {
-            let idents = super::signature::iter_to_string(packer.bo_idents());
-            me.initializations.push(format!(
-                r#"
-                {definition}
-                let mut bo = std::mem::MaybeUninit::<{BO_STRUCT}>::uninit();
-                "#
-            ));
-            me.post_call.push(format!(
-                "let {BO_STRUCT}({idents}) = unsafe {{ bo.assume_init() }};"
-            ));
-            me.args.push(format!(
-                r#"{ARG} {{
-                b: {OUTPUT_BUFFER} {{
-                    ptr: std::ptr::addr_of_mut!(bo).cast(),
-                    size: {size},
-                }}
-            }}"#
-            ));
-        }
-
-        idlc_codegen::functions::visit_params(function, &mut me);
+        idlc_codegen::functions::visit_params_sorted(function, &mut me);
 
         me
     }
@@ -123,6 +81,45 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         self.generate_input_buffer(ident);
     }
 
+    fn visit_input_primitive(&mut self, ident: &Ident, ty: &idlc_mir::Primitive) {
+        let ty: &str = change_primitive(ty);
+        let ident = EscapedIdent::new(ident);
+        self.args.push(format!(
+            r#"{ARG} {{
+                bi: {INPUT_BUFFER} {{
+                    ptr: std::ptr::addr_of!({ident}).cast(),
+                    size: std::mem::size_of::<{ty}>(),
+                }}
+            }}"#
+        ));
+    }
+
+    fn visit_input_bundled(
+        &mut self,
+        packed_primitives: &idlc_codegen::serialization::PackedPrimitives,
+    ) {
+        let packer = super::serialization::PackedPrimitives::new(packed_primitives);
+        let Some(TransportBuffer { definition, size }) = packer.bi_definition() else {
+            unreachable!()
+        };
+        let idents = super::signature::iter_to_string(packer.bi_idents());
+        self.initializations.push(format!(
+            r#"
+            {definition}
+            let mut bi = {BI_STRUCT}({idents});
+            "#
+        ));
+        self.args.push(format!(
+            r#"{ARG} {{
+                bi: {INPUT_BUFFER} {{
+                    ptr: std::ptr::addr_of!(bi).cast(),
+                    size: {size},
+                }}
+            }}
+            "#
+        ));
+    }
+
     fn visit_input_struct(&mut self, ident: &Ident, ty: &idlc_mir::Struct) {
         let ty: &str = &namespaced_struct(ty);
         let ident = EscapedIdent::new(ident);
@@ -151,6 +148,52 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
 
     fn visit_output_struct_buffer(&mut self, ident: &Ident, ty: &idlc_mir::Struct) {
         self.generate_output_buffer(ident, &namespaced_struct(ty));
+    }
+
+    fn visit_output_primitive(&mut self, ident: &Ident, ty: &idlc_mir::Primitive) {
+        let ty: &str = change_primitive(ty);
+        let ident = EscapedIdent::new(ident);
+        self.initializations.push(format!(
+            "let mut {ident} = std::mem::MaybeUninit::<{ty}>::uninit();\n"
+        ));
+        self.post_call
+            .push(format!("let {ident} = unsafe {{ {ident}.assume_init() }};"));
+        self.args.push(format!(
+            r#"{ARG} {{
+                bi: {INPUT_BUFFER} {{
+                    ptr: std::ptr::addr_of_mut!({ident}).cast(),
+                    size: std::mem::size_of::<{ty}>(),
+                }}
+            }}"#
+        ));
+    }
+
+    fn visit_output_bundled(
+        &mut self,
+        packed_primitives: &idlc_codegen::serialization::PackedPrimitives,
+    ) {
+        let packer = super::serialization::PackedPrimitives::new(packed_primitives);
+        let Some(TransportBuffer { definition, size }) = packer.bo_definition() else {
+            unreachable!()
+        };
+        let idents = super::signature::iter_to_string(packer.bo_idents());
+        self.initializations.push(format!(
+            r#"
+                {definition}
+                let mut bo = std::mem::MaybeUninit::<{BO_STRUCT}>::uninit();
+                "#
+        ));
+        self.post_call.push(format!(
+            "let {BO_STRUCT}({idents}) = unsafe {{ bo.assume_init() }};"
+        ));
+        self.args.push(format!(
+            r#"{ARG} {{
+                b: {OUTPUT_BUFFER} {{
+                    ptr: std::ptr::addr_of_mut!(bo).cast(),
+                    size: {size},
+                }}
+            }}"#
+        ));
     }
 
     fn visit_output_struct(&mut self, ident: &Ident, ty: &idlc_mir::Struct) {
@@ -190,12 +233,11 @@ pub fn emit(
     documentation: &str,
     counts: &idlc_codegen::counts::Counter,
     signature: &super::signature::Signature,
-    packer: &super::serialization::PackedPrimitives,
 ) -> String {
     let id = function.id;
     let ident = &function.ident;
 
-    let implementation = Implementation::new(function, packer);
+    let implementation = Implementation::new(function);
     let initializations = implementation.initializations();
     let post_call_assignments = implementation.post_call_assignments();
     let args = implementation.args();

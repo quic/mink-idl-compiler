@@ -98,20 +98,20 @@ pub struct Const {
 }
 
 pub type Count = std::num::NonZeroU16;
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Type {
     Primitive(Primitive),
-    Interface(Option<String>),
     Struct(Struct),
+    Interface(Option<String>),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StructField {
     pub ident: Ident,
     pub val: (Type, Count),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Struct {
     pub ident: Ident,
     pub fields: Vec<StructField>,
@@ -132,22 +132,134 @@ pub enum InterfaceNode {
     Error(Error),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ParamTypeIn {
     Array(Type),
     Value(Type),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ParamTypeOut {
     Array(Type),
     Reference(Type),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Param {
     In { r#type: ParamTypeIn, ident: Ident },
     Out { r#type: ParamTypeOut, ident: Ident },
+}
+impl Param {
+    #[inline]
+    pub const fn r#type(&self) -> &Type {
+        match self {
+            Param::In { r#type, ident: _ } => match r#type {
+                ParamTypeIn::Array(t) | ParamTypeIn::Value(t) => t,
+            },
+            Param::Out { r#type, ident: _ } => match r#type {
+                ParamTypeOut::Array(t) | ParamTypeOut::Reference(t) => t,
+            },
+        }
+    }
+
+    #[inline]
+    pub const fn ident(&self) -> &Ident {
+        match self {
+            Param::In { r#type: _, ident } | Param::Out { r#type: _, ident } => ident,
+        }
+    }
+
+    #[inline]
+    pub const fn is_input(&self) -> bool {
+        matches!(
+            self,
+            Param::In {
+                r#type: _,
+                ident: _
+            }
+        )
+    }
+
+    #[inline]
+    pub const fn is_output(&self) -> bool {
+        matches!(
+            self,
+            Param::Out {
+                r#type: _,
+                ident: _
+            }
+        )
+    }
+
+    pub const fn is_array(&self) -> bool {
+        matches!(
+            self,
+            Param::In {
+                r#type: ParamTypeIn::Array(_),
+                ident: _,
+            } | Param::Out {
+                r#type: ParamTypeOut::Array(_),
+                ident: _,
+            }
+        )
+    }
+
+    pub const fn is_primitive(&self) -> bool {
+        matches!(self.r#type(), Type::Primitive(_))
+    }
+
+    pub const fn is_primitive_value(&self) -> bool {
+        !self.is_array() && self.is_primitive()
+    }
+}
+
+impl PartialOrd for Param {
+    #[inline]
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Param {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        match (self, other) {
+            (
+                Param::In {
+                    r#type: _,
+                    ident: _,
+                },
+                Param::Out {
+                    r#type: _,
+                    ident: _,
+                },
+            ) => match (self.r#type(), other.r#type()) {
+                (Type::Interface(_), Type::Interface(_)) => std::cmp::Ordering::Less,
+                (Type::Primitive(_), _) | (Type::Struct(_), _) => std::cmp::Ordering::Less,
+                (Type::Interface(_), _) => std::cmp::Ordering::Greater,
+            },
+            (
+                Param::Out {
+                    r#type: _,
+                    ident: _,
+                },
+                Param::In {
+                    r#type: _,
+                    ident: _,
+                },
+            ) => match (self.r#type(), other.r#type()) {
+                (Type::Interface(_), _) => std::cmp::Ordering::Greater,
+                (Type::Primitive(_), Type::Interface(_))
+                | (Type::Struct(_), Type::Interface(_)) => std::cmp::Ordering::Less,
+                _ => std::cmp::Ordering::Greater,
+            },
+            _ => match (self.r#type(), other.r#type()) {
+                (Type::Primitive(_), Type::Interface(_)) => std::cmp::Ordering::Less,
+                (Type::Struct(_), Type::Interface(_)) => std::cmp::Ordering::Less,
+                (Type::Interface(_), _) => std::cmp::Ordering::Greater,
+                _ => std::cmp::Ordering::Equal,
+            },
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -474,6 +586,93 @@ mod tests {
                         value: 10
                     }
                 )
+            ]
+        );
+    }
+
+    #[test]
+    fn sorting_params() {
+        let mut params = [
+            Param::Out {
+                r#type: ParamTypeOut::Reference(Type::Interface(None)),
+                ident: Ident::new_without_span("interface3".to_string()),
+            },
+            Param::Out {
+                r#type: ParamTypeOut::Array(Type::Primitive(Primitive::Uint16)),
+                ident: Ident::new_without_span("primitive4".to_string()),
+            },
+            Param::Out {
+                r#type: ParamTypeOut::Reference(Type::Interface(None)),
+                ident: Ident::new_without_span("interface4".to_string()),
+            },
+            Param::Out {
+                r#type: ParamTypeOut::Array(Type::Primitive(Primitive::Uint16)),
+                ident: Ident::new_without_span("primitive5".to_string()),
+            },
+            Param::Out {
+                r#type: ParamTypeOut::Array(Type::Struct(Struct {
+                    ident: Ident::new_without_span(String::new()),
+                    fields: Vec::new(),
+                    origin: None,
+                })),
+                ident: Ident::new_without_span("struct3".to_string()),
+            },
+            Param::Out {
+                r#type: ParamTypeOut::Array(Type::Struct(Struct {
+                    ident: Ident::new_without_span(String::new()),
+                    fields: Vec::new(),
+                    origin: None,
+                })),
+                ident: Ident::new_without_span("struct4".to_string()),
+            },
+            Param::In {
+                r#type: ParamTypeIn::Value(Type::Interface(None)),
+                ident: Ident::new_without_span("interface1".to_string()),
+            },
+            Param::In {
+                r#type: ParamTypeIn::Array(Type::Primitive(Primitive::Uint16)),
+                ident: Ident::new_without_span("primitive1".to_string()),
+            },
+            Param::In {
+                r#type: ParamTypeIn::Value(Type::Interface(None)),
+                ident: Ident::new_without_span("interface2".to_string()),
+            },
+            Param::In {
+                r#type: ParamTypeIn::Value(Type::Primitive(Primitive::Uint16)),
+                ident: Ident::new_without_span("primitive2".to_string()),
+            },
+            Param::In {
+                r#type: ParamTypeIn::Array(Type::Struct(Struct {
+                    ident: Ident::new_without_span(String::new()),
+                    fields: Vec::new(),
+                    origin: None,
+                })),
+                ident: Ident::new_without_span("struct1".to_string()),
+            },
+            Param::In {
+                r#type: ParamTypeIn::Value(Type::Primitive(Primitive::Float32)),
+                ident: Ident::new_without_span("primitive3".to_string()),
+            },
+        ];
+        params.sort();
+        assert_eq!(
+            params
+                .iter()
+                .map(|x| x.ident().ident.as_str())
+                .collect::<Vec<_>>(),
+            [
+                "primitive1",
+                "primitive2",
+                "struct1",
+                "primitive3",
+                "primitive4",
+                "primitive5",
+                "struct3",
+                "struct4",
+                "interface1",
+                "interface2",
+                "interface3",
+                "interface4"
             ]
         );
     }

@@ -24,7 +24,6 @@ pub fn emit_interface(interface: &Interface) -> String {
             InterfaceNode::Function(f) => {
                 let signature = functions::signature::Signature::new(f);
                 let counts = idlc_codegen::counts::Counter::new(f);
-                let primitive_packer = functions::serialization::PackedPrimitives::new(f);
                 let documentation = idlc_codegen::documentation::Documentation::new(
                     f,
                     idlc_codegen::documentation::DocumentationStyle::Rust,
@@ -35,14 +34,8 @@ pub fn emit_interface(interface: &Interface) -> String {
                     &documentation,
                     &counts,
                     &signature,
-                    &primitive_packer,
                 ));
-                invoke_arms.push(functions::invoke::emit(
-                    f,
-                    &signature,
-                    &counts,
-                    &primitive_packer,
-                ));
+                invoke_arms.push(functions::invoke::emit(f, &signature, &counts));
                 trait_functions.push(functions::traits::emit(f, &documentation, &signature));
             }
         }
@@ -63,13 +56,7 @@ pub fn emit_interface(interface: &Interface) -> String {
             .for_each(|f| {
                 let signature = functions::signature::Signature::new(f);
                 let counts = idlc_codegen::counts::Counter::new(f);
-                let primitive_packer = functions::serialization::PackedPrimitives::new(f);
-                invoke_arms.push(functions::invoke::emit(
-                    f,
-                    &signature,
-                    &counts,
-                    &primitive_packer,
-                ))
+                invoke_arms.push(functions::invoke::emit(f, &signature, &counts))
             })
     });
 
