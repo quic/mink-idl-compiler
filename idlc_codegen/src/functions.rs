@@ -90,12 +90,12 @@ impl<'a> Param<'a> {
                 .filter(|&x| {
                     !(packed_primitives.n_inputs() > 1
                         && x.is_input()
-                        && (x.is_primitive_value() || x.is_struct_value()))
+                        && (x.is_primitive_value() || x.is_small_struct_value()))
                 })
                 .filter(|x| {
                     !(packed_primitives.n_outputs() > 1
                         && x.is_output()
-                        && (x.is_primitive_value() || x.is_struct_value()))
+                        && (x.is_primitive_value() || x.is_small_struct_value()))
                 })
                 .map(Param::Params),
         );

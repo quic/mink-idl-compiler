@@ -284,13 +284,13 @@ impl Param {
     }
 
     #[must_use]
-    pub const fn is_struct(&self) -> bool {
-        matches!(self.r#type(), Type::Struct(_))
+    pub const fn is_small_struct(&self) -> bool {
+        matches!(self.r#type(), Type::Struct(Struct::Small(_)))
     }
 
     #[must_use]
-    pub const fn is_struct_value(&self) -> bool {
-        !self.is_array() && self.is_struct()
+    pub const fn is_small_struct_value(&self) -> bool {
+        !self.is_array() && self.is_small_struct()
     }
 }
 

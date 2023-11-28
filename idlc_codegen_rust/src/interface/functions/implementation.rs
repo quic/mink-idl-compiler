@@ -103,12 +103,10 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
             unreachable!()
         };
         let idents = super::signature::iter_to_string(packer.bi_assignment_idents());
-        let post_assignments = packer.post_bi_assignments();
         self.initializations.push(format!(
             r#"
             {definition}
             let mut bi = {BI_STRUCT}({idents});
-            {post_assignments}
             "#
         ));
         self.args.push(format!(
