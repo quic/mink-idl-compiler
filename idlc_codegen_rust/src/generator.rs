@@ -31,7 +31,10 @@ impl idlc_codegen::Generator for Generator {
                     interfaces.get_mut(&base).unwrap().push_str(&emit_const(c));
                 }
                 Node::Struct(s) => {
-                    interfaces.get_mut(&base).unwrap().push_str(&emit_struct(s));
+                    interfaces
+                        .get_mut(&base)
+                        .unwrap()
+                        .push_str(&emit_struct(s.as_ref()));
                 }
                 Node::Interface(i) => {
                     let mut interface_content = String::new();

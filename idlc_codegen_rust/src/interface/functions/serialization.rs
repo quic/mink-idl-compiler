@@ -1,4 +1,11 @@
-use crate::{ident::EscapedIdent, types::change_primitive};
+use std::borrow::Cow;
+
+use idlc_codegen::serialization::Type;
+
+use crate::{
+    ident::EscapedIdent,
+    types::{change_primitive, namespaced_struct},
+};
 
 #[derive(Debug, Clone)]
 pub struct TransportBuffer {
@@ -19,10 +26,32 @@ impl<'a> PackedPrimitives<'a> {
         self.generate_struct(self.0.input_types(), "BI", self.0.packed_input_size())
     }
 
-    pub fn bi_idents(&self) -> impl ExactSizeIterator<Item = String> + '_ {
+    pub fn bi_definition_idents(&self) -> impl ExactSizeIterator<Item = String> + '_ {
         self.0
             .inputs_by_idents()
             .map(|(ident, _)| EscapedIdent::new(ident).to_string())
+    }
+
+    pub fn bi_assignment_idents(&self) -> impl ExactSizeIterator<Item = String> + '_ {
+        self.0.inputs_by_idents().map(|(ident, ty)| {
+            let ident = EscapedIdent::new(ident);
+            match ty {
+                Type::Primitive(_) => ident.to_string(),
+                Type::SmallStruct(_) => format!("*{ident}"),
+            }
+        })
+    }
+
+    pub fn post_bi_assignments(&self) -> String {
+        let mut assignments = String::new();
+        self.0.inputs_by_idents().for_each(|(ident, ty)| {
+            if matches!(ty, Type::SmallStruct(_)) {
+                let ident = EscapedIdent::new(ident);
+                assignments += &format!(r"let {ident} = &{ident};");
+            }
+        });
+
+        assignments
     }
 
     pub fn bo_definition(&self) -> Option<TransportBuffer> {
@@ -38,7 +67,7 @@ impl<'a> PackedPrimitives<'a> {
     #[inline]
     fn generate_struct(
         &self,
-        types: impl Iterator<Item = idlc_mir::Primitive>,
+        types: impl Iterator<Item = &'a Type>,
         ident: &'static str,
         size: usize,
     ) -> Option<TransportBuffer> {
@@ -46,7 +75,10 @@ impl<'a> PackedPrimitives<'a> {
             return None;
         }
 
-        let fields = super::signature::iter_to_string(types.map(|ty| change_primitive(&ty)));
+        let fields = super::signature::iter_to_string(types.map(|ty| match ty {
+            Type::Primitive(p) => Cow::Borrowed(change_primitive(p)),
+            Type::SmallStruct(s) => Cow::Owned(namespaced_struct(s)),
+        }));
         let definition = format!(
             r#"
         #[repr(C, packed)]

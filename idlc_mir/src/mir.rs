@@ -112,11 +112,74 @@ pub struct StructField {
     pub val: (Type, Count),
 }
 
+impl StructField {
+    pub fn size(&self) -> usize {
+        let count = self.val.1;
+        let size = match &self.val.0 {
+            Type::Primitive(p) => p.size(),
+            Type::Struct(s) => s.as_ref().size(),
+            Type::Interface(_) => Primitive::Uint64.size() * 2,
+        };
+
+        size * usize::from(count.get())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Struct {
+pub enum Struct {
+    /// This variant of struct can be bundled with other primitives as it's
+    /// guaranteed to be less than [`Struct::BUNDLED_SIZE_MAX`] bytes long.
+    Small(StructInner),
+    Big(StructInner),
+}
+
+impl From<StructInner> for Struct {
+    fn from(value: StructInner) -> Self {
+        let size = value.size();
+        Self::new(value, size)
+    }
+}
+
+impl Struct {
+    /// A bundle is a collection of parameter values that are sent or received
+    /// as a single invoke argument. Data parameters that are of a fixed size
+    /// less than or equal to 16 bytes are called small parameters and may be
+    /// bundled.  If there are two or more small input parameters, then all
+    /// small input parameters are placed in an input bundle which is sent as
+    /// the first input buffer argument. Otherwise, no input bundle is sent, and
+    /// all input data parameters are sent as discrete arguments.
+    pub const BUNDLED_SIZE_MAX: usize = 16;
+
+    #[inline]
+    pub const fn new(inner: StructInner, size: usize) -> Self {
+        if size <= Self::BUNDLED_SIZE_MAX {
+            Self::Small(inner)
+        } else {
+            Self::Big(inner)
+        }
+    }
+}
+impl AsRef<StructInner> for Struct {
+    #[inline]
+    fn as_ref(&self) -> &StructInner {
+        match self {
+            Self::Small(s) | Self::Big(s) => s,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StructInner {
     pub ident: Ident,
     pub fields: Vec<StructField>,
     pub origin: Option<PathBuf>,
+}
+
+impl StructInner {
+    #[inline]
+    pub fn size(&self) -> usize {
+        self.fields.iter().fold(0, |acc, e| acc + e.size())
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -219,6 +282,16 @@ impl Param {
     pub const fn is_primitive_value(&self) -> bool {
         !self.is_array() && self.is_primitive()
     }
+
+    #[must_use]
+    pub const fn is_struct(&self) -> bool {
+        matches!(self.r#type(), Type::Struct(_))
+    }
+
+    #[must_use]
+    pub const fn is_struct_value(&self) -> bool {
+        !self.is_array() && self.is_struct()
+    }
 }
 
 impl PartialOrd for Param {
@@ -296,18 +369,25 @@ fn parse_const(const_: &idlc_ast::Const) -> Rc<Node> {
 fn parse_struct(struct_: &idlc_ast::Struct, idl_store: &IDLStore) -> Rc<Node> {
     let ident = struct_.ident.clone();
     let mut fields = Vec::<StructField>::new();
+    let mut size = 0;
     for field in &struct_.fields {
         let val = (Type::new(&field.val.0, idl_store), field.val.1);
-        fields.push(StructField {
+        let field = StructField {
             ident: field.ident.clone(),
             val,
-        });
+        };
+        size += field.size();
+        fields.push(field);
     }
-    Rc::new(Node::Struct(Struct {
-        ident,
-        fields,
-        origin: None,
-    }))
+
+    Rc::new(Node::Struct(Struct::new(
+        StructInner {
+            ident,
+            fields,
+            origin: None,
+        },
+        size,
+    )))
 }
 
 fn parse_interface(
@@ -475,18 +555,24 @@ impl Type {
                     || match idl_store.struct_lookup(ident) {
                         Some((r#struct, path)) => {
                             let mut fields = Vec::new();
+                            let mut size = 0;
                             for field in &r#struct.fields {
                                 let (ty, count) = &field.val;
-                                fields.push(StructField {
+                                let field = StructField {
                                     ident: field.ident.clone(),
                                     val: (Self::new(ty, idl_store), *count),
-                                });
+                                };
+                                size += field.size();
+                                fields.push(field);
                             }
-                            Self::Struct(Struct {
-                                ident: r#struct.ident.clone(),
-                                fields,
-                                origin: Some(path),
-                            })
+                            Self::Struct(Struct::new(
+                                StructInner {
+                                    ident: r#struct.ident.clone(),
+                                    fields,
+                                    origin: Some(path),
+                                },
+                                size,
+                            ))
                         }
                         None => panic!("Couldn't find any references of symbol {ident}"),
                     },
@@ -621,19 +707,25 @@ mod tests {
                 ident: Ident::new_without_span("primitive5".to_string()),
             },
             Param::Out {
-                r#type: ParamTypeOut::Array(Type::Struct(Struct {
-                    ident: Ident::new_without_span(String::new()),
-                    fields: Vec::new(),
-                    origin: None,
-                })),
+                r#type: ParamTypeOut::Array(Type::Struct(
+                    StructInner {
+                        ident: Ident::new_without_span(String::new()),
+                        fields: Vec::new(),
+                        origin: None,
+                    }
+                    .into(),
+                )),
                 ident: Ident::new_without_span("struct3".to_string()),
             },
             Param::Out {
-                r#type: ParamTypeOut::Array(Type::Struct(Struct {
-                    ident: Ident::new_without_span(String::new()),
-                    fields: Vec::new(),
-                    origin: None,
-                })),
+                r#type: ParamTypeOut::Array(Type::Struct(
+                    StructInner {
+                        ident: Ident::new_without_span(String::new()),
+                        fields: Vec::new(),
+                        origin: None,
+                    }
+                    .into(),
+                )),
                 ident: Ident::new_without_span("struct4".to_string()),
             },
             Param::In {
@@ -653,11 +745,14 @@ mod tests {
                 ident: Ident::new_without_span("primitive2".to_string()),
             },
             Param::In {
-                r#type: ParamTypeIn::Array(Type::Struct(Struct {
-                    ident: Ident::new_without_span(String::new()),
-                    fields: Vec::new(),
-                    origin: None,
-                })),
+                r#type: ParamTypeIn::Array(Type::Struct(
+                    StructInner {
+                        ident: Ident::new_without_span(String::new()),
+                        fields: Vec::new(),
+                        origin: None,
+                    }
+                    .into(),
+                )),
                 ident: Ident::new_without_span("struct1".to_string()),
             },
             Param::In {

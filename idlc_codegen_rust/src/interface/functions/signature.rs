@@ -1,4 +1,4 @@
-use idlc_mir::{Ident, Primitive, Struct};
+use idlc_mir::{Ident, Primitive, StructInner};
 
 use crate::{
     ident::EscapedIdent,
@@ -73,7 +73,7 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
         self.push_inputs(ident, format!("&[{}]", change_primitive(ty)));
     }
 
-    fn visit_input_struct_buffer(&mut self, ident: &Ident, ty: &Struct) {
+    fn visit_input_struct_buffer(&mut self, ident: &Ident, ty: &StructInner) {
         self.push_inputs(ident, format!("&[{}]", namespaced_struct(ty)));
     }
 
@@ -81,7 +81,10 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
         self.push_inputs(ident, change_primitive(ty));
     }
 
-    fn visit_input_struct(&mut self, ident: &Ident, ty: &Struct) {
+    fn visit_input_big_struct(&mut self, ident: &Ident, ty: &StructInner) {
+        self.push_inputs(ident, format!("&{}", namespaced_struct(ty)));
+    }
+    fn visit_input_small_struct(&mut self, ident: &Ident, ty: &StructInner) {
         self.push_inputs(ident, format!("&{}", namespaced_struct(ty)));
     }
 
@@ -104,7 +107,7 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
         );
     }
 
-    fn visit_output_struct_buffer(&mut self, ident: &Ident, ty: &Struct) {
+    fn visit_output_struct_buffer(&mut self, ident: &Ident, ty: &StructInner) {
         self.push_inputs(ident, format!("&mut [{}]", namespaced_struct(ty)));
         self.push_inputs(
             &idlc_mir::Ident::new_without_span(format!("{ident}_lenout")),
@@ -116,7 +119,10 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
         self.push_outputs(ident, change_primitive(ty));
     }
 
-    fn visit_output_struct(&mut self, ident: &Ident, ty: &Struct) {
+    fn visit_output_big_struct(&mut self, ident: &Ident, ty: &StructInner) {
+        self.push_outputs(ident, namespaced_struct(ty));
+    }
+    fn visit_output_small_struct(&mut self, ident: &Ident, ty: &StructInner) {
         self.push_outputs(ident, namespaced_struct(ty));
     }
 

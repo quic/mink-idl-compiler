@@ -13,7 +13,7 @@ pub const fn change_primitive(primitive: &idlc_mir::Primitive) -> &'static str {
     }
 }
 
-pub fn namespaced_struct(r#struct: &idlc_mir::Struct) -> String {
+pub fn namespaced_struct(r#struct: &idlc_mir::StructInner) -> String {
     use crate::interface::mink_primitives::INTERFACES_BASE;
     let namespace = r#struct
         .origin

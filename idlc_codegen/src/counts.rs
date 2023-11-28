@@ -1,4 +1,4 @@
-use idlc_mir::{Ident, Primitive, Struct};
+use idlc_mir::{Ident, Primitive, StructInner};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Counter {
@@ -7,8 +7,8 @@ pub struct Counter {
     pub output_objects: u8,
     pub output_buffers: u8,
 
-    has_primitive_input: bool,
-    has_primitive_output: bool,
+    has_bundled_input: bool,
+    has_bundled_output: bool,
 }
 
 impl super::functions::ParameterVisitor for Counter {
@@ -18,17 +18,22 @@ impl super::functions::ParameterVisitor for Counter {
     }
 
     #[inline]
-    fn visit_input_struct_buffer(&mut self, _: &Ident, _: &Struct) {
+    fn visit_input_struct_buffer(&mut self, _: &Ident, _: &StructInner) {
         self.input_buffers += 1;
     }
 
     #[inline]
     fn visit_input_primitive(&mut self, _: &Ident, _: &Primitive) {
-        self.has_primitive_input = true;
+        self.has_bundled_input = true;
     }
 
     #[inline]
-    fn visit_input_struct(&mut self, _: &Ident, _: &Struct) {
+    fn visit_input_small_struct(&mut self, _: &Ident, _: &StructInner) {
+        self.has_bundled_input = true;
+    }
+
+    #[inline]
+    fn visit_input_big_struct(&mut self, _: &Ident, _: &StructInner) {
         self.input_buffers += 1;
     }
 
@@ -43,17 +48,21 @@ impl super::functions::ParameterVisitor for Counter {
     }
 
     #[inline]
-    fn visit_output_struct_buffer(&mut self, _: &Ident, _: &Struct) {
+    fn visit_output_struct_buffer(&mut self, _: &Ident, _: &StructInner) {
         self.output_buffers += 1;
     }
 
     #[inline]
     fn visit_output_primitive(&mut self, _: &Ident, _: &Primitive) {
-        self.has_primitive_output = true;
+        self.has_bundled_output = true;
+    }
+    #[inline]
+    fn visit_output_small_struct(&mut self, _: &Ident, _: &StructInner) {
+        self.has_bundled_output = true;
     }
 
     #[inline]
-    fn visit_output_struct(&mut self, _: &Ident, _: &Struct) {
+    fn visit_output_big_struct(&mut self, _: &Ident, _: &StructInner) {
         self.output_buffers += 1;
     }
 
@@ -69,8 +78,8 @@ impl Counter {
         let mut me = Self::default();
         super::functions::visit_params(function, &mut me);
 
-        me.input_buffers += me.has_primitive_input.then_some(1).unwrap_or_default();
-        me.output_buffers += me.has_primitive_output.then_some(1).unwrap_or_default();
+        me.input_buffers += me.has_bundled_input.then_some(1).unwrap_or_default();
+        me.output_buffers += me.has_bundled_output.then_some(1).unwrap_or_default();
 
         me
     }

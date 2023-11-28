@@ -77,7 +77,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         self.generate_input_buffer(ident);
     }
 
-    fn visit_input_struct_buffer(&mut self, ident: &Ident, _: &idlc_mir::Struct) {
+    fn visit_input_struct_buffer(&mut self, ident: &Ident, _: &idlc_mir::StructInner) {
         self.generate_input_buffer(ident);
     }
 
@@ -102,11 +102,13 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let Some(TransportBuffer { definition, size }) = packer.bi_definition() else {
             unreachable!()
         };
-        let idents = super::signature::iter_to_string(packer.bi_idents());
+        let idents = super::signature::iter_to_string(packer.bi_assignment_idents());
+        let post_assignments = packer.post_bi_assignments();
         self.initializations.push(format!(
             r#"
             {definition}
             let mut bi = {BI_STRUCT}({idents});
+            {post_assignments}
             "#
         ));
         self.args.push(format!(
@@ -120,7 +122,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         ));
     }
 
-    fn visit_input_struct(&mut self, ident: &Ident, ty: &idlc_mir::Struct) {
+    fn visit_input_big_struct(&mut self, ident: &Ident, ty: &idlc_mir::StructInner) {
         let ty: &str = &namespaced_struct(ty);
         let ident = EscapedIdent::new(ident);
         self.args.push(format!(
@@ -131,6 +133,9 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
                 }}
             }}"#
         ));
+    }
+    fn visit_input_small_struct(&mut self, ident: &Ident, ty: &idlc_mir::StructInner) {
+        self.visit_input_big_struct(ident, ty);
     }
 
     fn visit_input_object(&mut self, ident: &Ident, _: Option<&str>) {
@@ -146,7 +151,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         self.generate_output_buffer(ident, change_primitive(ty));
     }
 
-    fn visit_output_struct_buffer(&mut self, ident: &Ident, ty: &idlc_mir::Struct) {
+    fn visit_output_struct_buffer(&mut self, ident: &Ident, ty: &idlc_mir::StructInner) {
         self.generate_output_buffer(ident, &namespaced_struct(ty));
     }
 
@@ -196,7 +201,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         ));
     }
 
-    fn visit_output_struct(&mut self, ident: &Ident, ty: &idlc_mir::Struct) {
+    fn visit_output_big_struct(&mut self, ident: &Ident, ty: &idlc_mir::StructInner) {
         let ty: &str = &namespaced_struct(ty);
         let ident = EscapedIdent::new(ident);
         self.initializations.push(format!(
@@ -212,6 +217,9 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
                 }}
             }}"#
         ));
+    }
+    fn visit_output_small_struct(&mut self, ident: &Ident, ty: &idlc_mir::StructInner) {
+        self.visit_output_big_struct(ident, ty);
     }
 
     fn visit_output_object(&mut self, ident: &Ident, _: Option<&str>) {

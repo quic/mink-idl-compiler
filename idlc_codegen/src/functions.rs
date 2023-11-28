@@ -1,21 +1,23 @@
-use idlc_mir::{Function, Ident, ParamTypeIn, ParamTypeOut, Primitive, Struct, Type};
+use idlc_mir::{Function, Ident, ParamTypeIn, ParamTypeOut, Primitive, Struct, StructInner, Type};
 
 use crate::serialization::PackedPrimitives;
 
 #[allow(unused)]
 pub trait ParameterVisitor {
     fn visit_input_primitive_buffer(&mut self, ident: &Ident, ty: &Primitive) {}
-    fn visit_input_struct_buffer(&mut self, ident: &Ident, ty: &Struct) {}
+    fn visit_input_struct_buffer(&mut self, ident: &Ident, ty: &StructInner) {}
     fn visit_input_primitive(&mut self, ident: &Ident, ty: &Primitive) {}
     fn visit_input_bundled(&mut self, packed_primitives: &PackedPrimitives) {}
-    fn visit_input_struct(&mut self, ident: &Ident, ty: &Struct) {}
+    fn visit_input_big_struct(&mut self, ident: &Ident, ty: &StructInner) {}
+    fn visit_input_small_struct(&mut self, ident: &Ident, ty: &StructInner) {}
     fn visit_input_object(&mut self, ident: &Ident, ty: Option<&str>) {}
 
     fn visit_output_primitive_buffer(&mut self, ident: &Ident, ty: &Primitive) {}
-    fn visit_output_struct_buffer(&mut self, ident: &Ident, ty: &Struct) {}
+    fn visit_output_struct_buffer(&mut self, ident: &Ident, ty: &StructInner) {}
     fn visit_output_primitive(&mut self, ident: &Ident, ty: &Primitive) {}
     fn visit_output_bundled(&mut self, packed_primitives: &PackedPrimitives) {}
-    fn visit_output_struct(&mut self, ident: &Ident, ty: &Struct) {}
+    fn visit_output_big_struct(&mut self, ident: &Ident, ty: &StructInner) {}
+    fn visit_output_small_struct(&mut self, ident: &Ident, ty: &StructInner) {}
     fn visit_output_object(&mut self, ident: &Ident, ty: Option<&str>) {}
 }
 
@@ -37,24 +39,39 @@ impl<'a> Param<'a> {
                         ParamTypeIn::Array(t) => match t {
                             Type::Primitive(p) => visitor.visit_input_primitive_buffer(ident, p),
                             Type::Interface(_) => todo!(),
-                            Type::Struct(s) => visitor.visit_input_struct_buffer(ident, s),
+                            Type::Struct(Struct::Big(s) | Struct::Small(s)) => {
+                                visitor.visit_input_struct_buffer(ident, s)
+                            }
                         },
                         ParamTypeIn::Value(t) => match t {
                             Type::Primitive(p) => visitor.visit_input_primitive(ident, p),
                             Type::Interface(i) => visitor.visit_input_object(ident, i.as_deref()),
-                            Type::Struct(s) => visitor.visit_input_struct(ident, s),
+                            Type::Struct(Struct::Big(s)) => {
+                                visitor.visit_input_big_struct(ident, s)
+                            }
+
+                            Type::Struct(Struct::Small(s)) => {
+                                visitor.visit_input_small_struct(ident, s)
+                            }
                         },
                     },
                     idlc_mir::Param::Out { r#type, ident } => match r#type {
                         ParamTypeOut::Array(t) => match t {
                             Type::Primitive(p) => visitor.visit_output_primitive_buffer(ident, p),
                             Type::Interface(_) => todo!(),
-                            Type::Struct(s) => visitor.visit_output_struct_buffer(ident, s),
+                            Type::Struct(Struct::Big(s) | Struct::Small(s)) => {
+                                visitor.visit_output_struct_buffer(ident, s)
+                            }
                         },
                         ParamTypeOut::Reference(t) => match t {
                             Type::Primitive(p) => visitor.visit_output_primitive(ident, p),
                             Type::Interface(i) => visitor.visit_output_object(ident, i.as_deref()),
-                            Type::Struct(s) => visitor.visit_output_struct(ident, s),
+                            Type::Struct(Struct::Big(s)) => {
+                                visitor.visit_output_big_struct(ident, s)
+                            }
+                            Type::Struct(Struct::Small(s)) => {
+                                visitor.visit_output_small_struct(ident, s)
+                            }
                         },
                     },
                 },
@@ -71,10 +88,14 @@ impl<'a> Param<'a> {
             params
                 .iter()
                 .filter(|&x| {
-                    !(packed_primitives.n_inputs() > 1 && x.is_input() && x.is_primitive_value())
+                    !(packed_primitives.n_inputs() > 1
+                        && x.is_input()
+                        && (x.is_primitive_value() || x.is_struct_value()))
                 })
                 .filter(|x| {
-                    !(packed_primitives.n_outputs() > 1 && x.is_output() && x.is_primitive_value())
+                    !(packed_primitives.n_outputs() > 1
+                        && x.is_output()
+                        && (x.is_primitive_value() || x.is_struct_value()))
                 })
                 .map(Param::Params),
         );

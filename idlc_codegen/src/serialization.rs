@@ -1,14 +1,37 @@
-use idlc_mir::Primitive;
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Type {
+    Primitive(idlc_mir::Primitive),
+    SmallStruct(idlc_mir::StructInner),
+}
+impl Type {
+    pub fn size(&self) -> usize {
+        match self {
+            Self::Primitive(p) => p.size(),
+            Self::SmallStruct(s) => s.size(),
+        }
+    }
+}
+impl PartialOrd<Self> for Type {
+    #[inline]
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+impl std::cmp::Ord for Type {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.size().cmp(&other.size())
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct Pair {
     ident: idlc_mir::Ident,
-    ty: Primitive,
+    ty: Type,
     nth_param: usize,
 }
 
 impl Pair {
-    pub fn new(ident: &idlc_mir::Ident, ty: Primitive, nth_param: usize) -> Self {
+    pub fn new(ident: &idlc_mir::Ident, ty: Type, nth_param: usize) -> Self {
         Self {
             ident: ident.clone(),
             ty,
@@ -39,15 +62,31 @@ pub struct PackedPrimitives {
 }
 
 impl super::functions::ParameterVisitor for PackedPrimitives {
-    fn visit_input_primitive(&mut self, ident: &idlc_mir::Ident, ty: &Primitive) {
+    fn visit_input_primitive(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::Primitive) {
         let nth_param = self.inputs.len();
-        self.inputs.push(Pair::new(ident, *ty, nth_param));
+        self.inputs
+            .push(Pair::new(ident, Type::Primitive(*ty), nth_param));
         self.input_size += ty.size();
     }
 
-    fn visit_output_primitive(&mut self, ident: &idlc_mir::Ident, ty: &Primitive) {
+    fn visit_input_small_struct(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::StructInner) {
+        let nth_param = self.inputs.len();
+        self.inputs
+            .push(Pair::new(ident, Type::SmallStruct(ty.clone()), nth_param));
+        self.input_size += ty.size();
+    }
+
+    fn visit_output_primitive(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::Primitive) {
         let nth_param = self.outputs.len();
-        self.outputs.push(Pair::new(ident, *ty, nth_param));
+        self.outputs
+            .push(Pair::new(ident, Type::Primitive(*ty), nth_param));
+        self.output_size += ty.size();
+    }
+
+    fn visit_output_small_struct(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::StructInner) {
+        let nth_param = self.outputs.len();
+        self.outputs
+            .push(Pair::new(ident, Type::SmallStruct(ty.clone()), nth_param));
         self.output_size += ty.size();
     }
 }
@@ -65,18 +104,18 @@ impl PackedPrimitives {
     }
 
     #[must_use]
-    pub fn inputs_by_idents(&self) -> impl ExactSizeIterator<Item = (&idlc_mir::Ident, Primitive)> {
-        self.inputs.iter().map(|pair| (&pair.ident, pair.ty))
+    pub fn inputs_by_idents(&self) -> impl ExactSizeIterator<Item = (&idlc_mir::Ident, &Type)> {
+        self.inputs.iter().map(|pair| (&pair.ident, &pair.ty))
     }
 
     #[must_use]
-    pub fn inputs_by_index(&self) -> impl ExactSizeIterator<Item = (usize, Primitive)> + '_ {
-        self.inputs.iter().map(|pair| (pair.nth_param, pair.ty))
+    pub fn inputs_by_index(&self) -> impl ExactSizeIterator<Item = (usize, &Type)> {
+        self.inputs.iter().map(|pair| (pair.nth_param, &pair.ty))
     }
 
     #[must_use]
-    pub fn input_types(&self) -> impl ExactSizeIterator<Item = Primitive> + '_ {
-        self.inputs.iter().map(|pair| pair.ty)
+    pub fn input_types(&self) -> impl ExactSizeIterator<Item = &Type> {
+        self.inputs.iter().map(|pair| &pair.ty)
     }
 
     #[must_use]
@@ -90,20 +129,18 @@ impl PackedPrimitives {
     }
 
     #[must_use]
-    pub fn outputs_by_idents(
-        &self,
-    ) -> impl ExactSizeIterator<Item = (&idlc_mir::Ident, Primitive)> {
-        self.outputs.iter().map(|pair| (&pair.ident, pair.ty))
+    pub fn outputs_by_idents(&self) -> impl ExactSizeIterator<Item = (&idlc_mir::Ident, &Type)> {
+        self.outputs.iter().map(|pair| (&pair.ident, &pair.ty))
     }
 
     #[must_use]
-    pub fn outputs_by_index(&self) -> impl ExactSizeIterator<Item = (usize, Primitive)> + '_ {
-        self.outputs.iter().map(|pair| (pair.nth_param, pair.ty))
+    pub fn outputs_by_index(&self) -> impl ExactSizeIterator<Item = (usize, &Type)> {
+        self.outputs.iter().map(|pair| (pair.nth_param, &pair.ty))
     }
 
     #[must_use]
-    pub fn output_types(&self) -> impl ExactSizeIterator<Item = Primitive> + '_ {
-        self.outputs.iter().map(|pair| pair.ty)
+    pub fn output_types(&self) -> impl ExactSizeIterator<Item = &Type> {
+        self.outputs.iter().map(|pair| &pair.ty)
     }
 
     #[must_use]
