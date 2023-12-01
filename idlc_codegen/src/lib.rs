@@ -16,3 +16,10 @@ pub trait Generator {
     /// Generates the backend language based on input IDL
     fn generate(mir: &idlc_mir::Mir) -> Descriptor;
 }
+
+pub trait SplitInvokeGenerator {
+    /// Generates the backend language of stub side based on input IDL
+    fn generate_implementation(mir: &idlc_mir::Mir) -> String;
+    /// Generates the backend language of skel side based on input IDL
+    fn generate_invoke(mir: &idlc_mir::Mir) -> String;
+}

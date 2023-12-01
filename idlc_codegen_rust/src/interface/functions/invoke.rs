@@ -20,7 +20,7 @@ impl Invoke {
     pub fn new(function: &idlc_mir::Function) -> Self {
         let mut me = Self::default();
 
-        idlc_codegen::functions::visit_params_sorted(function, &mut me);
+        idlc_codegen::functions::visit_params_with_bundling(function, &mut me);
         me
     }
 

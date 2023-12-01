@@ -19,7 +19,7 @@ use idlc_ast_passes::{cycles, idl_store::IDLStore, struct_verifier, CompilerPass
 use idlc_mir::mir;
 use idlc_mir_passes::{interface_verifier, MirCompilerPass};
 
-use idlc_codegen::Generator;
+use idlc_codegen::{Generator, SplitInvokeGenerator};
 
 #[derive(clap::Parser)]
 #[command(author, version, about = None, long_about)]
@@ -134,6 +134,20 @@ fn main() {
         .output
         .unwrap_or_else(|| std::env::current_dir().unwrap());
     match (args.c, args.cpp, args.java, args.rust) {
+        (true, false, false, false) => {
+            let content = if args.skel {
+                idlc_codegen_c::Generator::generate_invoke(&mir)
+            } else {
+                idlc_codegen_c::Generator::generate_implementation(&mir)
+            };
+            let mut file = std::fs::OpenOptions::new()
+                .create(true)
+                .write(true)
+                .truncate(true)
+                .open(output)
+                .unwrap();
+            file.write_all(content.as_bytes()).unwrap();
+        }
         (true, false, false, true) => {
             for (name, content) in
                 timer::time!(idlc_codegen_rust::Generator::generate(&mir), "Rust codegen")

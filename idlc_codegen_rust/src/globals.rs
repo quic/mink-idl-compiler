@@ -19,12 +19,12 @@ pub fn emit_struct(r#struct: &StructInner) -> String {
             }
         };
         result.push_str(&if count == 1 {
-            format!("pub {ident}: {ty},")
+            format!("pub {ident}: {ty},\n")
         } else {
-            format!("pub {ident}: [{ty}; {count}],")
+            format!("pub {ident}: [{ty}; {count}],\n")
         });
     }
-    result.push('}');
+    result.push_str("}\n");
     result
 }
 
@@ -33,5 +33,5 @@ pub fn emit_const(r#const: &Const) -> String {
     let ty = change_primitive(&r#const.r#type);
     let value = &r#const.value;
 
-    format!("pub const {ident}: {ty} = {value};")
+    format!("pub const {ident}: {ty} = {value};\n")
 }

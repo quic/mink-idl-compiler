@@ -119,6 +119,11 @@ impl PackedPrimitives {
     }
 
     #[must_use]
+    pub fn input_idents(&self) -> impl ExactSizeIterator<Item = &idlc_mir::Ident> {
+        self.inputs.iter().map(|pair| &pair.ident)
+    }
+
+    #[must_use]
     pub fn n_inputs(&self) -> usize {
         self.inputs.len()
     }
@@ -141,6 +146,11 @@ impl PackedPrimitives {
     #[must_use]
     pub fn output_types(&self) -> impl ExactSizeIterator<Item = &Type> {
         self.outputs.iter().map(|pair| &pair.ty)
+    }
+
+    #[must_use]
+    pub fn output_idents(&self) -> impl ExactSizeIterator<Item = &idlc_mir::Ident> {
+        self.outputs.iter().map(|pair| &pair.ident)
     }
 
     #[must_use]

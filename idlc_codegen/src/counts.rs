@@ -6,6 +6,8 @@ pub struct Counter {
     pub input_objects: u8,
     pub output_objects: u8,
     pub output_buffers: u8,
+    pub total_bundled_input: u8,
+    pub total_bundled_output: u8,
 
     has_bundled_input: bool,
     has_bundled_output: bool,
@@ -25,16 +27,19 @@ impl super::functions::ParameterVisitor for Counter {
     #[inline]
     fn visit_input_primitive(&mut self, _: &Ident, _: &Primitive) {
         self.has_bundled_input = true;
+        self.total_bundled_input += 1;
     }
 
     #[inline]
     fn visit_input_small_struct(&mut self, _: &Ident, _: &StructInner) {
         self.has_bundled_input = true;
+        self.total_bundled_input += 1;
     }
 
     #[inline]
     fn visit_input_big_struct(&mut self, _: &Ident, _: &StructInner) {
         self.input_buffers += 1;
+        self.total_bundled_input += 1;
     }
 
     #[inline]
@@ -55,15 +60,18 @@ impl super::functions::ParameterVisitor for Counter {
     #[inline]
     fn visit_output_primitive(&mut self, _: &Ident, _: &Primitive) {
         self.has_bundled_output = true;
+        self.total_bundled_output += 1;
     }
     #[inline]
     fn visit_output_small_struct(&mut self, _: &Ident, _: &StructInner) {
         self.has_bundled_output = true;
+        self.total_bundled_output += 1;
     }
 
     #[inline]
     fn visit_output_big_struct(&mut self, _: &Ident, _: &StructInner) {
         self.output_buffers += 1;
+        self.total_bundled_output += 1;
     }
 
     #[inline]

@@ -38,7 +38,10 @@ impl<'a> Param<'a> {
                     idlc_mir::Param::In { r#type, ident } => match r#type {
                         ParamTypeIn::Array(t) => match t {
                             Type::Primitive(p) => visitor.visit_input_primitive_buffer(ident, p),
-                            Type::Interface(_) => todo!(),
+                            Type::Interface(_) => {
+                                todo!();
+                                // visitor.visit_input_object_buffer(ident, i.as_deref())
+                            }
                             Type::Struct(Struct::Big(s) | Struct::Small(s)) => {
                                 visitor.visit_input_struct_buffer(ident, s)
                             }
@@ -58,7 +61,10 @@ impl<'a> Param<'a> {
                     idlc_mir::Param::Out { r#type, ident } => match r#type {
                         ParamTypeOut::Array(t) => match t {
                             Type::Primitive(p) => visitor.visit_output_primitive_buffer(ident, p),
-                            Type::Interface(_) => todo!(),
+                            Type::Interface(_) => {
+                                todo!();
+                                // visitor.visit_output_object_buffer(ident, i.as_deref())
+                            }
                             Type::Struct(Struct::Big(s) | Struct::Small(s)) => {
                                 visitor.visit_output_struct_buffer(ident, s)
                             }
@@ -129,7 +135,7 @@ pub fn visit_params<V: ParameterVisitor>(function: &Function, visitor: &mut V) {
 }
 
 #[inline]
-pub fn visit_params_sorted<V: ParameterVisitor>(function: &Function, visitor: &mut V) {
+pub fn visit_params_with_bundling<V: ParameterVisitor>(function: &Function, visitor: &mut V) {
     let mut params = function.params.clone();
     params.sort();
     let packed_primitives = super::serialization::PackedPrimitives::new(function);
