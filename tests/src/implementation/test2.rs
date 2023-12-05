@@ -81,7 +81,7 @@ impl IITest2 for ITest2 {
     }
 
     fn test_obj_out(&mut self) -> Result<Option<crate::interfaces::itest1::ITest1>, itest2::Error> {
-        Ok(Some(super::ITest1::new(96).into()).into())
+        Ok(Some(super::ITest1::new(96).into()))
     }
 
     fn test_bundle(
