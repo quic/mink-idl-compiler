@@ -15,6 +15,10 @@ members = [
     "idlc_errors"
 ]
 
+exclude = [
+  "tests"
+]
+
 [profile.opt]
 inherits = "release"
 lto = true

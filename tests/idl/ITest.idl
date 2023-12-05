@@ -1,0 +1,44 @@
+struct F1 {
+    uint32 a;
+};
+
+struct SingleEncapsulated {
+    uint32 inner;
+};
+
+struct Collection {
+  uint64 a;
+  uint32 b;
+  uint32 c;
+  uint64 d;
+};
+
+const uint32 SUCCESS_FLAG = 0xdead;
+
+interface ITest1 {
+  error CUSTOM_1;
+  error CUSTOM_ME_ARE_TWO;
+  error MISMATCH;
+
+  method test_f1(in uint32 a, out uint32 b);
+  method in_struct(in Collection input);
+  method out_struct(out Collection output);
+  method single_out(out uint32 output);
+  method single_in(in uint32 input);
+  method single_primitive_in(in buffer unused, out buffer unused2, in uint32 input);
+  method single_primitive_out(in buffer unused, out buffer unused2, out uint32 output);
+  method multiple_primitive(in buffer unused, out buffer unused2, in uint16 input, out uint16 output, in interface unused3, out interface unused4, in uint32 input2, out uint64 output2, out buffer unused5);
+  method primitive_plus_struct_in(in SingleEncapsulated encapsulated, in uint32 magic);
+  method primitive_plus_struct_out(out SingleEncapsulated encapsulated, out uint32 magic);
+  method bundled_with_unbundled(in SingleEncapsulated bundled, in uint32 magic, in Collection unbundled);
+};
+
+interface ITest2 {
+  error my_custom_error;
+
+  method test_f2(in F1 f);
+  method test_obj_in(in ITest1 o, out uint32 a);
+  method test_obj_out(out ITest1 o);
+  method test_bundle(in buffer xxx, out buffer yyy, in uint32 a, in buffer xxx1, in uint8 b, in uint32 c, out uint32 d, out uint16 e, out uint32 f);
+  method test_array(in F1[] f_in, out F1[] f_out, out F1 f_x, in F1 f_y, in uint32[] a, out uint32[] b, out int32 c, in int16 d);
+};

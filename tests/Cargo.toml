@@ -1,0 +1,9 @@
+[package]
+name = "idlc_test"
+description = "Sanity check for idlc changes"
+authors = ["Arvind Mukund <arvimuku@quicinc.com>", "Christoph Busold <cbusold@qti.qualcomm.com>"]
+version = "0.1.0"
+edition = "2021"
+
+[build-dependencies]
+cc = "1.0.83"
