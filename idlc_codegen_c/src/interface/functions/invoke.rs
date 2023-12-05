@@ -119,9 +119,9 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         self.visit_input_big_struct(ident, ty);
     }
 
-    fn visit_input_object(&mut self, ident: &idlc_mir::Ident, _: Option<&str>) {
+    fn visit_input_object(&mut self, ident: &idlc_mir::Ident, ty: Option<&str>) {
         let idx = self.idx();
-        let ty = "Object".to_string();
+        let ty = ty.unwrap_or("Object").to_string();
         self.pre.push(format!(
             r#" \
                 {ty} {ident}_ptr = ({ty}){ARGS}[{idx}].o;"#
@@ -197,16 +197,16 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         self.args.push(format!("{ARGS}[{idx}].b.size != {size}"));
         self.pre.push(format!(
             r#" \
-            {definition} *o = {ARGS}[{idx}].b.ptr;"#
+                {definition} *o = {ARGS}[{idx}].b.ptr;"#
         ))
     }
 
-    fn visit_output_object(&mut self, ident: &idlc_mir::Ident, _: Option<&str>) {
+    fn visit_output_object(&mut self, ident: &idlc_mir::Ident, ty: Option<&str>) {
         let idx = self.idx();
-        let ty = "Object".to_string();
+        let ty = ty.unwrap_or("Object").to_string();
         self.pre.push(format!(
             r#" \
-            {ty} {ident}_ptr = ({ty}){ARGS}[{idx}].o;"#
+                {ty} {ident}_ptr = ({ty}){ARGS}[{idx}].o;"#
         ));
     }
 }

@@ -1,15 +1,4 @@
-#[must_use]
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+mod generator;
+pub mod interface;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub use generator::Generator;

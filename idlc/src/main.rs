@@ -148,6 +148,20 @@ fn main() {
                 .unwrap();
             file.write_all(content.as_bytes()).unwrap();
         }
+        (true, true, false, false) => {
+            let content = if args.skel {
+                idlc_codegen_cpp::Generator::generate_invoke(&mir)
+            } else {
+                idlc_codegen_cpp::Generator::generate_implementation(&mir)
+            };
+            let mut file = std::fs::OpenOptions::new()
+                .create(true)
+                .write(true)
+                .truncate(true)
+                .open(output)
+                .unwrap();
+            file.write_all(content.as_bytes()).unwrap();
+        }
         (true, false, false, true) => {
             for (name, content) in
                 timer::time!(idlc_codegen_rust::Generator::generate(&mir), "Rust codegen")

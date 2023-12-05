@@ -1,6 +1,6 @@
 use idlc_mir::{Ident, Primitive, StructInner};
 
-use crate::interface::variable_names::invoke::{CONST, OBJECT};
+use crate::interface::variable_names::invoke::CONST;
 use crate::types::change_primitive;
 
 #[derive(Debug, Clone, Default)]
@@ -118,11 +118,11 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
         }
     }
 
-    fn visit_input_object(&mut self, ident: &Ident, _ty: Option<&str>) {
+    fn visit_input_object(&mut self, ident: &Ident, ty: Option<&str>) {
         self.inputs
-            .push((format!("{}_val", ident), OBJECT.to_string()));
+            .push((format!("{}_val", ident), ty.unwrap_or("Object").to_string()));
         self.outputs
-            .push((format!("{}_ptr", ident), OBJECT.to_string()));
+            .push((format!("{}_ptr", ident), ty.unwrap_or("Object").to_string()));
     }
 
     fn visit_output_primitive_buffer(&mut self, ident: &Ident, ty: &Primitive) {
@@ -192,10 +192,14 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
         }
     }
 
-    fn visit_output_object(&mut self, ident: &Ident, _ty: Option<&str>) {
-        self.inputs
-            .push((format!("*{}_ptr", ident), OBJECT.to_string()));
-        self.outputs
-            .push((format!("&{}_ptr", ident), OBJECT.to_string()));
+    fn visit_output_object(&mut self, ident: &Ident, ty: Option<&str>) {
+        self.inputs.push((
+            format!("*{}_ptr", ident),
+            ty.unwrap_or("Object").to_string(),
+        ));
+        self.outputs.push((
+            format!("&{}_ptr", ident),
+            ty.unwrap_or("Object").to_string(),
+        ));
     }
 }

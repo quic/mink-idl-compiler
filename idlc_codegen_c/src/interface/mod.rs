@@ -1,7 +1,7 @@
 use idlc_mir::{Interface, InterfaceNode};
 
-mod functions;
-mod variable_names;
+pub mod functions;
+pub mod variable_names;
 
 use crate::types::change_const_primitive;
 
@@ -91,6 +91,7 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
 
     format!(
         r#"
+typedef Object {ident};
 {constants}
 {errors}
 {op_codes}
@@ -158,6 +159,7 @@ pub fn emit_interface_invoke(interface: &Interface) -> String {
 
     format!(
         r#"
+typedef Object {ident}; \
 #define {ident}_DEFINE_INVOKE(func, prefix, type) \
     int32_t func(ObjectCxt h, ObjectOp op, ObjectArg *a, ObjectCounts k) \
     {{ \

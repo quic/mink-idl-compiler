@@ -1,6 +1,6 @@
 mod generator;
-mod globals;
-mod interface;
-mod types;
+pub mod globals;
+pub mod interface;
+pub mod types;
 
 pub use generator::Generator;
