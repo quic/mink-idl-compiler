@@ -45,7 +45,8 @@ jobs:
         IDLC: "../target/debug/idlc"
       run: |
         cargo build
-        cargo test --manifest-path tests/Cargo.toml
-        cargo test --manifest-path tests/Cargo.toml --release
-        cargo clean --manifest-path tests/Cargo.toml && RUSTC_BOOTSTRAP=1 RUSTFLAGS="-Zsanitizer=address" CFLAGS="-fsanitize=address" cargo test --manifest-path tests/Cargo.toml  -Zbuild-std --target $(rustc -vV | awk '/^host/ { print $2 }')
-        cargo clean --manifest-path tests/Cargo.toml && RUSTC_BOOTSTRAP=1 RUSTFLAGS="-Zsanitizer=address" CFLAGS="-fsanitize=address" cargo test --manifest-path tests/Cargo.toml  -Zbuild-std --target $(rustc -vV | awk '/^host/ { print $2 }') --release
+        cd tests
+        cargo test
+        cargo test --release
+        cargo clean && RUSTC_BOOTSTRAP=1 RUSTFLAGS="-Zsanitizer=address" CFLAGS="-fsanitize=address" cargo test -Zbuild-std --target $(rustc -vV | awk '/^host/ { print $2 }')
+        cargo clean && RUSTC_BOOTSTRAP=1 RUSTFLAGS="-Zsanitizer=address" CFLAGS="-fsanitize=address" cargo test -Zbuild-std --target $(rustc -vV | awk '/^host/ { print $2 }') --release
