@@ -1,6 +1,12 @@
 use qcom_core::object;
 
-#[allow(unused, nonstandard_style, clippy::all, clippy::pedantic)]
+#[allow(
+    unused,
+    nonstandard_style,
+    clippy::all,
+    clippy::pedantic,
+    clippy::nursery
+)]
 pub mod interfaces {
     pub mod itest {
         include!(concat!(env!("OUT_DIR"), "/rust/itest.rs"));
