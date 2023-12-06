@@ -31,6 +31,11 @@ interface ITest1 {
   method primitive_plus_struct_in(in SingleEncapsulated encapsulated, in uint32 magic);
   method primitive_plus_struct_out(out SingleEncapsulated encapsulated, out uint32 magic);
   method bundled_with_unbundled(in SingleEncapsulated bundled, in uint32 magic, in Collection unbundled);
+  /**
+  * This documentation serves the purpose of ensuring codegen doesn't break when documentation exists.
+  *
+  */
+  method well_documented_method(in uint32 foo, out uint32 bar);
 };
 
 interface ITest2 {

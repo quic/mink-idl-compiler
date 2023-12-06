@@ -192,6 +192,11 @@ int32_t itest2_test_obj_in(void *ctx, Object o_val, uint32_t *a_ptr) {
     ASSERT(out == SUCCESS_FLAG);
     ASSERT(single_encapsulated.inner == SUCCESS_FLAG);
   }
+  {
+    uint32_t out = 0;
+    CHECK_OK(ITest1_well_documented_method(o_val, SUCCESS_FLAG, &out));
+    ASSERT(out == SUCCESS_FLAG);
+  }
 
   *a_ptr = SUCCESS_FLAG;
   return Object_OK;

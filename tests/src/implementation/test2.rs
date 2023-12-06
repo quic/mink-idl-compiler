@@ -77,6 +77,8 @@ impl IITest2 for ITest2 {
             ))
         );
 
+        assert_eq!(o.well_documented_method(SUCCESS_FLAG), Ok(SUCCESS_FLAG));
+
         Ok(SUCCESS_FLAG)
     }
 

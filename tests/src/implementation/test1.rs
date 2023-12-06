@@ -128,6 +128,14 @@ macro_rules! generate_itest1_impl {
                     Err(itest1::MISMATCH)
                 }
             }
+
+            fn r#well_documented_method(&mut self, r#foo: u32) -> Result<u32, itest1::Error> {
+                if foo == SUCCESS_FLAG {
+                    Ok(SUCCESS_FLAG)
+                } else {
+                    Err(itest1::MISMATCH)
+                }
+            }
         }
     };
 }
