@@ -24,9 +24,25 @@ pub mod interfaces {
 
 pub mod implementation;
 
-extern "C" {
-    #[allow(improper_ctypes)]
-    pub fn create_c_itest2() -> interfaces::itest2::ITest2;
-    #[allow(improper_ctypes)]
-    pub fn create_c_itest1(value: u32) -> Option<interfaces::itest1::ITest1>;
+#[allow(improper_ctypes)]
+pub mod c {
+    extern "C" {
+        #[link_name = "create_c_itest1"]
+        pub fn create_itest1(value: u32) -> Option<crate::interfaces::itest1::ITest1>;
+
+        #[link_name = "create_c_itest2"]
+        pub fn create_itest2() -> Option<crate::interfaces::itest2::ITest2>;
+    }
+}
+
+#[allow(improper_ctypes)]
+pub mod cpp {
+    extern "C" {
+        #[link_name = "create_cpp_itest1"]
+        pub fn create_itest1(value: u32) -> Option<crate::interfaces::itest1::ITest1>;
+
+        #[link_name = "create_cpp_itest2"]
+        pub fn create_itest2() -> Option<crate::interfaces::itest2::ITest2>;
+
+    }
 }

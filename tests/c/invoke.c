@@ -1,55 +1,22 @@
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include "header.h"
+
 #include <string.h>
 
-#include "ITest.h"
 #include "ITest_invoke.h"
-#include "object.h"
 
-const Collection TRUTH = {
-    .a = 0,
-    .b = 1,
-    .c = 2,
-    .d = 3,
-};
-
-#define CHECK_OK(expr)                                                         \
-  do {                                                                         \
-    int32_t ret = (expr);                                                      \
-    if (ret != Object_OK) {                                                    \
-      printf(#expr " returned %d\n", ret);                                     \
-      return ret;                                                              \
-    }                                                                          \
-  } while (0)
-
-#define ASSERT(expr)                                                           \
-  do {                                                                         \
-    if (!(expr)) {                                                             \
-      printf("Assertion failed: " #expr "\n");                                 \
-      return Object_ERROR;                                                     \
-    }                                                                          \
-  } while (0)
-
-struct CTest1 {
-  uint32_t refs;
-  uint32_t value;
-};
-
-static inline int32_t itest1_release(struct CTest1 *ctx) {
+int32_t itest1_release(struct CTest1 *ctx) {
   if (--ctx->refs == 0) {
     free(ctx);
   }
   return Object_OK;
 }
 
-static inline int32_t itest1_retain(struct CTest1 *ctx) {
+int32_t itest1_retain(struct CTest1 *ctx) {
   ctx->refs++;
   return Object_OK;
 }
 
-static inline int32_t itest1_test_f1(struct CTest1 *ctx, uint32_t a_val,
-                                     uint32_t *b_ptr) {
+int32_t itest1_test_f1(struct CTest1 *ctx, uint32_t a_val, uint32_t *b_ptr) {
   *b_ptr = a_val + ctx->value;
   return Object_OK;
 }
@@ -128,6 +95,13 @@ int32_t itest1_bundled_with_unbundled(void *ctx,
   ASSERT(magic_val == SUCCESS_FLAG);
   ASSERT(memcmp(unbundled_ptr, &TRUTH, sizeof(TRUTH)) == 0);
 
+  return Object_OK;
+}
+
+int32_t itest1_well_documented_method(void *ctx, uint32_t foo_val,
+                                      uint32_t *bar_ptr) {
+  ASSERT(foo_val == SUCCESS_FLAG);
+  *bar_ptr = SUCCESS_FLAG;
   return Object_OK;
 }
 

@@ -21,6 +21,7 @@ fn out_dir() -> &'static Path {
 enum Language {
     Rust,
     C { is_skel: bool },
+    Cpp { is_skel: bool },
 }
 
 fn build_interface(interface: &Path, output: &Path, lang: Language) {
@@ -30,6 +31,12 @@ fn build_interface(interface: &Path, output: &Path, lang: Language) {
             args.push("--rust");
         }
         Language::C { is_skel } => {
+            if is_skel {
+                args.push("--skel");
+            }
+        }
+        Language::Cpp { is_skel } => {
+            args.push("--cpp");
             if is_skel {
                 args.push("--skel");
             }
@@ -47,7 +54,6 @@ fn build_interface(interface: &Path, output: &Path, lang: Language) {
 }
 
 fn main() {
-    let mut builder = cc::Build::new();
     let idlc = std::env::var("IDLC").expect("`IDLC` environment variable should've been set.");
     let build_directory = |path: Option<&Path>, directory| {
         let mut base = out_dir().to_owned();
@@ -62,6 +68,7 @@ fn main() {
     };
     let rust_generated = || build_directory(None, "rust");
     let c_generated = |path: Option<&Path>| build_directory(path, "c");
+    let cpp_generated = |path: Option<&Path>| build_directory(path, "cpp");
 
     println!("cargo:rerun-if-changed={idlc}");
     println!("cargo:rerun-if-changed=idl/");
@@ -78,17 +85,41 @@ fn main() {
         );
         build_interface(
             interface,
-            &c_generated(Some(&PathBuf::from(format!("{stem}_skel.h")))),
+            &c_generated(Some(&PathBuf::from(format!("{stem}_invoke.h")))),
             Language::C { is_skel: true },
+        );
+        build_interface(
+            interface,
+            &cpp_generated(Some(&PathBuf::from(format!("{stem}.hpp")))),
+            Language::Cpp { is_skel: false },
+        );
+        build_interface(
+            interface,
+            &cpp_generated(Some(&PathBuf::from(format!("{stem}_invoke.hpp")))),
+            Language::Cpp { is_skel: true },
         );
         build_interface(interface, &rust_generated(), Language::Rust);
     }
 
     println!("cargo:rerun-if-changed=c/");
-    builder.file("c/invoke.c");
-    builder.include("c");
-    builder.include(c_generated(None));
-    builder.flag("-Wno-unused-parameter");
-    builder.flag("-Werror");
-    builder.compile("ffi");
+    let mut c_ffi = cc::Build::new();
+    c_ffi.file("c/invoke.c");
+    c_ffi.include("c");
+    c_ffi.include(c_generated(None));
+    c_ffi.flag("-Wno-unused-parameter");
+    c_ffi.flag("-Werror");
+    c_ffi.compile("c-ffi");
+
+    println!("cargo:rerun-if-changed=cpp/");
+    let mut cpp_ffi = cc::Build::new();
+    cpp_ffi.file("cpp/main.cpp");
+    cpp_ffi.cpp(true);
+    cpp_ffi.include("c");
+    cpp_ffi.include("cpp");
+    cpp_ffi.include(c_generated(None));
+    cpp_ffi.include(cpp_generated(None));
+    cpp_ffi.flag("-Wno-unused-parameter");
+    cpp_ffi.flag("-Wno-missing-field-initializers");
+    cpp_ffi.flag("-Werror");
+    cpp_ffi.compile("cpp-ffi");
 }
