@@ -2,6 +2,8 @@ use std::borrow::Cow;
 
 use idlc_codegen::serialization::Type;
 
+use crate::interface::variable_names::invoke::{BI, BO};
+
 use crate::types::change_primitive;
 
 #[derive(Debug, Clone)]
@@ -23,6 +25,7 @@ impl<'a> PackedPrimitives<'a> {
         self.generate_struct(
             self.0.inputs_by_idents(),
             self.0.packed_input_size(),
+            BI,
             is_invoke,
         )
     }
@@ -51,17 +54,26 @@ impl<'a> PackedPrimitives<'a> {
         self.generate_struct(
             self.0.outputs_by_idents(),
             self.0.packed_output_size(),
+            BO,
             is_invoke,
         )
     }
 
     pub fn post_bo_assignments(&self) -> String {
         let mut assignments = String::new();
-        self.0.outputs_by_idents().for_each(|(ident, _)| {
-            assignments += &format!(
-                r"*{ident}_ptr = o.m_{ident};
+        self.0.outputs_by_idents().for_each(|(ident, ty)| match ty {
+            Type::Primitive(_) => {
+                assignments += &format!(
+                    r"*{ident}_ptr = o.m_{ident};
     "
-            );
+                );
+            }
+            Type::SmallStruct(_) => {
+                assignments += &format!(
+                    r"*{ident}_ptr = o.m_{ident};
+    "
+                );
+            }
         });
 
         assignments
@@ -72,6 +84,7 @@ impl<'a> PackedPrimitives<'a> {
         &self,
         pairs: impl Iterator<Item = (&'a idlc_mir::Ident, &'a Type)>,
         size: usize,
+        in_out: &str,
         is_invoke: bool,
     ) -> Option<TransportBuffer> {
         if size == 0 {
@@ -101,12 +114,12 @@ impl<'a> PackedPrimitives<'a> {
 
         let definition = if is_invoke {
             format!(
-                r#"struct {{ \{fields}
+                r#"struct {in_out} {{ \{fields}
                 }}"#
             )
         } else {
             format!(
-                r#"struct {{{fields}
+                r#"struct {in_out} {{{fields}
     }}"#
             )
         };

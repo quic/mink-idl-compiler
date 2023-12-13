@@ -8,8 +8,8 @@ use super::serialization::TransportBuffer;
 
 #[derive(Debug, Clone, Default)]
 pub struct Implementation {
-    initializations: Vec<String>,
-    post_call: Vec<String>,
+    pub initializations: Vec<String>,
+    pub post_call: Vec<String>,
 
     pub obj_arr_in: String,
     pub obj_arr_out: String,
@@ -45,7 +45,7 @@ impl Implementation {
 
 impl Implementation {
     #[inline]
-    fn idx(&mut self) -> usize {
+    pub fn idx(&mut self) -> usize {
         let idx = self.idx;
         self.idx += 1;
 
@@ -58,6 +58,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let idx = self.idx();
         let name = format!("{}_ptr", ident);
         let ty = change_primitive(ty);
+
         self.initializations.push(format!(
             r#"{ARGS}[{idx}].bi = ({OBJECTBUFIN}) {{ {name}, {ident}_len * sizeof({ty}) }};
     "#
@@ -95,7 +96,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let idx = self.idx();
 
         self.initializations.push(format!(
-            r#"{definition} i = {{0}};
+            r#"{definition} i;
     {0}"#,
             packer.bi_assignments(),
         ));
@@ -177,7 +178,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let idx = self.idx();
 
         self.initializations.push(format!(
-            r#"{definition} o = {{0}};
+            r#"{definition} o;
     "#
         ));
         self.initializations.push(format!(

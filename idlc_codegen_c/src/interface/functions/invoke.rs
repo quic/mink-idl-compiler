@@ -1,5 +1,5 @@
 use crate::{
-    interface::variable_names::invoke::{ARGS, CONST, OP},
+    interface::variable_names::invoke::{ARGS, BI, BO, CONST, OP},
     types::change_primitive,
 };
 
@@ -8,8 +8,8 @@ use super::serialization::TransportBuffer;
 #[derive(Debug, Default, Clone)]
 pub struct Invoke {
     args: Vec<String>,
-    pre: Vec<String>,
-    post: Vec<String>,
+    pub pre: Vec<String>,
+    pub post: Vec<String>,
 
     idx: usize,
 }
@@ -45,7 +45,7 @@ impl Invoke {
 
 impl Invoke {
     #[inline]
-    fn idx(&mut self) -> usize {
+    pub fn idx(&mut self) -> usize {
         let idx = self.idx;
         self.idx += 1;
 
@@ -100,7 +100,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         self.args.push(format!("{ARGS}[{idx}].b.size != {size}"));
         self.pre.push(format!(
             r#" \
-                {CONST} {definition} *i = {ARGS}[{idx}].b.ptr;"#
+                {CONST} {definition} *i = (const struct {BI}*){ARGS}[{idx}].b.ptr;"#
         ))
     }
 
@@ -138,7 +138,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
                 size_t {ident}_len = {ARGS}[{idx}].b.size / sizeof({ty});"#
         ));
         self.post.push(format!(
-            r#"\
+            r#" \
             {ARGS}[{idx}].b.size = {ident}_len * sizeof({ty});"#
         ));
     }
@@ -197,7 +197,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         self.args.push(format!("{ARGS}[{idx}].b.size != {size}"));
         self.pre.push(format!(
             r#" \
-                {definition} *o = {ARGS}[{idx}].b.ptr;"#
+                {definition} *o = (struct {BO}*){ARGS}[{idx}].b.ptr;"#
         ))
     }
 
@@ -214,7 +214,6 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
 pub fn emit(
     function: &idlc_mir::Function,
     iface_ident: &str,
-    documentation: &str,
     signature: &super::signature::Signature,
     counts: &idlc_codegen::counts::Counter,
 ) -> String {
@@ -235,7 +234,6 @@ pub fn emit(
 
     format!(
         r#" \
-            {documentation} \
             case {iface_ident}_{OP}_{ident}: {{ \
                 if (k != ObjectCounts_pack{counts:?}{args}) {{ \
                     break; \

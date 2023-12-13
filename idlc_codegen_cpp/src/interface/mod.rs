@@ -37,8 +37,7 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
             }
             InterfaceNode::Function(f) => {
                 let counts = idlc_codegen::counts::Counter::new(f);
-                let signature =
-                    idlc_codegen_c::interface::functions::signature::Signature::new(f, &counts);
+                let signature = functions::signature::Signature::new(f, &counts);
                 let documentation = idlc_codegen::documentation::Documentation::new(
                     f,
                     idlc_codegen::documentation::DocumentationStyle::Rust,
@@ -75,8 +74,7 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
             }
             InterfaceNode::Function(f) => {
                 let counts = idlc_codegen::counts::Counter::new(f);
-                let signature =
-                    idlc_codegen_c::interface::functions::signature::Signature::new(f, &counts);
+                let signature = functions::signature::Signature::new(f, &counts);
                 let documentation = idlc_codegen::documentation::Documentation::new(
                     f,
                     idlc_codegen::documentation::DocumentationStyle::Rust,
@@ -146,19 +144,9 @@ pub fn emit_interface_invoke(interface: &Interface) -> String {
         iface.nodes.iter().for_each(|node| {
             if let InterfaceNode::Function(f) = node {
                 let counts = idlc_codegen::counts::Counter::new(f);
-                let signature =
-                    idlc_codegen_c::interface::functions::signature::Signature::new(f, &counts);
-                let documentation = idlc_codegen::documentation::Documentation::new(
-                    f,
-                    idlc_codegen::documentation::DocumentationStyle::Rust,
-                );
+                let signature = functions::signature::Signature::new(f, &counts);
 
-                invokes.push_str(&functions::invoke::emit(
-                    f,
-                    &documentation,
-                    &signature,
-                    &counts,
-                ));
+                invokes.push_str(&functions::invoke::emit(f, &signature, &counts));
             }
         })
     });
@@ -166,19 +154,9 @@ pub fn emit_interface_invoke(interface: &Interface) -> String {
     for node in &interface.nodes {
         if let InterfaceNode::Function(f) = node {
             let counts = idlc_codegen::counts::Counter::new(f);
-            let signature =
-                idlc_codegen_c::interface::functions::signature::Signature::new(f, &counts);
-            let documentation = idlc_codegen::documentation::Documentation::new(
-                f,
-                idlc_codegen::documentation::DocumentationStyle::Rust,
-            );
+            let signature = functions::signature::Signature::new(f, &counts);
 
-            invokes.push_str(&functions::invoke::emit(
-                f,
-                &documentation,
-                &signature,
-                &counts,
-            ));
+            invokes.push_str(&functions::invoke::emit(f, &signature, &counts));
         }
     }
 
@@ -197,7 +175,7 @@ class {ident}ImplBase : protected ImplBase, public I{ident} {{
         }}
         return Object_ERROR_INVALID;
     }}
-}}
+}};
 "#
     )
 }

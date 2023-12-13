@@ -122,15 +122,10 @@ pub fn emit_interface_invoke(interface: &Interface) -> String {
             if let InterfaceNode::Function(f) = node {
                 let counts = idlc_codegen::counts::Counter::new(f);
                 let signature = functions::signature::Signature::new(f, &counts);
-                let documentation = idlc_codegen::documentation::Documentation::new(
-                    f,
-                    idlc_codegen::documentation::DocumentationStyle::Rust,
-                );
 
                 invokes.push_str(&functions::invoke::emit(
                     f,
                     &iface.ident,
-                    &documentation,
                     &signature,
                     &counts,
                 ));
@@ -142,24 +137,13 @@ pub fn emit_interface_invoke(interface: &Interface) -> String {
         if let InterfaceNode::Function(f) = node {
             let counts = idlc_codegen::counts::Counter::new(f);
             let signature = functions::signature::Signature::new(f, &counts);
-            let documentation = idlc_codegen::documentation::Documentation::new(
-                f,
-                idlc_codegen::documentation::DocumentationStyle::Rust,
-            );
 
-            invokes.push_str(&functions::invoke::emit(
-                f,
-                &ident,
-                &documentation,
-                &signature,
-                &counts,
-            ));
+            invokes.push_str(&functions::invoke::emit(f, &ident, &signature, &counts));
         }
     }
 
     format!(
         r#"
-typedef Object {ident}; \
 #define {ident}_DEFINE_INVOKE(func, prefix, type) \
     int32_t func(ObjectCxt h, ObjectOp op, ObjectArg *a, ObjectCounts k) \
     {{ \
