@@ -22,7 +22,7 @@ impl<'a> PackedPrimitives<'a> {
     }
 
     pub fn bi_definition(&self, is_invoke: bool) -> Option<TransportBuffer> {
-        self.generate_struct(
+        Self::generate_struct(
             self.0.inputs_by_idents(),
             self.0.packed_input_size(),
             BI,
@@ -51,7 +51,7 @@ impl<'a> PackedPrimitives<'a> {
     }
 
     pub fn bo_definition(&self, is_invoke: bool) -> Option<TransportBuffer> {
-        self.generate_struct(
+        Self::generate_struct(
             self.0.outputs_by_idents(),
             self.0.packed_output_size(),
             BO,
@@ -81,7 +81,6 @@ impl<'a> PackedPrimitives<'a> {
 
     #[inline]
     fn generate_struct(
-        &self,
         pairs: impl Iterator<Item = (&'a idlc_mir::Ident, &'a Type)>,
         size: usize,
         in_out: &str,
@@ -94,7 +93,7 @@ impl<'a> PackedPrimitives<'a> {
         let mut fields = String::new();
         for (ident, ty) in pairs {
             let ty = match ty {
-                Type::Primitive(p) => Cow::Borrowed(change_primitive(p)),
+                &Type::Primitive(p) => Cow::Borrowed(change_primitive(p)),
                 Type::SmallStruct(s) => Cow::Owned(s.ident.to_string()),
             };
             if is_invoke {

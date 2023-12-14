@@ -22,9 +22,9 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
                 constants.push_str(&format!(
                     r#"static const {} {} = {}({});
     "#,
-                    change_primitive(&c.r#type),
+                    change_primitive(c.r#type),
                     c.ident,
-                    change_const_primitive(&c.r#type),
+                    change_const_primitive(c.r#type),
                     c.value
                 ));
             }
@@ -59,9 +59,9 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
                 constants.push_str(&format!(
                     r#"static const {} {} = {}({});
     "#,
-                    change_primitive(&c.r#type),
+                    change_primitive(c.r#type),
                     c.ident,
-                    change_const_primitive(&c.r#type),
+                    change_const_primitive(c.r#type),
                     c.value
                 ));
             }

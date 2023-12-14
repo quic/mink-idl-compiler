@@ -1,4 +1,4 @@
-pub const fn change_const_primitive(primitive: &idlc_mir::Primitive) -> &'static str {
+pub const fn change_const_primitive(primitive: idlc_mir::Primitive) -> &'static str {
     match primitive {
         idlc_mir::Primitive::Uint8 => "UINT8_C",
         idlc_mir::Primitive::Uint16 => "UINT16_C",
@@ -13,7 +13,7 @@ pub const fn change_const_primitive(primitive: &idlc_mir::Primitive) -> &'static
     }
 }
 
-pub const fn change_primitive(primitive: &idlc_mir::Primitive) -> &'static str {
+pub const fn change_primitive(primitive: idlc_mir::Primitive) -> &'static str {
     match primitive {
         idlc_mir::Primitive::Uint8 => "uint8_t",
         idlc_mir::Primitive::Uint16 => "uint16_t",
@@ -27,18 +27,3 @@ pub const fn change_primitive(primitive: &idlc_mir::Primitive) -> &'static str {
         idlc_mir::Primitive::Float64 => "double",
     }
 }
-
-// get the string type of type name
-// pub fn change_type(r#type: &idlc_mir::Type, is_cpp: bool) -> &'static str {
-//     match r#type {
-//         idlc_mir::Type::Primitive(primitive) => change_primitive(primitive),
-//         idlc_mir::Type::Struct(custom) => &custom.r#struct.ident,
-//         idlc_mir::Type::Interface(iface) => {
-//             if is_cpp {
-//                 iface
-//             } else {
-//                 "Object"
-//             }
-//         }
-//     }
-// }

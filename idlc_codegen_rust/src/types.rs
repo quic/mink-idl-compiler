@@ -1,4 +1,4 @@
-pub const fn change_primitive(primitive: &idlc_mir::Primitive) -> &'static str {
+pub const fn change_primitive(primitive: idlc_mir::Primitive) -> &'static str {
     match primitive {
         idlc_mir::Primitive::Uint8 => "u8",
         idlc_mir::Primitive::Uint16 => "u16",

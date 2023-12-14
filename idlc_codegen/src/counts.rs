@@ -15,7 +15,7 @@ pub struct Counter {
 
 impl super::functions::ParameterVisitor for Counter {
     #[inline]
-    fn visit_input_primitive_buffer(&mut self, _: &Ident, _: &Primitive) {
+    fn visit_input_primitive_buffer(&mut self, _: &Ident, _: Primitive) {
         self.input_buffers += 1;
     }
 
@@ -25,7 +25,7 @@ impl super::functions::ParameterVisitor for Counter {
     }
 
     #[inline]
-    fn visit_input_primitive(&mut self, _: &Ident, _: &Primitive) {
+    fn visit_input_primitive(&mut self, _: &Ident, _: Primitive) {
         self.has_bundled_input = true;
         self.total_bundled_input += 1;
     }
@@ -48,7 +48,7 @@ impl super::functions::ParameterVisitor for Counter {
     }
 
     #[inline]
-    fn visit_output_primitive_buffer(&mut self, _: &Ident, _: &Primitive) {
+    fn visit_output_primitive_buffer(&mut self, _: &Ident, _: Primitive) {
         self.output_buffers += 1;
     }
 
@@ -58,7 +58,7 @@ impl super::functions::ParameterVisitor for Counter {
     }
 
     #[inline]
-    fn visit_output_primitive(&mut self, _: &Ident, _: &Primitive) {
+    fn visit_output_primitive(&mut self, _: &Ident, _: Primitive) {
         self.has_bundled_output = true;
         self.total_bundled_output += 1;
     }

@@ -75,7 +75,7 @@ impl<'a> PackedPrimitives<'a> {
         }
 
         let fields = super::signature::iter_to_string(types.map(|ty| match ty {
-            Type::Primitive(p) => Cow::Borrowed(change_primitive(p)),
+            &Type::Primitive(p) => Cow::Borrowed(change_primitive(p)),
             Type::SmallStruct(s) => Cow::Owned(namespaced_struct(s)),
         }));
         let definition = format!(

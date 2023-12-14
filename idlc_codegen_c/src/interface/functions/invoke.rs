@@ -54,7 +54,7 @@ impl Invoke {
 }
 
 impl idlc_codegen::functions::ParameterVisitor for Invoke {
-    fn visit_input_primitive_buffer(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::Primitive) {
+    fn visit_input_primitive_buffer(&mut self, ident: &idlc_mir::Ident, ty: idlc_mir::Primitive) {
         let idx = self.idx();
         let ty: &str = change_primitive(ty);
         let name = format!("*{}_ptr", ident);
@@ -76,7 +76,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         ));
     }
 
-    fn visit_input_primitive(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::Primitive) {
+    fn visit_input_primitive(&mut self, ident: &idlc_mir::Ident, ty: idlc_mir::Primitive) {
         let idx = self.idx();
         let ty: &str = change_primitive(ty);
         let name = format!("*{}_ptr", ident);
@@ -128,7 +128,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         ));
     }
 
-    fn visit_output_primitive_buffer(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::Primitive) {
+    fn visit_output_primitive_buffer(&mut self, ident: &idlc_mir::Ident, ty: idlc_mir::Primitive) {
         let idx = self.idx();
         let ty: &str = change_primitive(ty);
         let name = format!("*{}_ptr", ident);
@@ -173,7 +173,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         self.visit_output_big_struct(ident, ty);
     }
 
-    fn visit_output_primitive(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::Primitive) {
+    fn visit_output_primitive(&mut self, ident: &idlc_mir::Ident, ty: idlc_mir::Primitive) {
         let idx = self.idx();
         let ty: &str = change_primitive(ty);
         let name = format!("*{}_ptr", ident);

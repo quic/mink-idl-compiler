@@ -49,7 +49,7 @@ impl Signature {
 }
 
 impl idlc_codegen::functions::ParameterVisitor for Signature {
-    fn visit_input_primitive_buffer(&mut self, ident: &Ident, ty: &Primitive) {
+    fn visit_input_primitive_buffer(&mut self, ident: &Ident, ty: Primitive) {
         let name = format!("*{}_ptr", ident);
         let ty = format!("{CONST} {}", change_primitive(ty));
         self.inputs.push((name, ty));
@@ -73,7 +73,7 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
             .push((format!("{}_len", ident), "size_t".to_string()));
     }
 
-    fn visit_input_primitive(&mut self, ident: &Ident, ty: &Primitive) {
+    fn visit_input_primitive(&mut self, ident: &Ident, ty: Primitive) {
         self.inputs
             .push((format!("{}_val", ident), change_primitive(ty).to_string()));
         if self.total_bundled_input > 1 && self.bundled_inputs.contains(&ident.to_string()) {
@@ -117,7 +117,7 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
             .push((format!("p_{}", ident), ty.unwrap_or("Object").to_string()));
     }
 
-    fn visit_output_primitive_buffer(&mut self, ident: &Ident, ty: &Primitive) {
+    fn visit_output_primitive_buffer(&mut self, ident: &Ident, ty: Primitive) {
         let name = format!("*{}_ptr", ident);
         let ty = change_primitive(ty).to_string();
         self.inputs.push((name, ty));
@@ -149,7 +149,7 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
             .push((format!("&{}_len", ident), "size_t".to_string()));
     }
 
-    fn visit_output_primitive(&mut self, ident: &Ident, ty: &Primitive) {
+    fn visit_output_primitive(&mut self, ident: &Ident, ty: Primitive) {
         self.inputs
             .push((format!("*{}_ptr", ident), change_primitive(ty).to_string()));
         if self.total_bundled_output > 1 && self.bundled_outputs.contains(&ident.to_string()) {

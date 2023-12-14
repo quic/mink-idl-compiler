@@ -74,7 +74,7 @@ impl Invoke {
 }
 
 impl idlc_codegen::functions::ParameterVisitor for Invoke {
-    fn visit_input_primitive_buffer(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::Primitive) {
+    fn visit_input_primitive_buffer(&mut self, ident: &idlc_mir::Ident, ty: idlc_mir::Primitive) {
         self.generate_for_input_buffer(EscapedIdent::new(ident), change_primitive(ty));
     }
 
@@ -82,7 +82,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         self.generate_for_input_buffer(EscapedIdent::new(ident), &namespaced_struct(ty));
     }
 
-    fn visit_input_primitive(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::Primitive) {
+    fn visit_input_primitive(&mut self, ident: &idlc_mir::Ident, ty: idlc_mir::Primitive) {
         let ty: &str = change_primitive(ty);
         let ident = EscapedIdent::new(ident);
         let idx = self.idx();
@@ -147,7 +147,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         ));
     }
 
-    fn visit_output_primitive_buffer(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::Primitive) {
+    fn visit_output_primitive_buffer(&mut self, ident: &idlc_mir::Ident, ty: idlc_mir::Primitive) {
         self.generate_for_output_buffer(EscapedIdent::new(ident), change_primitive(ty));
     }
 
@@ -171,7 +171,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         self.visit_output_big_struct(ident, ty);
     }
 
-    fn visit_output_primitive(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::Primitive) {
+    fn visit_output_primitive(&mut self, ident: &idlc_mir::Ident, ty: idlc_mir::Primitive) {
         let ty = change_primitive(ty);
         let ident = EscapedIdent::new(ident);
         let idx = self.idx();

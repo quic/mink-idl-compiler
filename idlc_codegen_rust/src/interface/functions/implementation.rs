@@ -73,7 +73,7 @@ impl Implementation {
 }
 
 impl idlc_codegen::functions::ParameterVisitor for Implementation {
-    fn visit_input_primitive_buffer(&mut self, ident: &Ident, _: &idlc_mir::Primitive) {
+    fn visit_input_primitive_buffer(&mut self, ident: &Ident, _: idlc_mir::Primitive) {
         self.generate_input_buffer(ident);
     }
 
@@ -81,7 +81,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         self.generate_input_buffer(ident);
     }
 
-    fn visit_input_primitive(&mut self, ident: &Ident, ty: &idlc_mir::Primitive) {
+    fn visit_input_primitive(&mut self, ident: &Ident, ty: idlc_mir::Primitive) {
         let ty: &str = change_primitive(ty);
         let ident = EscapedIdent::new(ident);
         self.args.push(format!(
@@ -145,7 +145,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         ));
     }
 
-    fn visit_output_primitive_buffer(&mut self, ident: &Ident, ty: &idlc_mir::Primitive) {
+    fn visit_output_primitive_buffer(&mut self, ident: &Ident, ty: idlc_mir::Primitive) {
         self.generate_output_buffer(ident, change_primitive(ty));
     }
 
@@ -153,7 +153,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         self.generate_output_buffer(ident, &namespaced_struct(ty));
     }
 
-    fn visit_output_primitive(&mut self, ident: &Ident, ty: &idlc_mir::Primitive) {
+    fn visit_output_primitive(&mut self, ident: &Ident, ty: idlc_mir::Primitive) {
         let ty: &str = change_primitive(ty);
         let ident = EscapedIdent::new(ident);
         self.initializations.push(format!(

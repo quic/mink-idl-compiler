@@ -21,7 +21,7 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
                     "#define {}_{} {}({})\n",
                     ident,
                     c.ident,
-                    change_const_primitive(&c.r#type),
+                    change_const_primitive(c.r#type),
                     c.value
                 ));
             }
@@ -58,7 +58,7 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
                     "#define {}_{} {}({})\n",
                     ident,
                     c.ident,
-                    change_const_primitive(&c.r#type),
+                    change_const_primitive(c.r#type),
                     c.value
                 ));
             }

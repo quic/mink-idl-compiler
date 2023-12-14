@@ -62,10 +62,10 @@ pub struct PackedPrimitives {
 }
 
 impl super::functions::ParameterVisitor for PackedPrimitives {
-    fn visit_input_primitive(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::Primitive) {
+    fn visit_input_primitive(&mut self, ident: &idlc_mir::Ident, ty: idlc_mir::Primitive) {
         let nth_param = self.inputs.len();
         self.inputs
-            .push(Pair::new(ident, Type::Primitive(*ty), nth_param));
+            .push(Pair::new(ident, Type::Primitive(ty), nth_param));
         self.input_size += ty.size();
     }
 
@@ -76,10 +76,10 @@ impl super::functions::ParameterVisitor for PackedPrimitives {
         self.input_size += ty.size();
     }
 
-    fn visit_output_primitive(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::Primitive) {
+    fn visit_output_primitive(&mut self, ident: &idlc_mir::Ident, ty: idlc_mir::Primitive) {
         let nth_param = self.outputs.len();
         self.outputs
-            .push(Pair::new(ident, Type::Primitive(*ty), nth_param));
+            .push(Pair::new(ident, Type::Primitive(ty), nth_param));
         self.output_size += ty.size();
     }
 

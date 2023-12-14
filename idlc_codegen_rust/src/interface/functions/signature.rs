@@ -69,7 +69,7 @@ impl Signature {
 }
 
 impl idlc_codegen::functions::ParameterVisitor for Signature {
-    fn visit_input_primitive_buffer(&mut self, ident: &Ident, ty: &Primitive) {
+    fn visit_input_primitive_buffer(&mut self, ident: &Ident, ty: Primitive) {
         self.push_inputs(ident, format!("&[{}]", change_primitive(ty)));
     }
 
@@ -77,7 +77,7 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
         self.push_inputs(ident, format!("&[{}]", namespaced_struct(ty)));
     }
 
-    fn visit_input_primitive(&mut self, ident: &Ident, ty: &Primitive) {
+    fn visit_input_primitive(&mut self, ident: &Ident, ty: Primitive) {
         self.push_inputs(ident, change_primitive(ty));
     }
 
@@ -99,7 +99,7 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
         self.push_inputs(ident, format!("Option<&{ty}>"));
     }
 
-    fn visit_output_primitive_buffer(&mut self, ident: &Ident, ty: &Primitive) {
+    fn visit_output_primitive_buffer(&mut self, ident: &Ident, ty: Primitive) {
         self.push_inputs(ident, format!("&mut [{}]", change_primitive(ty)));
         self.push_inputs(
             &idlc_mir::Ident::new_without_span(format!("{ident}_lenout")),
@@ -115,7 +115,7 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
         );
     }
 
-    fn visit_output_primitive(&mut self, ident: &Ident, ty: &Primitive) {
+    fn visit_output_primitive(&mut self, ident: &Ident, ty: Primitive) {
         self.push_outputs(ident, change_primitive(ty));
     }
 
