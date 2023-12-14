@@ -7,7 +7,7 @@ mod functions;
 pub mod mink_primitives;
 mod variable_names;
 
-pub fn emit_interface(interface: &Interface) -> String {
+pub fn emit(interface: &Interface) -> String {
     use mink_primitives::{
         ARG, CONTEXT, COUNTS, GENERIC_ERROR, INVOKE_FN, OBJECT, OP_ID, OP_RELEASE, OP_RETAIN,
         WRAPPER,
@@ -35,10 +35,10 @@ pub fn emit_interface(interface: &Interface) -> String {
                 implementations.push(functions::implementation::emit(
                     f,
                     &documentation,
-                    &counts,
+                    counts,
                     &signature,
                 ));
-                invoke_arms.push(functions::invoke::emit(f, &signature, &counts));
+                invoke_arms.push(functions::invoke::emit(f, &signature, counts));
                 trait_functions.push(functions::traits::emit(f, &documentation, &signature));
             }
         }
@@ -58,8 +58,11 @@ pub fn emit_interface(interface: &Interface) -> String {
             })
             .for_each(|f| {
                 let signature = functions::signature::Signature::new(f);
-                let counts = idlc_codegen::counts::Counter::new(f);
-                invoke_arms.push(functions::invoke::emit(f, &signature, &counts));
+                invoke_arms.push(functions::invoke::emit(
+                    f,
+                    &signature,
+                    idlc_codegen::counts::Counter::new(f),
+                ));
             });
     });
 

@@ -5,7 +5,7 @@ use idlc_mir::Node;
 
 use crate::{
     globals::{emit_const, emit_struct},
-    interface::emit_interface,
+    interface::emit,
 };
 
 pub struct Generator;
@@ -45,7 +45,7 @@ impl idlc_codegen::Generator for Generator {
                         ));
                     }
                     interface_content.push('\n');
-                    interface_content.push_str(&emit_interface(i));
+                    interface_content.push_str(&emit(i));
                     let name = format!("{}.rs", i.ident.to_lowercase());
                     if name == base.to_str().unwrap() {
                         interfaces

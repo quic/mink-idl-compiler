@@ -23,7 +23,7 @@ impl<'a> PackedPrimitives<'a> {
     }
 
     pub fn bi_definition(&self) -> Option<TransportBuffer> {
-        self.generate_struct(self.0.input_types(), "BI", self.0.packed_input_size())
+        Self::generate_struct(self.0.input_types(), "BI", self.0.packed_input_size())
     }
 
     pub fn bi_definition_idents(&self) -> impl ExactSizeIterator<Item = String> + '_ {
@@ -55,7 +55,7 @@ impl<'a> PackedPrimitives<'a> {
     }
 
     pub fn bo_definition(&self) -> Option<TransportBuffer> {
-        self.generate_struct(self.0.output_types(), "BO", self.0.packed_output_size())
+        Self::generate_struct(self.0.output_types(), "BO", self.0.packed_output_size())
     }
 
     pub fn bo_idents(&self) -> impl ExactSizeIterator<Item = String> + '_ {
@@ -66,7 +66,6 @@ impl<'a> PackedPrimitives<'a> {
 
     #[inline]
     fn generate_struct(
-        &self,
         types: impl Iterator<Item = &'a Type>,
         ident: &'static str,
         size: usize,

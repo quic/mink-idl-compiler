@@ -237,7 +237,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
 pub fn emit(
     function: &idlc_mir::Function,
     documentation: &str,
-    counts: &idlc_codegen::counts::Counter,
+    counts: idlc_codegen::counts::Counter,
     signature: &super::signature::Signature,
 ) -> String {
     let id = function.id;

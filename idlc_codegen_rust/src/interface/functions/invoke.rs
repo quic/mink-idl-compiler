@@ -222,7 +222,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
 pub fn emit(
     function: &idlc_mir::Function,
     signature: &super::signature::Signature,
-    counts: &idlc_codegen::counts::Counter,
+    counts: idlc_codegen::counts::Counter,
 ) -> String {
     use crate::interface::mink_primitives::{ERROR_STRUCT, OK, PACK_COUNTS};
     use crate::interface::variable_names::invoke::{CONTEXT, COUNTS};
