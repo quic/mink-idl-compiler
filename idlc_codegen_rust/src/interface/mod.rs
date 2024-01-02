@@ -10,7 +10,7 @@ mod variable_names;
 pub fn emit(interface: &Interface) -> String {
     use mink_primitives::{
         ARG, CONTEXT, COUNTS, GENERIC_ERROR, INVOKE_FN, OBJECT, OP_ID, OP_RELEASE, OP_RETAIN,
-        WRAPPER,
+        TYPED_OBJECT_TRAIT, WRAPPER,
     };
     let ident = &interface.ident;
     let mut trait_functions = Vec::new();
@@ -91,6 +91,7 @@ pub fn emit(interface: &Interface) -> String {
     #[repr(transparent)]
     #[derive(Debug, Clone, PartialEq)]
     pub struct {ident}({OBJECT});
+    unsafe impl {TYPED_OBJECT_TRAIT} for {ident} {{}}
 
     pub trait I{ident}: {base_ident} 'static {{
         {trait_functions}
@@ -98,33 +99,6 @@ pub fn emit(interface: &Interface) -> String {
 
     impl {ident} {{
         {implementations}
-    }}
-
-    impl {ident} {{
-        #[inline]
-        /// Returns inner raw [`{OBJECT}`] out of [`{ident}`].
-        pub fn into_raw(self) -> {OBJECT} {{
-            self.0
-        }}
-
-        #[inline]
-        /// Uses raw [`{OBJECT}`] to create a typed [`{ident}`] without performing type checking.
-        ///
-        /// # Safety
-        /// This function exhibits safe behavior as long as the [`{OBJECT}`]
-        /// used is a valid [`{ident}`].
-        pub const unsafe fn from_raw(o: crate::object::Object) -> Self {{
-            Self(o)
-        }}
-
-        #[inline]
-        /// Uses raw &[`{OBJECT}`] to create a typed &[`{ident}`] without performing type checking.
-        ///
-        /// # Safety
-        /// This function exhibits safe behavior as long as the &[`{OBJECT}`] used is a valid &[`{OBJECT}`]
-        pub const unsafe fn from_raw_ref(o: &crate::object::Object) -> &Self {{
-            std::mem::transmute(o)
-        }}
     }}
 
     impl AsRef<{upcast_target}> for {ident} {{
