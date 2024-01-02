@@ -10,4 +10,4 @@ idlc_ast = { path = "../idlc_ast" }
 idlc_ast_passes = { path="../idlc_ast_passes" }
 idlc_errors = { version = "0.1.0", path = "../idlc_errors" }
 idlc_mir = { path="../idlc_mir" }
-thiserror = "1.0.50"
+thiserror = "1.0.56"

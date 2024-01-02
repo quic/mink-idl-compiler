@@ -12,4 +12,4 @@ description = "AST structure for IDL; contains grammar and AST generators"
 [dependencies]
 pest = "2.7.5"
 pest_derive = "2.7.5"
-thiserror = "1.0.50"
+thiserror = "1.0.56"
