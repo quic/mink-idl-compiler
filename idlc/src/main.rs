@@ -21,8 +21,17 @@ use idlc_mir_passes::{interface_verifier, MirCompilerPass};
 
 use idlc_codegen::{Generator, SplitInvokeGenerator};
 
+fn long_version() -> &'static str {
+    format!(
+        "{}\nCompiled from (git hash): {}",
+        env!("CARGO_PKG_VERSION"),
+        env!("GIT_HASH")
+    )
+    .leak()
+}
+
 #[derive(clap::Parser)]
-#[command(author, version, about = None, long_about)]
+#[command(author, version, long_version=long_version(), about = None, long_about)]
 /// Parse .idl files into AST.
 ///
 /// The C-compiler for example returns `nested too deeply`, rust detects cyclic
