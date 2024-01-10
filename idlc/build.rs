@@ -2,7 +2,7 @@ use std::process::Command;
 
 pub fn main() {
     let output = Command::new("git")
-        .args(&["describe", "--always", "--abbrev=40", "--dirty"])
+        .args(["describe", "--always", "--abbrev=40", "--dirty"])
         .output()
         .unwrap();
     let git_hash = std::str::from_utf8(&output.stdout).unwrap();
