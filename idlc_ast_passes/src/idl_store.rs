@@ -107,27 +107,34 @@ impl IDLStore {
             return canonicalized;
         }
 
-        let mut set_found_files = std::collections::HashSet::new();
+        let mut possibilities = std::collections::HashSet::new();
+        let mut first: Option<PathBuf> = None;
+
         for include_path in &self.include_paths {
-            let inc_path = include_path.join(path);
-            if inc_path.exists() {
-                set_found_files.insert(inc_path.canonicalize().unwrap());
+            let possibility = include_path.join(path);
+            if possibility.exists() {
+                let canonical = possibility.canonicalize().unwrap();
+                if first.is_none() {
+                    first = Some(canonical.clone());
+                }
+                possibilities.insert(canonical);
             }
         }
+        let Some(first) = first else {
+            idlc_errors::unrecoverable!("File not found: {}", path.display());
+        };
 
-        let selected_path = set_found_files.iter().next().expect("File not found");
-
-        if set_found_files.len() > 1 {
+        if possibilities.len() > 1 {
             warn!(
                 "Found multiple files with the same name '{}' in different paths: ",
                 path.display()
             );
-            for f in &set_found_files {
+            for f in &possibilities {
                 warn!("{}", f.display());
             }
-            warn!("Selecting '{}'", selected_path.display());
+            warn!("Selecting '{}'", first.display());
         }
-        selected_path.clone()
+        first
     }
 
     fn check_includes(&mut self, ast: &'_ idlc_ast::Ast) -> Result<Vec<String>, crate::Error> {

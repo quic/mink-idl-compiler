@@ -133,6 +133,36 @@ fn cycle_with_duplicate_file_with_include_paths() {
 
 #[test]
 #[serial]
+fn no_cycle_with_duplicate_file_with_include_paths() {
+    assert_eq!(
+        verify(
+            "no_cycle_with_duplicate_file_with_include_paths",
+            "a.idl",
+            "./test_inner",
+        )
+        .unwrap(),
+        [
+            std::path::Path::new("c.idl")
+                .canonicalize()
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            std::path::Path::new("b.idl")
+                .canonicalize()
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            std::path::Path::new("a.idl")
+                .canonicalize()
+                .unwrap()
+                .to_str()
+                .unwrap()
+        ]
+    );
+}
+
+#[test]
+#[serial]
 #[should_panic(expected = "File not found")]
 fn invalid_file() {
     let _ = verify("", "invalid_file.idl", "");
