@@ -145,9 +145,15 @@ fn main() {
     match (args.c, args.cpp, args.java, args.rust) {
         (true, false, false, false) => {
             let content = if args.skel {
-                idlc_codegen_c::Generator::generate_invoke(&mir)
+                timer::time!(
+                    idlc_codegen_c::Generator::generate_invoke(&mir),
+                    "C invoke codegen"
+                )
             } else {
-                idlc_codegen_c::Generator::generate_implementation(&mir)
+                timer::time!(
+                    idlc_codegen_c::Generator::generate_implementation(&mir),
+                    "C implementation codegen"
+                )
             };
             let mut file = std::fs::OpenOptions::new()
                 .create(true)
@@ -159,9 +165,15 @@ fn main() {
         }
         (true, true, false, false) => {
             let content = if args.skel {
-                idlc_codegen_cpp::Generator::generate_invoke(&mir)
+                timer::time!(
+                    idlc_codegen_cpp::Generator::generate_invoke(&mir),
+                    "C++ invoke codegen"
+                )
             } else {
-                idlc_codegen_cpp::Generator::generate_implementation(&mir)
+                timer::time!(
+                    idlc_codegen_cpp::Generator::generate_implementation(&mir),
+                    "C++ implementation codegen"
+                )
             };
             let mut file = std::fs::OpenOptions::new()
                 .create(true)
