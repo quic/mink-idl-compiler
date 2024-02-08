@@ -242,6 +242,64 @@ impl Primitive {
         // All primitive types are required to be aligned to it's size.
         self.size()
     }
+
+    /// Ensures the type is checked for range
+    pub(crate) fn new(r#type: &str, value: &str) -> Result<Self, Error> {
+        let value = value.trim();
+        let radix = if value.starts_with("0x") || value.starts_with("-0x") {
+            16
+        } else {
+            10
+        };
+        let value = &value.replace("0x", "");
+        match r#type {
+            "uint8" => {
+                u8::from_str_radix(value, radix)?;
+                Ok(Self::Uint8)
+            }
+            "uint16" => {
+                u16::from_str_radix(value, radix)?;
+                Ok(Self::Uint16)
+            }
+            "uint32" => {
+                u32::from_str_radix(value, radix)?;
+                Ok(Self::Uint32)
+            }
+            "uint64" => {
+                u64::from_str_radix(value, radix)?;
+                Ok(Self::Uint64)
+            }
+            "int8" => {
+                i8::from_str_radix(value, radix)?;
+                Ok(Self::Int8)
+            }
+            "int16" => {
+                i16::from_str_radix(value, radix)?;
+                Ok(Self::Int16)
+            }
+            "int32" => {
+                i32::from_str_radix(value, radix)?;
+                Ok(Self::Int32)
+            }
+            "int64" => {
+                i64::from_str_radix(value, radix)?;
+                Ok(Self::Int64)
+            }
+            "float32" => {
+                if value.parse::<f32>()?.is_infinite() {
+                    return Err(Error::FloatIsInfinite);
+                }
+                Ok(Self::Float32)
+            }
+            "float64" => {
+                if value.parse::<f64>()?.is_infinite() {
+                    return Err(Error::FloatIsInfinite);
+                }
+                Ok(Self::Float64)
+            }
+            _ => Err(Error::UnknownPrimitiveType(value.to_string())),
+        }
+    }
 }
 
 impl TryFrom<&str> for Primitive {

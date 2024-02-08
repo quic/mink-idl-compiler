@@ -12,7 +12,7 @@ ident          = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
 integer_type   = @{ "u"? ~ "int" ~ ("8" | "16" | "32" | "64") }
 float_type     = @{ "float" ~ ("32" | "64") }
 primitive_type = @{ (integer_type | float_type) }
-value          = @{ ("0x" ~ ASCII_HEX_DIGIT+ | "-"? ~ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)?) }
+value          = @{ ("-"? ~ "0x" ~ ASCII_HEX_DIGIT+ | "-"? ~ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)?) }
 
 array        = @{ ASCII_DIGIT+ }
 struct_field =  { (primitive_type | ident) ~ ("[" ~ array ~ "]")? ~ ident ~ ";" }

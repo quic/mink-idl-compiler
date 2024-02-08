@@ -121,6 +121,7 @@ fn consts() {
             "const int8 foo = -5;",
             "const float32 foo = -5.123213;",
             "const float32 bar = 5.123213;",
+            "const uint8 bar = -0xabc;",
         ]
     );
 
@@ -131,7 +132,6 @@ fn consts() {
             "const uint8 bar = 123abf;",
             "const uint8 bar = abc;",
             "const uint8 bar = -abc;",
-            "const uint8 bar = -0xabc;",
             "const float32 bar = 5.;",
         ]
     );

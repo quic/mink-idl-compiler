@@ -1,3 +1,4 @@
+mod ast;
 mod parser;
 
 macro_rules! valid {

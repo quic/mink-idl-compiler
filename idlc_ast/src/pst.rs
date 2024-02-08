@@ -22,8 +22,12 @@ pub enum Error {
     UnknownPrimitiveType(String),
     #[error("Cannot parse integer")]
     ParseIntError(#[from] std::num::ParseIntError),
+    #[error("Cannot parse float")]
+    ParseFloatError(#[from] std::num::ParseFloatError),
     #[error("Documentation for this node doesn't exist yet")]
     UnsupportedDocumentation,
+    #[error("Parsed float translates to infinite")]
+    FloatIsInfinite,
 }
 impl From<pest::error::Error<Rule>> for Error {
     fn from(value: pest::error::Error<Rule>) -> Self {
@@ -65,13 +69,18 @@ impl<R: pest::RuleType + Ord> From<Pair<'_, R>> for Ident {
 
 impl<'a> From<Pairs<'a, Rule>> for Const {
     fn from(mut inner: Pairs<'a, Rule>) -> Self {
-        let r#type = Primitive::try_from(ast_unwrap!(inner.next()).as_str());
+        let idl_type = ast_unwrap!(inner.next()).as_str();
         let ident = ast_unwrap!(inner.next()).into();
-        let value = ast_unwrap!(inner.next()).as_str().to_string();
+        let value = ast_unwrap!(inner.next()).as_str();
+
+        let primitive = Primitive::new(idl_type, value).unwrap_or_else(|e| {
+            idlc_errors::unrecoverable!("'{value}' isn't in range for type '{idl_type}' [{e}]");
+        });
+
         Self {
             ident,
-            r#type: ast_unwrap!(r#type),
-            value,
+            r#type: primitive,
+            value: value.to_string(),
         }
     }
 }
