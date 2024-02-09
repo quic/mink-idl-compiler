@@ -17,4 +17,4 @@ idlc_codegen_java = { path="../idlc_codegen_java" }
 idlc_codegen = { path = "../idlc_codegen" }
 idlc_errors = { path = "../idlc_errors" }
 
-clap = { version = "4.4.12", features = ["derive"] }
+clap = { version = "4.5.0", features = ["derive"] }
