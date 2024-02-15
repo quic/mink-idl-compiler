@@ -25,11 +25,6 @@ impl super::functions::ParameterVisitor for Counter {
     }
 
     #[inline]
-    fn visit_input_object_buffer(&mut self, _: &Ident, _: Option<&str>, cnt: Count) {
-        self.input_objects += cnt.get() as u8;
-    }
-
-    #[inline]
     fn visit_input_primitive(&mut self, _: &Ident, _: Primitive) {
         self.has_bundled_input = true;
         self.total_bundled_input += 1;
@@ -53,6 +48,11 @@ impl super::functions::ParameterVisitor for Counter {
     }
 
     #[inline]
+    fn visit_input_object_array(&mut self, _: &Ident, _: Option<&str>, cnt: Count) {
+        self.input_objects += u8::try_from(cnt.get()).unwrap();
+    }
+
+    #[inline]
     fn visit_output_primitive_buffer(&mut self, _: &Ident, _: Primitive) {
         self.output_buffers += 1;
     }
@@ -60,11 +60,6 @@ impl super::functions::ParameterVisitor for Counter {
     #[inline]
     fn visit_output_struct_buffer(&mut self, _: &Ident, _: &StructInner) {
         self.output_buffers += 1;
-    }
-
-    #[inline]
-    fn visit_output_object_buffer(&mut self, _: &Ident, _: Option<&str>, cnt: Count) {
-        self.output_objects += cnt.get() as u8;
     }
 
     #[inline]
@@ -87,6 +82,11 @@ impl super::functions::ParameterVisitor for Counter {
     #[inline]
     fn visit_output_object(&mut self, _: &Ident, _: Option<&str>) {
         self.output_objects += 1;
+    }
+
+    #[inline]
+    fn visit_output_object_array(&mut self, _: &Ident, _: Option<&str>, cnt: Count) {
+        self.output_objects += u8::try_from(cnt.get()).unwrap();
     }
 }
 

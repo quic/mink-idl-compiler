@@ -161,8 +161,8 @@ impl From<Pair<'_, Rule>> for ParamTypeIn {
 
         if let Some(pair) = inner.next() {
             match pair.as_rule() {
-                Rule::unbounded_arr => Self::Array(r#type, None),
-                Rule::bounded_arr => {
+                Rule::unbounded_array => Self::Array(r#type, None),
+                Rule::bounded_array => {
                     let array_len: Count = ast_unwrap!(pair.into_inner().as_str().parse());
                     Self::Array(r#type, Some(array_len))
                 }
@@ -186,8 +186,8 @@ impl From<Pair<'_, Rule>> for ParamTypeOut {
 
         if let Some(pair) = inner.next() {
             match pair.as_rule() {
-                Rule::unbounded_arr => Self::Array(r#type, None),
-                Rule::bounded_arr => {
+                Rule::unbounded_array => Self::Array(r#type, None),
+                Rule::bounded_array => {
                     let array_len: Count = ast_unwrap!(pair.into_inner().as_str().parse());
                     Self::Array(r#type, Some(array_len))
                 }
@@ -234,7 +234,7 @@ fn parse_struct(pair: Pair<Rule>) -> Rc<Node> {
                 let r#type = Type::from(ast_unwrap!(iter.next()));
                 let next = ast_unwrap!(iter.next());
                 let (elem, ident) = match next.as_rule() {
-                    Rule::bounded_arr => {
+                    Rule::bounded_array => {
                         let array_len: Count =
                             ast_unwrap!(next.clone().into_inner().as_str().parse());
                         let ident = ast_unwrap!(iter.next()).as_str().to_string();

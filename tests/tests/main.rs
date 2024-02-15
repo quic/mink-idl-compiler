@@ -16,6 +16,26 @@ fn rust_calls_rust_itest1() {
 }
 
 #[test]
+fn rust_calls_rust_itest1_array() {
+    let rust_wrapper: ITest2 = implementation::ITest2::new().into();
+    let input_array = [
+        Some(implementation::ITest1::default().into()),
+        Some(implementation::ITest1::default().into()),
+        Some(implementation::ITest1::default().into()),
+    ];
+    assert_eq!(
+        rust_wrapper.test_obj_array_in(&input_array),
+        Ok(SUCCESS_FLAG)
+    );
+
+    let (objs, value) = rust_wrapper.test_obj_array_out().unwrap();
+    assert!(value == SUCCESS_FLAG);
+    for obj in objs {
+        assert_eq!(rust_wrapper.test_obj_in(obj.as_ref()), Ok(SUCCESS_FLAG));
+    }
+}
+
+#[test]
 fn test_bundle_inout() {
     let mut _lenout = 0;
     let test2: ITest2 = implementation::ITest2::new().into();

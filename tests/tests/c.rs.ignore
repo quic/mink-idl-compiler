@@ -19,3 +19,14 @@ fn c_itest1() {
     let input = unsafe { create_itest1(Default::default()).unwrap() };
     assert_eq!(rust_wrapper.test_obj_in(Some(&input)), Ok(SUCCESS_FLAG));
 }
+
+#[test]
+fn c_itest_array() {
+    let c_wrapper = unsafe { create_itest2().unwrap() };
+    let input_array = [
+        Some(unsafe { create_itest1(Default::default()).unwrap() }),
+        Some(unsafe { create_itest1(Default::default()).unwrap() }),
+        Some(unsafe { create_itest1(Default::default()).unwrap() }),
+    ];
+    assert_eq!(c_wrapper.test_obj_array_in(&input_array), Ok(SUCCESS_FLAG));
+}

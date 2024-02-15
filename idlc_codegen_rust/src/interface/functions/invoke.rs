@@ -82,20 +82,6 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         self.generate_for_input_buffer(EscapedIdent::new(ident), &namespaced_struct(ty));
     }
 
-    fn visit_input_object_buffer(
-        &mut self,
-        _ident: &idlc_mir::Ident,
-        _: Option<&str>,
-        _cnt: idlc_mir::Count,
-    ) {
-        // todo!();
-        let idx = self.idx();
-        let ident = EscapedIdent::new(_ident);
-        self.pre.push(format!(
-            "let {ident} = std::mem::transmute_copy(&{ARGS}[{idx}].o.as_ref());"
-        ));
-    }
-
     fn visit_input_primitive(&mut self, ident: &idlc_mir::Ident, ty: idlc_mir::Primitive) {
         let ty: &str = change_primitive(ty);
         let ident = EscapedIdent::new(ident);
@@ -159,6 +145,22 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         self.pre.push(format!(
             "let {ident} = std::mem::transmute({ARGS}[{idx}].o.as_ref());"
         ));
+    }
+
+    fn visit_input_object_array(
+        &mut self,
+        ident: &idlc_mir::Ident,
+        _: Option<&str>,
+        cnt: idlc_mir::Count,
+    ) {
+        let ident = EscapedIdent::new(ident);
+        let mut definition = format!("let {ident} = &std::mem::ManuallyDrop::new([");
+        for _ in 0..cnt.get() {
+            let idx = self.idx();
+            definition += &format!("std::mem::transmute_copy(&{ARGS}[{idx}].o),",);
+        }
+        definition.push_str("]);");
+        self.pre.push(definition);
     }
 
     fn visit_output_primitive_buffer(&mut self, ident: &idlc_mir::Ident, ty: idlc_mir::Primitive) {
@@ -230,6 +232,24 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         self.post.push(format!(
             "{ARGS}[{idx}].o = std::mem::ManuallyDrop::new(std::mem::transmute({ident}));\n"
         ));
+    }
+
+    fn visit_output_object_array(
+        &mut self,
+        ident: &idlc_mir::Ident,
+        _: Option<&str>,
+        cnt: idlc_mir::Count,
+    ) {
+        let ident = EscapedIdent::new(ident);
+        self.post.push(format!(
+            "let {ident} = std::mem::ManuallyDrop::new({ident});"
+        ));
+        for i in 0..cnt.get() {
+            let idx = self.idx();
+            self.post.push(format!(
+            "{ARGS}[{idx}].o = std::mem::ManuallyDrop::new(std::mem::transmute_copy(&{ident}[{i}]));"
+        ));
+        }
     }
 }
 

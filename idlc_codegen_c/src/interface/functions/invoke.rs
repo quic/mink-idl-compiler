@@ -87,7 +87,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         ));
     }
 
-    fn visit_input_object_buffer(
+    fn visit_input_object_array(
         &mut self,
         ident: &idlc_mir::Ident,
         ty: Option<&str>,
@@ -187,7 +187,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         ));
     }
 
-    fn visit_output_object_buffer(
+    fn visit_output_object_array(
         &mut self,
         ident: &idlc_mir::Ident,
         ty: Option<&str>,

@@ -23,7 +23,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         self.0.visit_input_struct_buffer(ident, ty);
     }
 
-    fn visit_input_object_buffer(
+    fn visit_input_object_array(
         &mut self,
         ident: &idlc_mir::Ident,
         ty: Option<&str>,
@@ -84,7 +84,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         self.0.visit_output_struct_buffer(ident, ty);
     }
 
-    fn visit_output_object_buffer(
+    fn visit_output_object_array(
         &mut self,
         ident: &idlc_mir::Ident,
         ty: Option<&str>,

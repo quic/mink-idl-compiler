@@ -81,19 +81,6 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         self.generate_input_buffer(ident);
     }
 
-    fn visit_input_object_buffer(&mut self, ident: &Ident, ty: Option<&str>, cnt: idlc_mir::Count) {
-        // todo!();
-        for i in 0..cnt.get() {
-            self.visit_input_object(
-                &Ident {
-                    ident: format!("{ident}[{i}].as_ref()"),
-                    span: ident.span,
-                },
-                ty,
-            )
-        }
-    }
-
     fn visit_input_primitive(&mut self, ident: &Ident, ty: idlc_mir::Primitive) {
         let ty: &str = change_primitive(ty);
         let ident = EscapedIdent::new(ident);
@@ -158,21 +145,21 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         ));
     }
 
+    fn visit_input_object_array(&mut self, ident: &Ident, ty: Option<&str>, cnt: idlc_mir::Count) {
+        for i in 0..cnt.get() {
+            self.visit_input_object(
+                &Ident::new(format!("{ident}[{i}].as_ref()"), ident.span),
+                ty,
+            );
+        }
+    }
+
     fn visit_output_primitive_buffer(&mut self, ident: &Ident, ty: idlc_mir::Primitive) {
         self.generate_output_buffer(ident, change_primitive(ty));
     }
 
     fn visit_output_struct_buffer(&mut self, ident: &Ident, ty: &idlc_mir::StructInner) {
         self.generate_output_buffer(ident, &namespaced_struct(ty));
-    }
-
-    fn visit_output_object_buffer(
-        &mut self,
-        _ident: &Ident,
-        _: Option<&str>,
-        _cnt: idlc_mir::Count,
-    ) {
-        // todo!();
     }
 
     fn visit_output_primitive(&mut self, ident: &Ident, ty: idlc_mir::Primitive) {
@@ -252,6 +239,31 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
             r#"{ARG} {{
                 o: std::mem::ManuallyDrop::new(None)
             }}"#
+        ));
+    }
+
+    fn visit_output_object_array(&mut self, ident: &Ident, ty: Option<&str>, cnt: idlc_mir::Count) {
+        use crate::interface::mink_primitives::{INTERFACES_BASE, OBJECT};
+        use std::borrow::Cow;
+
+        let ty = ty.map_or(Cow::Borrowed(OBJECT), |ty| {
+            Cow::Owned(format!("{INTERFACES_BASE}::{}::{ty}", ty.to_lowercase()))
+        });
+        let ident = EscapedIdent::new(ident);
+        self.initializations.push(format!(
+            "let mut {ident}: [std::mem::MaybeUninit<Option<{ty}>>; {cnt}] = unsafe {{ std::mem::MaybeUninit::uninit().assume_init() }};"
+        ));
+        for i in 0..cnt.get() {
+            let idx = self.args.len();
+            self.args.push(format!(
+                r#"{ARG} {{
+                o: std::mem::ManuallyDrop::new(None)
+            }}"#
+            ));
+            self.post_call.push(format!("unsafe {{ {ident}[{i}].write(std::mem::transmute(std::mem::ManuallyDrop::take(&mut {ARGS}[{idx}].o))); }}"));
+        }
+        self.post_call.push(format!(
+            "let {ident} = unsafe {{ std::mem::transmute({ident}) }};"
         ));
     }
 }

@@ -90,14 +90,14 @@ private:
 
 class ITest2Impl : public cpp::ITest2ImplBase {
 public:
-  int32_t test_f2(const cpp::F1 &f_ref)  {
+  int32_t test_f2(const cpp::F1 &f_ref) {
     return itest2_test_f2(NULL, (const F1 *)&f_ref);
   }
 
-  int32_t test_obj_in(const cpp::ITest1 &o_ref, uint32_t *a_ptr)  {
+  int32_t test_obj_in(const cpp::ITest1 &o_ref, uint32_t *a_ptr) {
     return itest2_test_obj_in(NULL, o_ref.get(), a_ptr);
   }
-  int32_t test_obj_out(cpp::ITest1 &o_ref)  {
+  int32_t test_obj_out(cpp::ITest1 &o_ref) {
     Object tmp = Object_NULL;
     CHECK_OK(itest2_test_obj_out(NULL, &tmp));
     o_ref = cpp::ITest1(tmp);
@@ -108,7 +108,7 @@ public:
                       size_t yyy_len, size_t *yyy_lenout, uint32_t a_val,
                       const uint8_t *xxx1_ptr, size_t xxx1_len, uint8_t b_val,
                       uint32_t c_val, uint32_t *d_ptr, uint16_t *e_ptr,
-                      uint32_t *f_ptr)  {
+                      uint32_t *f_ptr) {
     return itest2_test_bundle(NULL, xxx_ptr, xxx_len, yyy_ptr, yyy_len,
                               yyy_lenout, a_val, xxx1_ptr, xxx1_len, b_val,
                               c_val, d_ptr, e_ptr, f_ptr);
@@ -118,11 +118,11 @@ public:
                      cpp::F1 &f_x_ref, const cpp::F1 &f_y_ref,
                      const uint32_t *a_ptr, size_t a_len, uint32_t *b_ptr,
                      size_t b_len, size_t *b_lenout, int32_t *c_ptr,
-                     int16_t d_val)  {
+                     int16_t d_val) {
     return Object_OK;
   }
   int32_t test_obj_array_in(const cpp::ITest1 (&o_in_ptr)[3], uint32_t *a_ptr) {
-    for(size_t i=0; i<3; i++) {
+    for (size_t i = 0; i < 3; i++) {
       CHECK_OK(itest2_test_obj_in(NULL, (o_in_ptr)[i].get(), a_ptr));
     }
     *a_ptr = SUCCESS_FLAG;

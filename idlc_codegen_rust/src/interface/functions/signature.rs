@@ -77,23 +77,6 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
         self.push_inputs(ident, format!("&[{}]", namespaced_struct(ty)));
     }
 
-    fn visit_input_object_buffer(
-        &mut self,
-        _ident: &Ident,
-        _ty: Option<&str>,
-        _cnt: idlc_mir::Count,
-    ) {
-        // todo!();
-        use crate::interface::mink_primitives::{INTERFACES_BASE, OBJECT};
-        use std::borrow::Cow;
-
-        let ty = _ty.map_or(Cow::Borrowed(OBJECT), |ty| {
-            Cow::Owned(format!("{INTERFACES_BASE}::{}::{ty}", ty.to_lowercase()))
-        });
-
-        self.push_inputs(_ident, format!("&[Option<{ty}>; {_cnt}]"));
-    }
-
     fn visit_input_primitive(&mut self, ident: &Ident, ty: Primitive) {
         self.push_inputs(ident, change_primitive(ty));
     }
@@ -116,6 +99,17 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
         self.push_inputs(ident, format!("Option<&{ty}>"));
     }
 
+    fn visit_input_object_array(&mut self, ident: &Ident, ty: Option<&str>, cnt: idlc_mir::Count) {
+        use crate::interface::mink_primitives::{INTERFACES_BASE, OBJECT};
+        use std::borrow::Cow;
+
+        let ty = ty.map_or(Cow::Borrowed(OBJECT), |ty| {
+            Cow::Owned(format!("{INTERFACES_BASE}::{}::{ty}", ty.to_lowercase()))
+        });
+
+        self.push_inputs(ident, format!("&[Option<{ty}>; {cnt}]"));
+    }
+
     fn visit_output_primitive_buffer(&mut self, ident: &Ident, ty: Primitive) {
         self.push_inputs(ident, format!("&mut [{}]", change_primitive(ty)));
         self.push_inputs(
@@ -130,22 +124,6 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
             &idlc_mir::Ident::new_without_span(format!("{ident}_lenout")),
             "&mut usize",
         );
-    }
-
-    fn visit_output_object_buffer(
-        &mut self,
-        _ident: &Ident,
-        _ty: Option<&str>,
-        _cnt: idlc_mir::Count,
-    ) {
-        // todo!();
-        use crate::interface::mink_primitives::{INTERFACES_BASE, OBJECT};
-        use std::borrow::Cow;
-
-        let ty = _ty.map_or(Cow::Borrowed(OBJECT), |ty| {
-            Cow::Owned(format!("{INTERFACES_BASE}::{}::{ty}", ty.to_lowercase()))
-        });
-        self.push_outputs(_ident, format!("Vec<Option<{ty}>>"));
     }
 
     fn visit_output_primitive(&mut self, ident: &Ident, ty: Primitive) {
@@ -167,5 +145,15 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
             Cow::Owned(format!("{INTERFACES_BASE}::{}::{ty}", ty.to_lowercase()))
         });
         self.push_outputs(ident, format!("Option<{ty}>"));
+    }
+
+    fn visit_output_object_array(&mut self, ident: &Ident, ty: Option<&str>, cnt: idlc_mir::Count) {
+        use crate::interface::mink_primitives::{INTERFACES_BASE, OBJECT};
+        use std::borrow::Cow;
+
+        let ty = ty.map_or(Cow::Borrowed(OBJECT), |ty| {
+            Cow::Owned(format!("{INTERFACES_BASE}::{}::{ty}", ty.to_lowercase()))
+        });
+        self.push_outputs(ident, format!("[Option<{ty}>; {cnt}]"));
     }
 }

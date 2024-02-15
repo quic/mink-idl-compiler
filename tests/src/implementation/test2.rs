@@ -128,12 +128,23 @@ impl IITest2 for ITest2 {
         &mut self,
         o_in: &[Option<crate::interfaces::itest1::ITest1>; 3],
     ) -> Result<u32, itest2::Error> {
-        for o in o_in {
-            if let Some(o) = o {
-                assert_eq!(self.test_obj_in(Some(o)), Ok(SUCCESS_FLAG));
-            }
+        for o in o_in.iter().filter(|o| o.is_some()) {
+            assert_eq!(self.test_obj_in(o.as_ref()), Ok(SUCCESS_FLAG));
         }
 
         Ok(SUCCESS_FLAG)
+    }
+
+    fn r#test_obj_array_out(
+        &mut self,
+    ) -> Result<([Option<crate::interfaces::itest1::ITest1>; 3], u32), itest2::Error> {
+        Ok((
+            [
+                Some(super::ITest1::new(0).into()),
+                Some(super::ITest1::new(1).into()),
+                Some(super::ITest1::new(2).into()),
+            ],
+            SUCCESS_FLAG,
+        ))
     }
 }

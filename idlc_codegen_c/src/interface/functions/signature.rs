@@ -99,7 +99,7 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
             .push((format!("{}_len", ident), "size_t".to_string()));
     }
 
-    fn visit_input_object_buffer(&mut self, ident: &Ident, ty: Option<&str>, cnt: idlc_mir::Count) {
+    fn visit_input_object_array(&mut self, ident: &Ident, ty: Option<&str>, cnt: idlc_mir::Count) {
         let name = format!("(*{}_ptr)[{cnt}]", ident);
         let ty = format!("{CONST} {}", ty.unwrap_or("Object"));
         self.inputs.push((name, ty));
@@ -182,12 +182,7 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
             .push((format!("&{}_len", ident), "size_t".to_string()));
     }
 
-    fn visit_output_object_buffer(
-        &mut self,
-        ident: &Ident,
-        ty: Option<&str>,
-        cnt: idlc_mir::Count,
-    ) {
+    fn visit_output_object_array(&mut self, ident: &Ident, ty: Option<&str>, cnt: idlc_mir::Count) {
         let name = format!("(*{}_ptr)[{cnt}]", ident);
         let ty = ty.unwrap_or("Object").to_string();
         self.inputs.push((name, ty));

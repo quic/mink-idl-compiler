@@ -338,6 +338,12 @@ impl Ident {
             ident,
         }
     }
+
+    #[inline]
+    #[must_use]
+    pub const fn new(ident: String, span: Span) -> Self {
+        Self { span, ident }
+    }
 }
 impl PartialEq<Self> for Ident {
     fn eq(&self, other: &Self) -> bool {

@@ -14,15 +14,16 @@ float_type     = @{ "float" ~ ("32" | "64") }
 primitive_type = @{ (integer_type | float_type) }
 value          = @{ ("-"? ~ "0x" ~ ASCII_HEX_DIGIT+ | "-"? ~ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)?) }
 
-array        = @{ ASCII_DIGIT+ }
-bounded_arr  = ${ "[" ~ array ~ "]" }
-struct_field =  { (primitive_type | ident) ~ bounded_arr? ~ ident ~ ";" }
-struct       =  { "struct " ~ (!"interface" ~ ident) ~ "{" ~ (struct_field)+ ~ "};" }
+array           = @{ ASCII_DIGIT+ }
+bounded_array   = ${ "[" ~ array ~ "]" }
+unbounded_array = @{ "[]" }
+
+struct_field = { (primitive_type | ident) ~ bounded_array? ~ ident ~ ";" }
+struct       = { "struct " ~ (!"interface" ~ ident) ~ "{" ~ (struct_field)+ ~ "};" }
 
 const = { "const " ~ primitive_type ~ ident ~ "=" ~ value ~ ";" }
 
-unbounded_arr  = @{ "[]" }
-param_type = ${ ((ident | "interface") ~ bounded_arr) | ((primitive_type | !"interface" ~ ident) ~ unbounded_arr) | (primitive_type | ident | "interface") | "buffer" }
+param_type = ${ ((ident | "interface") ~ bounded_array) | ((primitive_type | !"interface" ~ ident) ~ unbounded_array) | primitive_type | ident | "interface" | "buffer" }
 mutability = @{ ("in" | "out") }
 param      =  { mutability ~ param_type ~ ident }
 function   =  { "method " ~ ident ~ "(" ~ param? ~ ("," ~ param)* ~ ");" }

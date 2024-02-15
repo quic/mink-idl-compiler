@@ -75,12 +75,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         ));
     }
 
-    fn visit_input_object_buffer(
-        &mut self,
-        ident: &Ident,
-        _ty: Option<&str>,
-        cnt: idlc_mir::Count,
-    ) {
+    fn visit_input_object_array(&mut self, ident: &Ident, _ty: Option<&str>, cnt: idlc_mir::Count) {
         for i in 0..cnt.into() {
             let _idx = self.idx();
             self.args.push(format!(
@@ -172,7 +167,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         ));
     }
 
-    fn visit_output_object_buffer(
+    fn visit_output_object_array(
         &mut self,
         ident: &Ident,
         _ty: Option<&str>,

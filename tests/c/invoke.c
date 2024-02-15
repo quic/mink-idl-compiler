@@ -197,8 +197,9 @@ int32_t itest2_test_array(void *ctx, const F1 *f_in_ptr, size_t f_in_len,
   return Object_ERROR;
 }
 
-int32_t itest2_test_obj_array_in(void *ctx, const Object (*o_in_ptr)[3],uint32_t *a_ptr) {
-  for(size_t i=0; i<3; i++) {
+int32_t itest2_test_obj_array_in(void *ctx, const Object (*o_in_ptr)[3],
+                                 uint32_t *a_ptr) {
+  for (size_t i = 0; i < 3; i++) {
     CHECK_OK(itest2_test_obj_in(ctx, (*o_in_ptr)[i], a_ptr));
   }
   *a_ptr = SUCCESS_FLAG;

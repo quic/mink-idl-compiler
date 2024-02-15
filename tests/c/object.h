@@ -21,7 +21,7 @@ typedef uint32_t ObjectOp;
 // method (member function) being requested by the client.
 
 #define ObjectOp_METHOD_MASK ((ObjectOp)0x0000FFFFu)
-#define ObjectOp_methodID(op) ((op)&ObjectOp_METHOD_MASK)
+#define ObjectOp_methodID(op) ((op) & ObjectOp_METHOD_MASK)
 
 // end of user-defined range
 
@@ -46,7 +46,7 @@ typedef uint32_t ObjectOp;
 
 #define ObjectOp_LOCAL ((ObjectOp)0x00008000U)
 
-#define ObjectOp_isLocal(op) (((op)&ObjectOp_LOCAL) != 0)
+#define ObjectOp_isLocal(op) (((op) & ObjectOp_LOCAL) != 0)
 
 //------------------------------------------------------------------------
 // ObjectCounts
