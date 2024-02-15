@@ -8,6 +8,7 @@ use super::serialization::TransportBuffer;
 #[derive(Debug, Default, Clone)]
 pub struct Invoke {
     args: Vec<String>,
+    pub len_intialize: Vec<String>,
     pub pre: Vec<String>,
     pub post: Vec<String>,
 
@@ -16,7 +17,13 @@ pub struct Invoke {
 
 impl Invoke {
     pub fn new(function: &idlc_mir::Function) -> Self {
-        let mut me = Self::default();
+        let mut me = Self {
+            args: vec![],
+            len_intialize: vec![],
+            pre: vec![],
+            post: vec![],
+            idx: 0,
+        };
 
         idlc_codegen::functions::visit_params_with_bundling(function, &mut me);
         me
@@ -32,6 +39,10 @@ impl Invoke {
             acc += arg.as_ref();
         }
         acc
+    }
+
+    pub fn len_intialize(&self) -> String {
+        self.len_intialize.concat()
     }
 
     pub fn pre(&self) -> String {
@@ -73,6 +84,24 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
             r#" \
                 {CONST} {ty} {name} = ({CONST} {ty}*){ARGS}[{idx}].b.ptr; \
                 size_t {ident}_len = {ARGS}[{idx}].b.size / sizeof({ty});"#
+        ));
+    }
+
+    fn visit_input_object_buffer(
+        &mut self,
+        ident: &idlc_mir::Ident,
+        ty: Option<&str>,
+        cnt: idlc_mir::Count,
+    ) {
+        let ty = ty.unwrap_or("Object").to_string();
+        let mut objs = String::new();
+        for _ in 0..cnt.into() {
+            let idx = self.idx();
+            objs.push_str(&format!(r"a[{idx}].o,"));
+        }
+        self.pre.push(format!(
+            r#" \
+                const {ty} {ident}[{cnt}] = {{ {objs} }};"#,
         ));
     }
 
@@ -158,6 +187,26 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         ));
     }
 
+    fn visit_output_object_buffer(
+        &mut self,
+        ident: &idlc_mir::Ident,
+        ty: Option<&str>,
+        cnt: idlc_mir::Count,
+    ) {
+        let name = format!("{}", ident);
+        let ty = ty.unwrap_or("Object").to_string();
+        let mut objs = String::new();
+        for _ in 0..cnt.into() {
+            let idx = self.idx();
+            objs.push_str(&format!(r#"a[{idx}].o, "#));
+        }
+
+        self.pre.push(format!(
+            r#" \
+                {ty} {name}[{cnt}] = {{ {objs} }};"#,
+        ));
+    }
+
     fn visit_output_big_struct(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::StructInner) {
         let idx = self.idx();
         let name = format!("*{}_ptr", ident);
@@ -204,6 +253,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
     fn visit_output_object(&mut self, ident: &idlc_mir::Ident, ty: Option<&str>) {
         let idx = self.idx();
         let ty = ty.unwrap_or("Object").to_string();
+
         self.pre.push(format!(
             r#" \
                 {ty} {ident}_ptr = ({ty}){ARGS}[{idx}].o;"#
@@ -218,24 +268,25 @@ pub fn emit(
     counts: &idlc_codegen::counts::Counter,
 ) -> String {
     let ident = &function.ident;
+
     let invoke = Invoke::new(function);
+    let len_intialize = invoke.len_intialize();
     let pre = invoke.pre();
     let post = invoke.post();
     let args = invoke.args();
 
     let return_idents = super::signature::iter_to_string(signature.return_idents());
 
-    let counts = (
-        counts.input_buffers,
-        counts.output_buffers,
-        counts.input_objects,
-        counts.output_objects,
+    let counts = format!(
+        "({0},{1},{2},{3})",
+        counts.input_buffers, counts.output_buffers, counts.input_objects, counts.output_objects,
     );
 
     format!(
         r#" \
             case {iface_ident}_{OP}_{ident}: {{ \
-                if (k != ObjectCounts_pack{counts:?}{args}) {{ \
+                {len_intialize} \
+                if (k != ObjectCounts_pack{counts}{args}) {{ \
                     break; \
                 }} \
                 {pre} \

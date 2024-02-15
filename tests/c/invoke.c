@@ -197,6 +197,14 @@ int32_t itest2_test_array(void *ctx, const F1 *f_in_ptr, size_t f_in_len,
   return Object_ERROR;
 }
 
+int32_t itest2_test_obj_array_in(void *ctx, const Object (*o_in_ptr)[3],uint32_t *a_ptr) {
+  for(size_t i=0; i<3; i++) {
+    CHECK_OK(itest2_test_obj_in(ctx, (*o_in_ptr)[i], a_ptr));
+  }
+  *a_ptr = SUCCESS_FLAG;
+  return Object_OK;
+}
+
 ITest2_DEFINE_INVOKE(itest2_invoke, itest2_, void *);
 
 Object create_c_itest2() { return (Object){itest2_invoke, NULL}; }

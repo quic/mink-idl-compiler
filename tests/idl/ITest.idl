@@ -46,4 +46,5 @@ interface ITest2 {
   method test_obj_out(out ITest1 o);
   method test_bundle(in buffer xxx, out buffer yyy, in uint32 a, in buffer xxx1, in uint8 b, in uint32 c, out uint32 d, out uint16 e, out uint32 f);
   method test_array(in F1[] f_in, out F1[] f_out, out F1 f_x, in F1 f_y, in uint32[] a, out uint32[] b, out int32 c, in int16 d);
+  method test_obj_array_in(in ITest1[3] o_in, out uint32 a);
 };

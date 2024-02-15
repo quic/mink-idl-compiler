@@ -9,6 +9,8 @@ pub struct Signature {
     outputs: Vec<(String, String)>,
     bundled_inputs: Vec<String>,
     bundled_outputs: Vec<String>,
+    input_obj_arg: Vec<String>,
+    output_obj_arg: Vec<String>,
 
     total_bundled_input: u8,
     total_bundled_output: u8,
@@ -21,6 +23,8 @@ impl Signature {
             outputs: vec![],
             bundled_inputs: vec![],
             bundled_outputs: vec![],
+            input_obj_arg: vec![],
+            output_obj_arg: vec![],
             total_bundled_input: counts.total_bundled_input,
             total_bundled_output: counts.total_bundled_output,
         };
@@ -71,6 +75,15 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
             .push((format!("{}_ptr", ident), "size_t".to_string()));
         self.outputs
             .push((format!("{}_len", ident), "size_t".to_string()));
+    }
+
+    fn visit_input_object_buffer(&mut self, ident: &Ident, ty: Option<&str>, cnt: idlc_mir::Count) {
+        let name = format!("(&{}_ptr)[{cnt}]", ident);
+        let ty = format!("{CONST} {}", ty.unwrap_or("Object"));
+        self.inputs.push((name, ty));
+        self.input_obj_arg.push(format!("{}_len", ident));
+        self.outputs
+            .push((format!("{}.inner", ident), "size_t".to_string()));
     }
 
     fn visit_input_primitive(&mut self, ident: &Ident, ty: Primitive) {
@@ -147,6 +160,20 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
             .push((format!("{}_len", ident), "size_t".to_string()));
         self.outputs
             .push((format!("&{}_len", ident), "size_t".to_string()));
+    }
+
+    fn visit_output_object_buffer(
+        &mut self,
+        ident: &Ident,
+        ty: Option<&str>,
+        cnt: idlc_mir::Count,
+    ) {
+        let name = format!("(&{}_ptr)[{cnt}]", ident);
+        let ty = ty.unwrap_or("Object").to_string();
+        self.inputs.push((name, ty));
+        self.output_obj_arg.push(format!("{}_len", ident));
+        self.outputs
+            .push((format!("p_{}", ident), "size_t".to_string()));
     }
 
     fn visit_output_primitive(&mut self, ident: &Ident, ty: Primitive) {

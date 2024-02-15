@@ -34,7 +34,101 @@ impl<'mir> MirCompilerPass<'_> for InterfaceVerifier<'mir> {
                     match node {
                         InterfaceNode::Const(c) => consts.add_ident(&c.ident, from),
                         InterfaceNode::Error(e) => consts.add_ident(&e.ident, from),
-                        InterfaceNode::Function(f) => functions.add_ident(&f.ident, from),
+                        InterfaceNode::Function(f) => {
+                            functions.add_ident(&f.ident, from);
+
+                            let mut args_array_in = false;
+                            let mut args_value_in = false;
+                            let mut args_array_out = false;
+                            let mut args_value_out = false;
+                            for param in &f.params {
+                                match param {
+                                    idlc_mir::Param::In { r#type, ident: _ } => match r#type {
+                                        idlc_mir::ParamTypeIn::Array(t, cnt) => {
+                                            if let idlc_mir::Type::Interface(i) = t {
+                                                let iface_name =
+                                                    i.as_deref().unwrap_or("interface").to_string();
+                                                if !cnt.is_some() {
+                                                    idlc_errors::unrecoverable!(
+                                                        "Interface `{}`, method `{}` should not have unbounded array of interface",
+                                                        iface_name, f.ident
+                                                    );
+                                                } else if cnt.unwrap()
+                                                    == std::num::NonZeroU16::new(1).unwrap()
+                                                {
+                                                    idlc_errors::warn!(
+                                                        "Interface `{}`, method `{}` has the array size of 1. It is better to use non-array interface instead222",
+                                                        iface_name, f.ident
+                                                    );
+                                                }
+
+                                                args_array_in = true;
+                                            };
+                                            if let idlc_mir::Type::Struct(_)
+                                            | idlc_mir::Type::Primitive(_) = t
+                                            {
+                                                if cnt.is_some() {
+                                                    idlc_errors::unrecoverable!(
+                                                        "Interface `{}`, method `{}` should not have bounded array of primitive/struct",
+                                                        src.ident, f.ident
+                                                    );
+                                                }
+                                            }
+                                        }
+                                        idlc_mir::ParamTypeIn::Value(t) => {
+                                            if let idlc_mir::Type::Interface(_) = t {
+                                                args_value_in = true;
+                                            };
+                                        }
+                                    },
+                                    idlc_mir::Param::Out { r#type, ident: _ } => match r#type {
+                                        idlc_mir::ParamTypeOut::Array(t, cnt) => {
+                                            if let idlc_mir::Type::Interface(i) = t {
+                                                let iface_name =
+                                                    i.as_deref().unwrap_or("interface").to_string();
+                                                if !cnt.is_some() {
+                                                    idlc_errors::unrecoverable!(
+                                                        "Interface `{}`, method `{}` should not have unbounded array of interface",
+                                                        iface_name, f.ident
+                                                    );
+                                                } else if cnt.unwrap()
+                                                    == std::num::NonZeroU16::new(1).unwrap()
+                                                {
+                                                    idlc_errors::warn!(
+                                                        "Interface `{}`, method `{}` has the array size of 1. It is better to use non-array interface instead111",
+                                                        iface_name, f.ident
+                                                    );
+                                                }
+                                                args_array_out = true;
+                                            };
+                                            if let idlc_mir::Type::Struct(_)
+                                            | idlc_mir::Type::Primitive(_) = t
+                                            {
+                                                if cnt.is_some() {
+                                                    idlc_errors::unrecoverable!(
+                                                        "Interface `{}`, method `{}` should not have bounded array of primitive/struct",
+                                                        src.ident, f.ident
+                                                    );
+                                                }
+                                            }
+                                        }
+                                        idlc_mir::ParamTypeOut::Reference(t) => {
+                                            if let idlc_mir::Type::Interface(_) = t {
+                                                args_value_out = true;
+                                            };
+                                        }
+                                    },
+                                }
+                            }
+                            if (args_array_in && args_value_in)
+                                || (args_array_out && args_value_out)
+                            {
+                                idlc_errors::unrecoverable!(
+                                    "Interface `{}`, method `{}` has both object array and non-array object arguments",
+                                    src.ident, f.ident,
+                                );
+                            }
+                        }
                     }
                 }
             }

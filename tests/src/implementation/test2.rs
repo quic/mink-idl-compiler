@@ -123,4 +123,17 @@ impl IITest2 for ITest2 {
         }
         Err(crate::object::error::generic::INVALID.into())
     }
+
+    fn test_obj_array_in(
+        &mut self,
+        o_in: &[Option<crate::interfaces::itest1::ITest1>; 3],
+    ) -> Result<u32, itest2::Error> {
+        for o in o_in {
+            if let Some(o) = o {
+                assert_eq!(self.test_obj_in(Some(o)), Ok(SUCCESS_FLAG));
+            }
+        }
+
+        Ok(SUCCESS_FLAG)
+    }
 }

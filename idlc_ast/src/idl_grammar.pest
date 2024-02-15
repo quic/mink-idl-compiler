@@ -15,13 +15,14 @@ primitive_type = @{ (integer_type | float_type) }
 value          = @{ ("-"? ~ "0x" ~ ASCII_HEX_DIGIT+ | "-"? ~ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)?) }
 
 array        = @{ ASCII_DIGIT+ }
-struct_field =  { (primitive_type | ident) ~ ("[" ~ array ~ "]")? ~ ident ~ ";" }
+bounded_arr  = ${ "[" ~ array ~ "]" }
+struct_field =  { (primitive_type | ident) ~ bounded_arr? ~ ident ~ ";" }
 struct       =  { "struct " ~ (!"interface" ~ ident) ~ "{" ~ (struct_field)+ ~ "};" }
 
 const = { "const " ~ primitive_type ~ ident ~ "=" ~ value ~ ";" }
 
-param_arr  = @{ "[]" }
-param_type = ${ (primitive_type | ident | "interface") ~ param_arr? | "buffer" }
+unbounded_arr  = @{ "[]" }
+param_type = ${ ((ident | "interface") ~ bounded_arr) | ((primitive_type | !"interface" ~ ident) ~ unbounded_arr) | (primitive_type | ident | "interface") | "buffer" }
 mutability = @{ ("in" | "out") }
 param      =  { mutability ~ param_type ~ ident }
 function   =  { "method " ~ ident ~ "(" ~ param? ~ ("," ~ param)* ~ ");" }

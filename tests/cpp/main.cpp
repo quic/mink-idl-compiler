@@ -121,6 +121,13 @@ public:
                      int16_t d_val)  {
     return Object_OK;
   }
+  int32_t test_obj_array_in(const cpp::ITest1 (&o_in_ptr)[3], uint32_t *a_ptr) {
+    for(size_t i=0; i<3; i++) {
+      CHECK_OK(itest2_test_obj_in(NULL, (o_in_ptr)[i].get(), a_ptr));
+    }
+    *a_ptr = SUCCESS_FLAG;
+    return Object_OK;
+  }
 };
 
 extern "C" {

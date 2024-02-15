@@ -1,4 +1,4 @@
-use idlc_mir::{Ident, Primitive, StructInner};
+use idlc_mir::{Count, Ident, Primitive, StructInner};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Counter {
@@ -22,6 +22,11 @@ impl super::functions::ParameterVisitor for Counter {
     #[inline]
     fn visit_input_struct_buffer(&mut self, _: &Ident, _: &StructInner) {
         self.input_buffers += 1;
+    }
+
+    #[inline]
+    fn visit_input_object_buffer(&mut self, _: &Ident, _: Option<&str>, cnt: Count) {
+        self.input_objects += cnt.get() as u8;
     }
 
     #[inline]
@@ -55,6 +60,11 @@ impl super::functions::ParameterVisitor for Counter {
     #[inline]
     fn visit_output_struct_buffer(&mut self, _: &Ident, _: &StructInner) {
         self.output_buffers += 1;
+    }
+
+    #[inline]
+    fn visit_output_object_buffer(&mut self, _: &Ident, _: Option<&str>, cnt: Count) {
+        self.output_objects += cnt.get() as u8;
     }
 
     #[inline]

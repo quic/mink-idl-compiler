@@ -82,6 +82,20 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         self.generate_for_input_buffer(EscapedIdent::new(ident), &namespaced_struct(ty));
     }
 
+    fn visit_input_object_buffer(
+        &mut self,
+        _ident: &idlc_mir::Ident,
+        _: Option<&str>,
+        _cnt: idlc_mir::Count,
+    ) {
+        // todo!();
+        let idx = self.idx();
+        let ident = EscapedIdent::new(_ident);
+        self.pre.push(format!(
+            "let {ident} = std::mem::transmute_copy(&{ARGS}[{idx}].o.as_ref());"
+        ));
+    }
+
     fn visit_input_primitive(&mut self, ident: &idlc_mir::Ident, ty: idlc_mir::Primitive) {
         let ty: &str = change_primitive(ty);
         let ident = EscapedIdent::new(ident);

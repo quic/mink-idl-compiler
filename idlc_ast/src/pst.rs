@@ -155,13 +155,19 @@ impl From<Pair<'_, Rule>> for ParamTypeIn {
         let r#type = Type::from(ast_unwrap!(inner.next()));
         if let Type::Custom(r#type) = &r#type {
             if r#type == "buffer" {
-                return Self::Array(Type::Primitive(Primitive::Uint8));
+                return Self::Array(Type::Primitive(Primitive::Uint8), None);
             }
         }
 
         if let Some(pair) = inner.next() {
-            debug_assert_eq!(pair.as_rule(), Rule::param_arr);
-            Self::Array(r#type)
+            match pair.as_rule() {
+                Rule::unbounded_arr => Self::Array(r#type, None),
+                Rule::bounded_arr => {
+                    let array_len: Count = ast_unwrap!(pair.into_inner().as_str().parse());
+                    Self::Array(r#type, Some(array_len))
+                }
+                _ => unreachable!(),
+            }
         } else {
             Self::Value(r#type)
         }
@@ -174,13 +180,19 @@ impl From<Pair<'_, Rule>> for ParamTypeOut {
         let r#type = Type::from(ast_unwrap!(inner.next()));
         if let Type::Custom(r#type) = &r#type {
             if r#type == "buffer" {
-                return Self::Array(Type::Primitive(Primitive::Uint8));
+                return Self::Array(Type::Primitive(Primitive::Uint8), None);
             }
         }
 
         if let Some(pair) = inner.next() {
-            debug_assert_eq!(pair.as_rule(), Rule::param_arr);
-            Self::Array(r#type)
+            match pair.as_rule() {
+                Rule::unbounded_arr => Self::Array(r#type, None),
+                Rule::bounded_arr => {
+                    let array_len: Count = ast_unwrap!(pair.into_inner().as_str().parse());
+                    Self::Array(r#type, Some(array_len))
+                }
+                _ => unreachable!(),
+            }
         } else {
             Self::Reference(r#type)
         }
@@ -222,8 +234,9 @@ fn parse_struct(pair: Pair<Rule>) -> Rc<Node> {
                 let r#type = Type::from(ast_unwrap!(iter.next()));
                 let next = ast_unwrap!(iter.next());
                 let (elem, ident) = match next.as_rule() {
-                    Rule::array => {
-                        let array_len: Count = ast_unwrap!(next.as_str().parse());
+                    Rule::bounded_arr => {
+                        let array_len: Count =
+                            ast_unwrap!(next.clone().into_inner().as_str().parse());
                         let ident = ast_unwrap!(iter.next()).as_str().to_string();
                         (array_len, ident)
                     }

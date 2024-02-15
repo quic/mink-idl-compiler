@@ -114,3 +114,33 @@ fn duplicated_base_const() {
         ",
     );
 }
+
+#[should_panic]
+#[test]
+fn obj_with_obj_array_input() {
+    verify(
+        r"
+        interface Foo {
+            method num();
+        };
+        interface IFoo {
+            method num(in Foo[] a, in Foo b);
+        };
+        ",
+    );
+}
+
+#[should_panic]
+#[test]
+fn obj_with_obj_array_output() {
+    verify(
+        r"
+        interface Foo {
+            method num();
+        };
+        interface IFoo {
+            method num(out Foo a, out Foo[] b);
+        };
+        ",
+    );
+}

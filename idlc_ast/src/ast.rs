@@ -127,7 +127,7 @@ impl Const {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ParamTypeIn {
-    Array(Type),
+    Array(Type, Option<Count>),
     Value(Type),
 }
 
@@ -135,14 +135,14 @@ impl AsRef<Type> for ParamTypeIn {
     #[inline]
     fn as_ref(&self) -> &Type {
         match self {
-            Self::Array(t) | Self::Value(t) => t,
+            Self::Array(t, _) | Self::Value(t) => t,
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ParamTypeOut {
-    Array(Type),
+    Array(Type, Option<Count>),
     Reference(Type),
 }
 
@@ -150,7 +150,7 @@ impl AsRef<Type> for ParamTypeOut {
     #[inline]
     fn as_ref(&self) -> &Type {
         match self {
-            Self::Array(t) | Self::Reference(t) => t,
+            Self::Array(t, _) | Self::Reference(t) => t,
         }
     }
 }
