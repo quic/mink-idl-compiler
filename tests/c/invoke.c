@@ -206,6 +206,14 @@ int32_t itest2_test_obj_array_in(void *ctx, const Object (*o_in_ptr)[3],
   return Object_OK;
 }
 
+int32_t itest2_test_obj_array_out(void *ctx, Object (*o_ptr)[3], uint32_t *a_ptr) {
+  (*o_ptr)[0] = create_c_itest1(0);
+  (*o_ptr)[1] = create_c_itest1(1);
+  (*o_ptr)[2] = create_c_itest1(2);
+  *a_ptr = SUCCESS_FLAG;
+  return Object_OK;
+}
+
 ITest2_DEFINE_INVOKE(itest2_invoke, itest2_, void *);
 
 Object create_c_itest2() { return (Object){itest2_invoke, NULL}; }

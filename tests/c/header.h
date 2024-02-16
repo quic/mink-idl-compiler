@@ -106,6 +106,10 @@ int32_t itest2_test_array(void *ctx, const F1 *f_in_ptr, size_t f_in_len,
                           size_t a_len, uint32_t *b_ptr, size_t b_len,
                           size_t *b_lenout, int32_t *c_ptr, int16_t d_val);
 
+int32_t itest2_test_obj_array_in(void *ctx, const Object (*o_in_ptr)[3], uint32_t *a_ptr);
+
+int32_t itest2_test_obj_array_out(void *ctx, Object (*o_out_ptr)[3], uint32_t *a_ptr);
+
 #ifdef __cplusplus
 }
 #endif

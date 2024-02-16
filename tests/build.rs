@@ -7,9 +7,15 @@ use std::{
 static IDLC: OnceLock<PathBuf> = OnceLock::new();
 fn idlc() -> &'static Path {
     IDLC.get_or_init(|| {
-        PathBuf::from(
-            std::env::var("IDLC").expect("`IDLC` enviropnment variable should've been set"),
-        )
+        let p = PathBuf::from(
+            std::env::var("IDLC").unwrap_or_else(|_| "../target/debug/idlc".to_string()),
+        );
+        assert!(
+            p.exists(),
+            "`idlc` not found @ ../target/debug/idlc nor was it set using `IDLC`
+        environment variable"
+        );
+        p
     })
 }
 static OUT_DIR: OnceLock<PathBuf> = OnceLock::new();
@@ -76,49 +82,49 @@ fn main() {
 
     for interface in interfaces {
         let stem = interface.file_stem().unwrap().to_str().unwrap();
-        //
-        // build_interface(
-        //     interface,
-        //     &c_generated(Some(&PathBuf::from(format!("{stem}.h")))),
-        //     Language::C { is_skel: false },
-        // );
-        // build_interface(
-        //     interface,
-        //     &c_generated(Some(&PathBuf::from(format!("{stem}_invoke.h")))),
-        //     Language::C { is_skel: true },
-        // );
-        // build_interface(
-        //     interface,
-        //     &cpp_generated(Some(&PathBuf::from(format!("{stem}.hpp")))),
-        //     Language::Cpp { is_skel: false },
-        // );
-        // build_interface(
-        //     interface,
-        //     &cpp_generated(Some(&PathBuf::from(format!("{stem}_invoke.hpp")))),
-        //     Language::Cpp { is_skel: true },
-        // );
+
+        build_interface(
+            interface,
+            &c_generated(Some(&PathBuf::from(format!("{stem}.h")))),
+            Language::C { is_skel: false },
+        );
+        build_interface(
+            interface,
+            &c_generated(Some(&PathBuf::from(format!("{stem}_invoke.h")))),
+            Language::C { is_skel: true },
+        );
+        build_interface(
+            interface,
+            &cpp_generated(Some(&PathBuf::from(format!("{stem}.hpp")))),
+            Language::Cpp { is_skel: false },
+        );
+        build_interface(
+            interface,
+            &cpp_generated(Some(&PathBuf::from(format!("{stem}_invoke.hpp")))),
+            Language::Cpp { is_skel: true },
+        );
         build_interface(interface, &rust_generated(), Language::Rust);
     }
 
-    // println!("cargo:rerun-if-changed=c/");
-    // let mut c_ffi = cc::Build::new();
-    // c_ffi.file("c/invoke.c");
-    // c_ffi.include("c");
-    // c_ffi.include(c_generated(None));
-    // c_ffi.flag("-Wno-unused-parameter");
-    // c_ffi.flag("-Werror");
-    // c_ffi.compile("c-ffi");
-    //
-    // println!("cargo:rerun-if-changed=cpp/");
-    // let mut cpp_ffi = cc::Build::new();
-    // cpp_ffi.file("cpp/main.cpp");
-    // cpp_ffi.cpp(true);
-    // cpp_ffi.include("c");
-    // cpp_ffi.include("cpp");
-    // cpp_ffi.include(c_generated(None));
-    // cpp_ffi.include(cpp_generated(None));
-    // cpp_ffi.flag("-Wno-unused-parameter");
-    // cpp_ffi.flag("-Wno-missing-field-initializers");
-    // cpp_ffi.flag("-Werror");
-    // cpp_ffi.compile("cpp-ffi");
+    println!("cargo:rerun-if-changed=c/");
+    let mut c_ffi = cc::Build::new();
+    c_ffi.file("c/invoke.c");
+    c_ffi.include("c");
+    c_ffi.include(c_generated(None));
+    c_ffi.flag("-Wno-unused-parameter");
+    c_ffi.flag("-Werror");
+    c_ffi.compile("c-ffi");
+
+    println!("cargo:rerun-if-changed=cpp/");
+    let mut cpp_ffi = cc::Build::new();
+    cpp_ffi.file("cpp/main.cpp");
+    cpp_ffi.cpp(true);
+    cpp_ffi.include("c");
+    cpp_ffi.include("cpp");
+    cpp_ffi.include(c_generated(None));
+    cpp_ffi.include(cpp_generated(None));
+    cpp_ffi.flag("-Wno-unused-parameter");
+    cpp_ffi.flag("-Wno-missing-field-initializers");
+    cpp_ffi.flag("-Werror");
+    cpp_ffi.compile("cpp-ffi");
 }

@@ -88,6 +88,19 @@ private:
   struct CTest1 ctest;
 };
 
+extern "C" {
+
+Object create_cpp_itest1(uint32_t value) {
+  struct CTest1 ctest = {.refs = 1, .value = value};
+  ITest1Impl *me = new ITest1Impl(ctest);
+  if (me == nullptr) {
+    return Object_NULL;
+  }
+
+  return (Object){cpp::ImplBase::invoke, me};
+}
+}
+
 class ITest2Impl : public cpp::ITest2ImplBase {
 public:
   int32_t test_f2(const cpp::F1 &f_ref) {
@@ -128,20 +141,18 @@ public:
     *a_ptr = SUCCESS_FLAG;
     return Object_OK;
   }
+  int32_t test_obj_array_out(cpp::ITest1 (&o_out_ptr)[3], uint32_t *a_ptr) {
+    Object tmp[3];
+    for (size_t i=0; i<3; i++) {
+      tmp[i] = create_cpp_itest1(i);
+      o_out_ptr[i] = cpp::ITest1(tmp[i]);
+    }
+    *a_ptr = SUCCESS_FLAG;
+    return Object_OK;
+  }
 };
 
 extern "C" {
-
-Object create_cpp_itest1(uint32_t value) {
-  struct CTest1 ctest = {.refs = 1, .value = value};
-  ITest1Impl *me = new ITest1Impl(ctest);
-  if (me == nullptr) {
-    return Object_NULL;
-  }
-
-  return (Object){cpp::ImplBase::invoke, me};
-}
-
 Object create_cpp_itest2(void) {
   ITest2Impl *me = new ITest2Impl();
   if (me == nullptr) {

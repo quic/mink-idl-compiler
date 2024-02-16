@@ -173,20 +173,18 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         _ty: Option<&str>,
         cnt: idlc_mir::Count,
     ) {
-        let mut objs = String::new();
         for _ in 0..cnt.into() {
             let idx = self.idx();
-            objs.push_str(&format!(r#"a[{idx}].o, "#));
             self.args.push(
                 r#"{.o = (Object) { NULL, NULL } },
         "#
                 .to_string(),
             );
-        }
-        self.post_call.push(format!(
-            r#"{ident}_ptr[{cnt}] = {{ {objs} }};
+            self.post_call.push(format!(
+                r#"(*{ident}_ptr[{cnt}]) = a[{idx}].o;
     "#,
-        ));
+            ));
+        }
     }
 
     fn visit_output_primitive(&mut self, ident: &Ident, ty: idlc_mir::Primitive) {

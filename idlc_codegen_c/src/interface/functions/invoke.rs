@@ -196,14 +196,23 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         let name = format!("{}", ident);
         let ty = ty.unwrap_or("Object").to_string();
         let mut objs = String::new();
-        for _ in 0..cnt.into() {
+        let mut obj_assign = String::new();
+        for i in 0..cnt.into() {
             let idx = self.idx();
-            objs.push_str(&format!(r#"a[{idx}].o, "#));
+            objs.push_str("Object_NULL, ");
+            obj_assign.push_str(&format!(
+                r#"a[{idx}].o = {name}[{i}]; \
+                "#
+            ))
         }
 
         self.pre.push(format!(
             r#" \
                 {ty} {name}[{cnt}] = {{ {objs} }};"#,
+        ));
+        self.post.push(format!(
+            r#" \
+                {obj_assign}"#
         ));
     }
 

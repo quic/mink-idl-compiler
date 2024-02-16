@@ -108,7 +108,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
 
         self.0.post_call.push(format!(
             r#"for(size_t arg_idx=0;arg_idx<{cnt};arg_idx++)
-        (*{ident}_ptr)[arg_idx].consume(a[{idx}+arg_idx].o);
+        ({ident}_ptr)[arg_idx].consume(a[{idx}+arg_idx].o);
     "#,
         ));
 

@@ -91,19 +91,24 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         cnt: idlc_mir::Count,
     ) {
         let ty = ty.unwrap_or("ProxyBase").to_string();
-        let idx = self.0.idx();
+        let mut objs = String::new();
+        let mut obj_assign = String::new();
+        for i in 0..cnt.into() {
+            let idx = self.0.idx();
+            objs.push_str("Object_NULL, ");
+            obj_assign.push_str(&format!(
+                r#"{ARGS}[{idx}].o=p_{ident}[{i}].extract();
+                "#
+            ));
+        }
         self.0.pre.push(format!(
             r#" \
-                {ty} p_{ident}[{cnt}];"#
+                {ty} p_{ident}[{cnt}] = {{ {objs} }};"#
         ));
         self.0.post.push(format!(
             r#" \
-            for(size_t arg_idx=0;arg_idx<{cnt};arg_idx++) \
-                {ARGS}[{idx}+arg_idx].o=p_{ident}[arg_idx].extract();"#,
+            {obj_assign}"#,
         ));
-        for _ in 1..cnt.into() {
-            let _idx = self.0.idx();
-        }
     }
 
     fn visit_output_primitive(&mut self, ident: &Ident, ty: idlc_mir::Primitive) {
