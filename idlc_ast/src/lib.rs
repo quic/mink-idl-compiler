@@ -8,21 +8,21 @@ pub use ast::*;
 pub use pst::Error;
 use std::path::{Path, PathBuf};
 
-pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Ast, Error> {
+pub fn from_file<P: AsRef<Path>>(path: P, pedantic: bool) -> Result<Ast, Error> {
     let content = std::fs::read_to_string(&path)
         .map_err(|e| Error::Io(e, path.as_ref().display().to_string()))?;
-    from_string(path.as_ref().to_path_buf(), content)
+    from_string(path.as_ref().to_path_buf(), content, pedantic)
 }
 
-pub fn from_string<S: AsRef<str>>(root: PathBuf, s: S) -> Result<Ast, Error> {
-    let nodes = pst::parse_to_ast(s.as_ref())?;
+pub fn from_string<S: AsRef<str>>(root: PathBuf, s: S, pedantic: bool) -> Result<Ast, Error> {
+    let nodes = pst::parse_to_ast(s.as_ref(), pedantic)?;
     Ok(Ast { tag: root, nodes })
 }
 
 pub fn dump<P: AsRef<Path>>(path: P) {
     use std::time::Instant;
     let now = Instant::now();
-    let ast = from_file(path).unwrap();
+    let ast = from_file(path, false).unwrap();
     let duration = now.elapsed();
     println!("{ast:#?}");
     eprintln!("'dump_ast' completed in {duration:?}");

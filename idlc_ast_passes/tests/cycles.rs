@@ -7,7 +7,7 @@ use crate::idl_store::IDLStore;
 fn verify(idl: &'static str) -> Result<Vec<String>, crate::Error> {
     let store = IDLStore::new();
     let name = std::path::PathBuf::from("cycles.idl");
-    let node = idlc_ast::from_string(name.clone(), idl).unwrap();
+    let node = idlc_ast::from_string(name.clone(), idl, true).unwrap();
     store.insert_canonical(&name, &node);
     let mut verifier = Cycles::new(&store);
     verifier.run_pass(&node)

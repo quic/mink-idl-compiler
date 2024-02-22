@@ -71,6 +71,12 @@ struct Cli {
     #[arg(long, value_enum)]
     /// Dump various phases of the compiler and exit.
     dump: Option<Dumpable>,
+
+    #[arg(long, default_value_t = false)]
+    /// If `idlc` needs to be pedantic about integer widths and overflow (only check for now). This
+    /// is undefined behavior and the default should be pedantic however some old code depends on
+    /// this.
+    pedantic: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, clap::ValueEnum)]
@@ -106,7 +112,7 @@ fn main() {
     let mut include_paths = args.include_paths.clone().unwrap_or_default();
     include_paths.push(dir_path.to_path_buf());
 
-    let mut idl_store = IDLStore::with_includes(&include_paths);
+    let mut idl_store = IDLStore::with_includes(&include_paths, args.pedantic);
 
     let ast = idl_store.get_or_insert(input_file);
 

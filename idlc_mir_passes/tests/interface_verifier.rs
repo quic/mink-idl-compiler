@@ -7,7 +7,7 @@ use idlc_mir_passes::MirCompilerPass;
 fn verify(a_idl: &str) {
     let mut store = IDLStore::new();
     let name = std::path::PathBuf::from("mir.idl");
-    let node = idlc_ast::from_string(name.clone(), a_idl).unwrap();
+    let node = idlc_ast::from_string(name.clone(), a_idl, true).unwrap();
     store.insert_canonical(&name, &node);
 
     let ast = store.get_ast(&name).unwrap();

@@ -6,7 +6,7 @@ use crate::idl_store::IDLStore;
 fn verify(idl: &'static str) -> Result<(), idlc_ast_passes::Error> {
     let store = IDLStore::new();
     let name = std::path::PathBuf::from("struct-verifier.idl");
-    let node = idlc_ast::from_string(name.clone(), idl).unwrap();
+    let node = idlc_ast::from_string(name.clone(), idl, true).unwrap();
     store.insert_canonical(&name, &node);
     let mut cycles = cycles::Cycles::new(&store);
     let toposort = cycles.run_pass(&node)?;

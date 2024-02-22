@@ -2,7 +2,7 @@
 use idlc_ast_passes::{functions::Functions, CompilerPass};
 
 fn verify(idl: &'static str) {
-    let node = idlc_ast::from_string("test.idl".into(), idl).unwrap();
+    let node = idlc_ast::from_string("test.idl".into(), idl, true).unwrap();
     let mut functions = Functions::new();
     functions.run_pass(&node).unwrap();
 }

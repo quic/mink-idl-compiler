@@ -14,7 +14,7 @@ impl Language {
         include_paths: &[std::path::PathBuf],
         input_file: &std::path::Path,
     ) -> Result<Descriptor, Box<dyn std::error::Error>> {
-        let mut idl_store = IDLStore::with_includes(include_paths);
+        let mut idl_store = IDLStore::with_includes(include_paths, false);
         let ast = idl_store.get_or_insert(input_file);
 
         trace!("Running `IncludeChecker` pass");

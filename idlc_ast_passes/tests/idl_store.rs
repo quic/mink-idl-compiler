@@ -23,7 +23,7 @@ fn verify(
     if !include_paths.is_empty() {
         include_paths_vec.push(std::path::Path::new(include_paths).to_path_buf());
     }
-    let mut store = IDLStore::with_includes(&include_paths_vec);
+    let mut store = IDLStore::with_includes(&include_paths_vec, true);
     let input_file = std::path::Path::new(file_name_a)
         .canonicalize()
         .expect("Invalid input file.");
@@ -42,15 +42,15 @@ fn verify_memory(
 ) -> Result<Vec<String>, idlc_ast_passes::Error> {
     let mut store = IDLStore::new();
     let name = std::path::PathBuf::from(file_name_a);
-    let node = idlc_ast::from_string(name.clone(), a_idl).unwrap();
+    let node = idlc_ast::from_string(name.clone(), a_idl, true).unwrap();
     store.insert_canonical(&name, &node);
 
     let name2 = std::path::PathBuf::from(file_name_b);
-    let node2 = idlc_ast::from_string(name2.clone(), b_idl).unwrap();
+    let node2 = idlc_ast::from_string(name2.clone(), b_idl, true).unwrap();
     store.insert_canonical(&name2, &node2);
 
     let name3 = std::path::PathBuf::from(file_name_c);
-    let node3 = idlc_ast::from_string(name3.clone(), c_idl).unwrap();
+    let node3 = idlc_ast::from_string(name3.clone(), c_idl, true).unwrap();
     store.insert_canonical(&name3, &node3);
 
     let ast = store.get_ast(&name).unwrap();
