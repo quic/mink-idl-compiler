@@ -18,6 +18,7 @@ pub fn emit_struct(r#struct: &StructInner) -> String {
             &idlc_mir::Type::Primitive(primitive) => change_primitive(primitive).to_string(),
             idlc_mir::Type::Struct(s) => s.as_ref().ident.to_string(),
             idlc_mir::Type::Interface(_) => "Object".to_string(),
+            _ => unreachable!(),
         };
         result.push_str(&if count == 1 {
             format!("  {ty} {ident};\n")
@@ -30,7 +31,7 @@ pub fn emit_struct(r#struct: &StructInner) -> String {
 }
 
 pub fn emit_const(r#const: &Const) -> String {
-    let ident = r#const.ident.to_uppercase();
+    let ident = r#const.ident.to_string();
     let ty = change_const_primitive(r#const.r#type);
     let value = &r#const.value;
 

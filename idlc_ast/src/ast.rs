@@ -196,6 +196,7 @@ impl StructField {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Type {
+    UntypedBuffer,
     Primitive(Primitive),
     Interface,
     Custom(Ident),

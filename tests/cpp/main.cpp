@@ -30,26 +30,26 @@ public:
   int32_t single_in(uint32_t input_val) {
     return itest1_single_in(&this->ctest, input_val);
   }
-  int32_t single_primitive_in(const uint8_t *unused_ptr, size_t unused_len,
-                              uint8_t *unused2_ptr, size_t unused2_len,
+  int32_t single_primitive_in(const void *unused_ptr, size_t unused_len,
+                              void *unused2_ptr, size_t unused2_len,
                               size_t *unused2_lenout, uint32_t input_val) {
     return itest1_single_primitive_in(&this->ctest, unused_ptr, unused_len,
                                       unused2_ptr, unused2_len, unused2_lenout,
                                       input_val);
   }
-  int32_t single_primitive_out(const uint8_t *unused_ptr, size_t unused_len,
-                               uint8_t *unused2_ptr, size_t unused2_len,
+  int32_t single_primitive_out(const void *unused_ptr, size_t unused_len,
+                               void *unused2_ptr, size_t unused2_len,
                                size_t *unused2_lenout, uint32_t *output_ptr) {
     return itest1_single_primitive_out(&this->ctest, unused_ptr, unused_len,
                                        unused2_ptr, unused2_len, unused2_lenout,
                                        output_ptr);
   }
-  int32_t multiple_primitive(const uint8_t *unused_ptr, size_t unused_len,
-                             uint8_t *unused2_ptr, size_t unused2_len,
+  int32_t multiple_primitive(const void *unused_ptr, size_t unused_len,
+                             void *unused2_ptr, size_t unused2_len,
                              size_t *unused2_lenout, uint16_t input_val,
                              uint16_t *output_ptr, const ProxyBase &unused3_ref,
                              ProxyBase &unused4_ref, uint32_t input2_val,
-                             uint64_t *output2_ptr, uint8_t *unused5_ptr,
+                             uint64_t *output2_ptr, void *unused5_ptr,
                              size_t unused5_len, size_t *unused5_lenout) {
     Object unused4_val = unused4_ref.get();
 
@@ -117,9 +117,9 @@ public:
     return Object_OK;
   }
 
-  int32_t test_bundle(const uint8_t *xxx_ptr, size_t xxx_len, uint8_t *yyy_ptr,
+  int32_t test_bundle(const void *xxx_ptr, size_t xxx_len, void *yyy_ptr,
                       size_t yyy_len, size_t *yyy_lenout, uint32_t a_val,
-                      const uint8_t *xxx1_ptr, size_t xxx1_len, uint8_t b_val,
+                      const void *xxx1_ptr, size_t xxx1_len, uint8_t b_val,
                       uint32_t c_val, uint32_t *d_ptr, uint16_t *e_ptr,
                       uint32_t *f_ptr) {
     return itest2_test_bundle(NULL, xxx_ptr, xxx_len, yyy_ptr, yyy_len,

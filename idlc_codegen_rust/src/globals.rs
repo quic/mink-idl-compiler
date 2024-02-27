@@ -17,6 +17,7 @@ pub fn emit_struct(r#struct: &StructInner) -> String {
             idlc_mir::Type::Interface(_) => {
                 unimplemented!("Rust codegen doesn't support objects in struct")
             }
+            _ => unreachable!(),
         };
         result.push_str(&if count == 1 {
             format!("pub {ident}: {ty},\n")

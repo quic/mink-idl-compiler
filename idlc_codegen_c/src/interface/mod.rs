@@ -5,7 +5,7 @@ pub mod variable_names;
 
 use crate::types::change_const_primitive;
 
-pub fn emit_interface_impl(interface: &Interface) -> String {
+pub fn emit_interface_impl(interface: &Interface, is_typed_objects: bool) -> String {
     let ident = interface.ident.to_string();
 
     let mut constants = String::new();
@@ -33,7 +33,7 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
             }
             InterfaceNode::Function(f) => {
                 let counts = idlc_codegen::counts::Counter::new(f);
-                let signature = functions::signature::Signature::new(f, &counts);
+                let signature = functions::signature::Signature::new(f, &counts, is_typed_objects);
                 let documentation = idlc_codegen::documentation::Documentation::new(
                     f,
                     idlc_codegen::documentation::DocumentationStyle::Rust,
@@ -70,7 +70,7 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
             }
             InterfaceNode::Function(f) => {
                 let counts = idlc_codegen::counts::Counter::new(f);
-                let signature = functions::signature::Signature::new(f, &counts);
+                let signature = functions::signature::Signature::new(f, &counts, is_typed_objects);
                 let documentation = idlc_codegen::documentation::Documentation::new(
                     f,
                     idlc_codegen::documentation::DocumentationStyle::Rust,
@@ -88,10 +88,15 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
             }
         }
     }
+    let object_defined = if is_typed_objects {
+        "".to_string()
+    } else {
+        format!("typedef Object {ident};")
+    };
 
     format!(
         r#"
-typedef Object {ident};
+{object_defined}
 {constants}
 {errors}
 {op_codes}
@@ -111,7 +116,7 @@ static inline int32_t
     )
 }
 
-pub fn emit_interface_invoke(interface: &Interface) -> String {
+pub fn emit_interface_invoke(interface: &Interface, is_typed_objects: bool) -> String {
     let ident = interface.ident.to_string();
 
     let mut invokes = String::new();
@@ -121,13 +126,14 @@ pub fn emit_interface_invoke(interface: &Interface) -> String {
         iface.nodes.iter().for_each(|node| {
             if let InterfaceNode::Function(f) = node {
                 let counts = idlc_codegen::counts::Counter::new(f);
-                let signature = functions::signature::Signature::new(f, &counts);
+                let signature = functions::signature::Signature::new(f, &counts, is_typed_objects);
 
                 invokes.push_str(&functions::invoke::emit(
                     f,
                     &iface.ident,
                     &signature,
                     &counts,
+                    is_typed_objects,
                 ));
             }
         })
@@ -136,9 +142,15 @@ pub fn emit_interface_invoke(interface: &Interface) -> String {
     for node in &interface.nodes {
         if let InterfaceNode::Function(f) = node {
             let counts = idlc_codegen::counts::Counter::new(f);
-            let signature = functions::signature::Signature::new(f, &counts);
+            let signature = functions::signature::Signature::new(f, &counts, is_typed_objects);
 
-            invokes.push_str(&functions::invoke::emit(f, &ident, &signature, &counts));
+            invokes.push_str(&functions::invoke::emit(
+                f,
+                &ident,
+                &signature,
+                &counts,
+                is_typed_objects,
+            ));
         }
     }
 

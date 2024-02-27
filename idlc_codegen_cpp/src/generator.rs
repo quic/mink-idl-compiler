@@ -6,7 +6,7 @@ use crate::interface::{emit_interface_impl, emit_interface_invoke};
 pub struct Generator;
 
 impl idlc_codegen::SplitInvokeGenerator for Generator {
-    fn generate_implementation(mir: &idlc_mir::Mir) -> String {
+    fn generate_implementation(&self, mir: &idlc_mir::Mir) -> String {
         let mut result = String::new();
         result.push_str(&generate_common());
 
@@ -31,7 +31,7 @@ impl idlc_codegen::SplitInvokeGenerator for Generator {
         result
     }
 
-    fn generate_invoke(mir: &idlc_mir::Mir) -> String {
+    fn generate_invoke(&self, mir: &idlc_mir::Mir) -> String {
         let mut result = generate_common();
 
         let input_name = &mir.tag.file_stem().unwrap().to_str().unwrap();

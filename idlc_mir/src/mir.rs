@@ -101,6 +101,7 @@ pub struct Const {
 pub type Count = std::num::NonZeroU16;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Type {
+    UntypedBuffer,
     Primitive(Primitive),
     Struct(Struct),
     Interface(Option<String>),
@@ -119,6 +120,7 @@ impl StructField {
             Type::Primitive(p) => p.size(),
             Type::Struct(s) => s.as_ref().size(),
             Type::Interface(_) => Primitive::Uint64.size() * 2,
+            _ => unreachable!(),
         };
 
         size * usize::from(count.get())
@@ -321,10 +323,13 @@ impl Ord for Param {
                         std::cmp::Ordering::Less
                     }
                 }
-                (Type::Primitive(_) | Type::Struct(_), _) => std::cmp::Ordering::Less,
-                (Type::Interface(_), Type::Primitive(_) | Type::Struct(_)) => {
-                    std::cmp::Ordering::Greater
+                (Type::UntypedBuffer | Type::Primitive(_) | Type::Struct(_), _) => {
+                    std::cmp::Ordering::Less
                 }
+                (
+                    Type::Interface(_),
+                    Type::UntypedBuffer | Type::Primitive(_) | Type::Struct(_),
+                ) => std::cmp::Ordering::Greater,
             },
             (
                 Self::Out {
@@ -343,15 +348,18 @@ impl Ord for Param {
                         std::cmp::Ordering::Greater
                     }
                 }
-                (Type::Interface(_), Type::Primitive(_) | Type::Struct(_)) => {
-                    std::cmp::Ordering::Greater
-                }
-                (Type::Primitive(_) | Type::Struct(_), Type::Interface(_)) => {
-                    std::cmp::Ordering::Less
-                }
+                (
+                    Type::Interface(_),
+                    Type::UntypedBuffer | Type::Primitive(_) | Type::Struct(_),
+                ) => std::cmp::Ordering::Greater,
+                (
+                    Type::UntypedBuffer | Type::Primitive(_) | Type::Struct(_),
+                    Type::Interface(_),
+                ) => std::cmp::Ordering::Less,
                 _ => std::cmp::Ordering::Greater,
             },
             _ => match (self.r#type(), other.r#type()) {
+                (Type::UntypedBuffer, Type::Interface(_)) => std::cmp::Ordering::Less,
                 (Type::Primitive(_), Type::Interface(_)) => std::cmp::Ordering::Less,
                 (Type::Struct(_), Type::Interface(_)) => std::cmp::Ordering::Less,
                 (Type::Interface(_), Type::Interface(_)) => {
@@ -574,6 +582,7 @@ impl Type {
     fn new(ty: &idlc_ast::Type, idl_store: &IDLStore) -> Self {
         match ty {
             idlc_ast::Type::Primitive(primitive) => Self::Primitive(Primitive::from(primitive)),
+            idlc_ast::Type::UntypedBuffer => Self::UntypedBuffer,
             idlc_ast::Type::Interface => Self::Interface(None),
             idlc_ast::Type::Custom(custom) => {
                 let ident = &custom.ident;

@@ -64,6 +64,7 @@ impl StructVerifier {
                     Type::Primitive(p) => (p.size(), p.alignment()),
                     Type::Custom(c) => *store.get(&c.ident).unwrap(),
                     Type::Interface => (Type::interface_size(), Type::interface_align()),
+                    _ => unreachable!(),
                 };
                 if size % i_alignment != 0 {
                     return Err(Error::StructMemberNotAligned {

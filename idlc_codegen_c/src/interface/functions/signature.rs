@@ -13,6 +13,7 @@ pub struct Signature {
 
     total_bundled_input: u8,
     total_bundled_output: u8,
+    is_typed_objects: bool,
 }
 
 pub fn iter_to_string(iter: impl Iterator<Item = impl AsRef<str>>) -> String {
@@ -36,7 +37,11 @@ pub fn addition_iter_to_string(iter: impl Iterator<Item = impl AsRef<str>>) -> S
 }
 
 impl Signature {
-    pub fn new(function: &idlc_mir::Function, counts: &idlc_codegen::counts::Counter) -> Self {
+    pub fn new(
+        function: &idlc_mir::Function,
+        counts: &idlc_codegen::counts::Counter,
+        is_typed_objects: bool,
+    ) -> Self {
         let mut me = Self {
             inputs: vec![],
             outputs: vec![],
@@ -45,6 +50,7 @@ impl Signature {
             input_obj_arg: vec![],
             total_bundled_input: counts.total_bundled_input,
             total_bundled_output: counts.total_bundled_output,
+            is_typed_objects,
         };
 
         let packed_primitives = idlc_codegen::serialization::PackedPrimitives::new(function);
@@ -87,6 +93,19 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
             .push((format!("{}_len", ident), "size_t".to_string()));
     }
 
+    fn visit_input_untyped_buffer(&mut self, ident: &Ident) {
+        let ty = "void".to_string();
+        let name = format!("*{}_ptr", ident);
+        let ty = format!("{CONST} {}", ty);
+        self.inputs.push((name, ty));
+        self.inputs
+            .push((format!("{}_len", ident), "size_t".to_string()));
+        self.outputs
+            .push((format!("{}_ptr", ident), "size_t".to_string()));
+        self.outputs
+            .push((format!("{}_len", ident), "size_t".to_string()));
+    }
+
     fn visit_input_struct_buffer(&mut self, ident: &Ident, ty: &StructInner) {
         let name = format!("*{}_ptr", ident);
         let ty = format!("{CONST} {}", ty.ident);
@@ -101,7 +120,11 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
 
     fn visit_input_object_array(&mut self, ident: &Ident, ty: Option<&str>, cnt: idlc_mir::Count) {
         let name = format!("(*{}_ptr)[{cnt}]", ident);
-        let ty = format!("{CONST} {}", ty.unwrap_or("Object"));
+        let ty = if self.is_typed_objects {
+            "Object".to_string()
+        } else {
+            format!("{CONST} {}", ty.unwrap_or("Object"))
+        };
         self.inputs.push((name, ty));
         self.input_obj_arg.push(format!("{}_len", ident));
         self.outputs
@@ -111,7 +134,10 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
     fn visit_input_primitive(&mut self, ident: &Ident, ty: Primitive) {
         self.inputs
             .push((format!("{}_val", ident), change_primitive(ty).to_string()));
-        if self.total_bundled_input > 1 && self.bundled_inputs.contains(&ident.to_string()) {
+        if self.total_bundled_input > 1
+            && self.bundled_inputs.contains(&ident.to_string())
+            && self.bundled_inputs.len() > 1
+        {
             self.outputs
                 .push((format!("i->m_{}", ident), change_primitive(ty).to_string()));
         } else {
@@ -123,7 +149,10 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
     fn visit_input_big_struct(&mut self, ident: &Ident, ty: &StructInner) {
         self.inputs
             .push((format!("*{}_ptr", ident), format!("{CONST} {}", ty.ident)));
-        if self.total_bundled_input > 1 && self.bundled_inputs.contains(&ident.to_string()) {
+        if self.total_bundled_input > 1
+            && self.bundled_inputs.contains(&ident.to_string())
+            && self.bundled_inputs.len() > 1
+        {
             self.outputs
                 .push((format!("&i->m_{}", ident), format!("{CONST} {}", ty.ident)));
         } else {
@@ -134,7 +163,10 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
     fn visit_input_small_struct(&mut self, ident: &Ident, ty: &StructInner) {
         self.inputs
             .push((format!("*{}_ptr", ident), format!("{CONST} {}", ty.ident)));
-        if self.total_bundled_input > 1 && self.bundled_inputs.contains(&ident.to_string()) {
+        if self.total_bundled_input > 1
+            && self.bundled_inputs.contains(&ident.to_string())
+            && self.bundled_inputs.len() > 1
+        {
             self.outputs
                 .push((format!("&i->m_{}", ident), format!("{CONST} {}", ty.ident)));
         } else {
@@ -144,16 +176,36 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
     }
 
     fn visit_input_object(&mut self, ident: &Ident, ty: Option<&str>) {
-        self.inputs
-            .push((format!("{}_val", ident), ty.unwrap_or("Object").to_string()));
+        let ty = if self.is_typed_objects {
+            "Object"
+        } else {
+            ty.unwrap_or("Object")
+        };
+        self.inputs.push((format!("{}_val", ident), ty.to_string()));
         self.outputs
-            .push((format!("{}_ptr", ident), ty.unwrap_or("Object").to_string()));
+            .push((format!("*{}_ptr", ident), ty.to_string()));
     }
 
     fn visit_output_primitive_buffer(&mut self, ident: &Ident, ty: Primitive) {
         let name = format!("*{}_ptr", ident);
         let ty = change_primitive(ty).to_string();
         self.inputs.push((name, ty));
+        self.inputs
+            .push((format!("{}_len", ident), "size_t".to_string()));
+        self.inputs
+            .push((format!("*{}_lenout", ident), "size_t".to_string()));
+        self.outputs
+            .push((format!("{}_ptr", ident), "size_t".to_string()));
+        self.outputs
+            .push((format!("{}_len", ident), "size_t".to_string()));
+        self.outputs
+            .push((format!("&{}_len", ident), "size_t".to_string()));
+    }
+
+    fn visit_output_untyped_buffer(&mut self, ident: &Ident) {
+        let ty = "void".to_string();
+        let name = format!("*{}_ptr", ident);
+        self.inputs.push((name, ty.to_string()));
         self.inputs
             .push((format!("{}_len", ident), "size_t".to_string()));
         self.inputs
@@ -184,7 +236,11 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
 
     fn visit_output_object_array(&mut self, ident: &Ident, ty: Option<&str>, cnt: idlc_mir::Count) {
         let name = format!("(*{}_ptr)[{cnt}]", ident);
-        let ty = ty.unwrap_or("Object").to_string();
+        let ty = if self.is_typed_objects {
+            "Object".to_string()
+        } else {
+            ty.unwrap_or("Object").to_string()
+        };
         self.inputs.push((name, ty));
         self.outputs
             .push((format!("&{}", ident), "size_t".to_string()));
@@ -193,7 +249,10 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
     fn visit_output_primitive(&mut self, ident: &Ident, ty: Primitive) {
         self.inputs
             .push((format!("*{}_ptr", ident), change_primitive(ty).to_string()));
-        if self.total_bundled_output > 1 && self.bundled_outputs.contains(&ident.to_string()) {
+        if self.total_bundled_output > 1
+            && self.bundled_outputs.contains(&ident.to_string())
+            && self.bundled_outputs.len() > 1
+        {
             self.outputs
                 .push((format!("&o->m_{}", ident), change_primitive(ty).to_string()));
         } else {
@@ -205,7 +264,10 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
     fn visit_output_big_struct(&mut self, ident: &Ident, ty: &StructInner) {
         self.inputs
             .push((format!("*{}_ptr", ident), ty.ident.to_string()));
-        if self.total_bundled_output > 1 && self.bundled_outputs.contains(&ident.to_string()) {
+        if self.total_bundled_output > 1
+            && self.bundled_outputs.contains(&ident.to_string())
+            && self.bundled_outputs.len() > 1
+        {
             self.outputs
                 .push((format!("&o->m_{}", ident), ty.ident.to_string()));
         } else {
@@ -216,7 +278,10 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
     fn visit_output_small_struct(&mut self, ident: &Ident, ty: &StructInner) {
         self.inputs
             .push((format!("*{}_ptr", ident), ty.ident.to_string()));
-        if self.total_bundled_output > 1 && self.bundled_outputs.contains(&ident.to_string()) {
+        if self.total_bundled_output > 1
+            && self.bundled_outputs.contains(&ident.to_string())
+            && self.bundled_outputs.len() > 1
+        {
             self.outputs
                 .push((format!("&o->m_{}", ident), ty.ident.to_string()));
         } else {
@@ -226,13 +291,14 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
     }
 
     fn visit_output_object(&mut self, ident: &Ident, ty: Option<&str>) {
-        self.inputs.push((
-            format!("*{}_ptr", ident),
-            ty.unwrap_or("Object").to_string(),
-        ));
-        self.outputs.push((
-            format!("&{}_ptr", ident),
-            ty.unwrap_or("Object").to_string(),
-        ));
+        let ty = if self.is_typed_objects {
+            "Object"
+        } else {
+            ty.unwrap_or("Object")
+        };
+        self.inputs
+            .push((format!("*{}_ptr", ident), ty.to_string()));
+        self.outputs
+            .push((format!("{}_ptr", ident), ty.to_string()));
     }
 }

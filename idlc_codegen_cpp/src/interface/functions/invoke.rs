@@ -19,6 +19,10 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         self.0.visit_input_primitive_buffer(ident, ty);
     }
 
+    fn visit_input_untyped_buffer(&mut self, ident: &Ident) {
+        self.0.visit_input_untyped_buffer(ident);
+    }
+
     fn visit_input_struct_buffer(&mut self, ident: &Ident, ty: &idlc_mir::StructInner) {
         self.0.visit_input_struct_buffer(ident, ty);
     }
@@ -78,6 +82,10 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
 
     fn visit_output_primitive_buffer(&mut self, ident: &Ident, ty: idlc_mir::Primitive) {
         self.0.visit_output_primitive_buffer(ident, ty);
+    }
+
+    fn visit_output_untyped_buffer(&mut self, ident: &Ident) {
+        self.0.visit_output_untyped_buffer(ident);
     }
 
     fn visit_output_struct_buffer(&mut self, ident: &Ident, ty: &idlc_mir::StructInner) {

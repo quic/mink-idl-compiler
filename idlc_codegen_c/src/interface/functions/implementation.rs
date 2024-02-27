@@ -257,6 +257,7 @@ pub fn emit(
 ) -> String {
     let ident = &function.ident;
     let total = counts.total();
+    let mut object_args = String::new();
 
     let params = super::signature::iter_to_string(signature.params());
 
@@ -264,6 +265,15 @@ pub fn emit(
     let initializations = implementation.initializations();
     let args = implementation.args();
     let post_call_assignments = implementation.post_call_assignments();
+
+    if total > 0 {
+        object_args = format!(
+            r#"ObjectArg a[] = {{
+        {args}
+    }};
+        "#
+        );
+    }
 
     let returns = if total > 0 {
         format!("Object_invoke(self, {iface_ident}_{OP}_{ident}, a, ObjectCounts_pack({0}, {1}, {2}, {3}));",
@@ -282,9 +292,7 @@ static inline int32_t
 {current_iface_ident}_{ident}(Object self{params})
 {{
     {initializations}
-    ObjectArg a[] = {{
-        {args}
-    }};
+    {object_args}
     int32_t result = {returns}
     {post_call_assignments}
 

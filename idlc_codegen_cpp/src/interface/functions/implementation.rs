@@ -179,6 +179,7 @@ pub fn emit(
 ) -> String {
     let ident = &function.ident;
     let total = counts.total();
+    let mut object_args = String::new();
 
     let mut params =
         idlc_codegen_c::interface::functions::signature::iter_to_string(signature.params());
@@ -193,6 +194,15 @@ pub fn emit(
     initializations = initializations.replace('\n', "\n    ");
     args = args.replace('\n', "\n    ");
     post_call_assignments = post_call_assignments.replace('\n', "\n    ");
+
+    if total > 0 {
+        object_args = format!(
+            r#"ObjectArg a[] = {{
+            {args}
+        }};
+            "#
+        );
+    }
 
     let returns = if total > 0 {
         format!(
@@ -211,9 +221,7 @@ pub fn emit(
     {documentation}
     virtual int32_t {ident}({params}) {{
         {initializations}
-        ObjectArg a[] = {{
-            {args}
-        }};
+        {object_args}
         int32_t result = {returns}
         if (Object_OK != result) {{ return result; }}
         {post_call_assignments}

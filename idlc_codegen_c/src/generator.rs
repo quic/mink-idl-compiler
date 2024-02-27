@@ -5,10 +5,18 @@ use crate::{
     interface::{emit_interface_impl, emit_interface_invoke},
 };
 
-pub struct Generator;
+pub struct Generator {
+    is_typed_objects: bool,
+}
+
+impl Generator {
+    pub fn new(is_typed_objects: bool) -> Self {
+        Self { is_typed_objects }
+    }
+}
 
 impl idlc_codegen::SplitInvokeGenerator for Generator {
-    fn generate_implementation(mir: &idlc_mir::Mir) -> String {
+    fn generate_implementation(&self, mir: &idlc_mir::Mir) -> String {
         let mut result = String::new();
         result.push_str(&generate_common());
 
@@ -24,7 +32,7 @@ impl idlc_codegen::SplitInvokeGenerator for Generator {
                     result.push_str(&emit_struct(s.as_ref()));
                 }
                 Node::Interface(i) => {
-                    result.push_str(&emit_interface_impl(i));
+                    result.push_str(&emit_interface_impl(i, self.is_typed_objects));
                 }
             }
         }
@@ -32,7 +40,7 @@ impl idlc_codegen::SplitInvokeGenerator for Generator {
         result
     }
 
-    fn generate_invoke(mir: &idlc_mir::Mir) -> String {
+    fn generate_invoke(&self, mir: &idlc_mir::Mir) -> String {
         let mut result = generate_common();
 
         let input_name = &mir.tag.file_stem().unwrap().to_str().unwrap();
@@ -44,7 +52,7 @@ impl idlc_codegen::SplitInvokeGenerator for Generator {
                     result.push_str(&emit_include(i));
                 }
                 Node::Interface(i) => {
-                    result.push_str(&emit_interface_invoke(i));
+                    result.push_str(&emit_interface_invoke(i, self.is_typed_objects));
                 }
                 _ => (),
             }

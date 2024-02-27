@@ -7,6 +7,9 @@ use crate::serialization::PackedPrimitives;
 #[allow(unused)]
 pub trait ParameterVisitor {
     fn visit_input_primitive_buffer(&mut self, ident: &Ident, ty: Primitive) {}
+    fn visit_input_untyped_buffer(&mut self, ident: &Ident) {
+        self.visit_input_primitive_buffer(ident, Primitive::Uint8);
+    }
     fn visit_input_struct_buffer(&mut self, ident: &Ident, ty: &StructInner) {}
     fn visit_input_primitive(&mut self, ident: &Ident, ty: Primitive) {}
     fn visit_input_bundled(&mut self, packed_primitives: &PackedPrimitives) {}
@@ -16,6 +19,9 @@ pub trait ParameterVisitor {
     fn visit_input_object_array(&mut self, ident: &Ident, ty: Option<&str>, cnt: Count) {}
 
     fn visit_output_primitive_buffer(&mut self, ident: &Ident, ty: Primitive) {}
+    fn visit_output_untyped_buffer(&mut self, ident: &Ident) {
+        self.visit_output_primitive_buffer(ident, Primitive::Uint8);
+    }
     fn visit_output_struct_buffer(&mut self, ident: &Ident, ty: &StructInner) {}
     fn visit_output_primitive(&mut self, ident: &Ident, ty: Primitive) {}
     fn visit_output_bundled(&mut self, packed_primitives: &PackedPrimitives) {}
@@ -48,8 +54,10 @@ impl<'a> Param<'a> {
                             Type::Struct(Struct::Big(s) | Struct::Small(s)) => {
                                 visitor.visit_input_struct_buffer(ident, s)
                             }
+                            _ => unreachable!(),
                         },
                         ParamTypeIn::Value(t) => match t {
+                            Type::UntypedBuffer => visitor.visit_input_untyped_buffer(ident),
                             &Type::Primitive(p) => visitor.visit_input_primitive(ident, p),
                             Type::Interface(i) => visitor.visit_input_object(ident, i.as_deref()),
                             Type::Struct(Struct::Big(s)) => {
@@ -70,8 +78,10 @@ impl<'a> Param<'a> {
                             Type::Struct(Struct::Big(s) | Struct::Small(s)) => {
                                 visitor.visit_output_struct_buffer(ident, s)
                             }
+                            _ => unreachable!(),
                         },
                         ParamTypeOut::Reference(t) => match t {
+                            Type::UntypedBuffer => visitor.visit_output_untyped_buffer(ident),
                             &Type::Primitive(p) => visitor.visit_output_primitive(ident, p),
                             Type::Interface(i) => visitor.visit_output_object(ident, i.as_deref()),
                             Type::Struct(Struct::Big(s)) => {

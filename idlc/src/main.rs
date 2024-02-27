@@ -72,6 +72,11 @@ struct Cli {
     /// Dump various phases of the compiler and exit.
     dump: Option<Dumpable>,
 
+    #[arg(long = "typed-objects", default_value_t = false)]
+    /// Forces C codegen to emit 'Object' as a object type instead of its own type.
+    /// This option does NOT affect any other codegen backends.
+    typed_objects: bool,
+
     #[arg(long, default_value_t = false)]
     /// If `idlc` needs to be pedantic about integer widths and overflow (only check for now). This
     /// is undefined behavior and the default should be pedantic however some old code depends on
@@ -150,14 +155,12 @@ fn main() {
         .unwrap_or_else(|| std::env::current_dir().unwrap());
     match (args.c, args.cpp, args.java, args.rust) {
         (true, false, false, false) => {
+            let c_gen = idlc_codegen_c::Generator::new(args.typed_objects);
             let content = if args.skel {
-                timer::time!(
-                    idlc_codegen_c::Generator::generate_invoke(&mir),
-                    "C invoke codegen"
-                )
+                timer::time!(c_gen.generate_invoke(&mir), "C invoke codegen")
             } else {
                 timer::time!(
-                    idlc_codegen_c::Generator::generate_implementation(&mir),
+                    c_gen.generate_implementation(&mir),
                     "C implementation codegen"
                 )
             };
@@ -172,12 +175,12 @@ fn main() {
         (true, true, false, false) => {
             let content = if args.skel {
                 timer::time!(
-                    idlc_codegen_cpp::Generator::generate_invoke(&mir),
+                    idlc_codegen_cpp::Generator.generate_invoke(&mir),
                     "C++ invoke codegen"
                 )
             } else {
                 timer::time!(
-                    idlc_codegen_cpp::Generator::generate_implementation(&mir),
+                    idlc_codegen_cpp::Generator.generate_implementation(&mir),
                     "C++ implementation codegen"
                 )
             };

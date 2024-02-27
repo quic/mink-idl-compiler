@@ -133,7 +133,7 @@ impl From<Pair<'_, Rule>> for ParamTypeIn {
         let r#type = Type::from(ast_unwrap!(inner.next()));
         if let Type::Custom(r#type) = &r#type {
             if r#type == "buffer" {
-                return Self::Array(Type::Primitive(Primitive::Uint8), None);
+                return Self::Value(Type::UntypedBuffer);
             }
         }
 
@@ -158,7 +158,7 @@ impl From<Pair<'_, Rule>> for ParamTypeOut {
         let r#type = Type::from(ast_unwrap!(inner.next()));
         if let Type::Custom(r#type) = &r#type {
             if r#type == "buffer" {
-                return Self::Array(Type::Primitive(Primitive::Uint8), None);
+                return Self::Reference(Type::UntypedBuffer);
             }
         }
 

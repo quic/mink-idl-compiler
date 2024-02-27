@@ -12,16 +12,19 @@ pub struct Invoke {
     pub pre: Vec<String>,
     pub post: Vec<String>,
 
+    is_typed_objects: bool,
+
     idx: usize,
 }
 
 impl Invoke {
-    pub fn new(function: &idlc_mir::Function) -> Self {
+    pub fn new(function: &idlc_mir::Function, is_typed_objects: bool) -> Self {
         let mut me = Self {
             args: vec![],
             len_intialize: vec![],
             pre: vec![],
             post: vec![],
+            is_typed_objects,
             idx: 0,
         };
 
@@ -67,12 +70,24 @@ impl Invoke {
 impl idlc_codegen::functions::ParameterVisitor for Invoke {
     fn visit_input_primitive_buffer(&mut self, ident: &idlc_mir::Ident, ty: idlc_mir::Primitive) {
         let idx = self.idx();
+        let sz = ty.size();
         let ty: &str = change_primitive(ty);
         let name = format!("*{}_ptr", ident);
         self.pre.push(format!(
             r#" \
                 {CONST} {ty} {name} = ({CONST} {ty}*){ARGS}[{idx}].b.ptr; \
-                size_t {ident}_len = {ARGS}[{idx}].b.size / sizeof({ty});"#
+                size_t {ident}_len = {ARGS}[{idx}].b.size / {sz};"#
+        ));
+    }
+
+    fn visit_input_untyped_buffer(&mut self, ident: &idlc_mir::Ident) {
+        let idx = self.idx();
+        let ty = "void".to_string();
+        let name = format!("*{}_ptr", ident);
+        self.pre.push(format!(
+            r#" \
+                {CONST} {ty} {name} = ({CONST} {ty}*){ARGS}[{idx}].b.ptr; \
+                size_t {ident}_len = {ARGS}[{idx}].b.size;"#
         ));
     }
 
@@ -93,7 +108,11 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         ty: Option<&str>,
         cnt: idlc_mir::Count,
     ) {
-        let ty = ty.unwrap_or("Object").to_string();
+        let ty = if self.is_typed_objects {
+            "Object".to_string()
+        } else {
+            ty.unwrap_or("Object").to_string()
+        };
         let mut objs = String::new();
         for _ in 0..cnt.into() {
             let idx = self.idx();
@@ -107,10 +126,10 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
 
     fn visit_input_primitive(&mut self, ident: &idlc_mir::Ident, ty: idlc_mir::Primitive) {
         let idx = self.idx();
+        let sz = ty.size();
         let ty: &str = change_primitive(ty);
         let name = format!("*{}_ptr", ident);
-        self.args
-            .push(format!("{ARGS}[{idx}].b.size != sizeof({ty})"));
+        self.args.push(format!("{ARGS}[{idx}].b.size != {sz}"));
         self.pre.push(format!(
             r#" \
                 {CONST} {ty} {name} = ({CONST} {ty}*){ARGS}[{idx}].b.ptr;"#
@@ -150,25 +169,46 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
 
     fn visit_input_object(&mut self, ident: &idlc_mir::Ident, ty: Option<&str>) {
         let idx = self.idx();
-        let ty = ty.unwrap_or("Object").to_string();
+        let ty = if self.is_typed_objects {
+            "Object".to_string()
+        } else {
+            ty.unwrap_or("Object").to_string()
+        };
+
         self.pre.push(format!(
             r#" \
-                {ty} {ident}_ptr = ({ty}){ARGS}[{idx}].o;"#
+                {ty} *{ident}_ptr = &{ARGS}[{idx}].o;"#
         ));
     }
 
     fn visit_output_primitive_buffer(&mut self, ident: &idlc_mir::Ident, ty: idlc_mir::Primitive) {
         let idx = self.idx();
+        let sz = ty.size();
         let ty: &str = change_primitive(ty);
         let name = format!("*{}_ptr", ident);
         self.pre.push(format!(
             r#" \
                 {ty} {name} = ({ty}*){ARGS}[{idx}].b.ptr; \
-                size_t {ident}_len = {ARGS}[{idx}].b.size / sizeof({ty});"#
+                size_t {ident}_len = {ARGS}[{idx}].b.size / {sz};"#
         ));
         self.post.push(format!(
             r#" \
-            {ARGS}[{idx}].b.size = {ident}_len * sizeof({ty});"#
+            {ARGS}[{idx}].b.size = {ident}_len * {sz};"#
+        ));
+    }
+
+    fn visit_output_untyped_buffer(&mut self, ident: &idlc_mir::Ident) {
+        let idx = self.idx();
+        let ty = "void".to_string();
+        let name = format!("*{}_ptr", ident);
+        self.pre.push(format!(
+            r#" \
+                {ty} {name} = ({ty}*){ARGS}[{idx}].b.ptr; \
+                size_t {ident}_len = {ARGS}[{idx}].b.size;"#
+        ));
+        self.post.push(format!(
+            r#" \
+            {ARGS}[{idx}].b.size = {ident}_len;"#
         ));
     }
 
@@ -194,7 +234,11 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         cnt: idlc_mir::Count,
     ) {
         let name = format!("{}", ident);
-        let ty = ty.unwrap_or("Object").to_string();
+        let ty = if self.is_typed_objects {
+            "Object".to_string()
+        } else {
+            ty.unwrap_or("Object").to_string()
+        };
         let mut objs = String::new();
         let mut obj_assign = String::new();
         for i in 0..cnt.into() {
@@ -233,10 +277,10 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
 
     fn visit_output_primitive(&mut self, ident: &idlc_mir::Ident, ty: idlc_mir::Primitive) {
         let idx = self.idx();
+        let sz = ty.size();
         let ty: &str = change_primitive(ty);
         let name = format!("*{}_ptr", ident);
-        self.args
-            .push(format!("{ARGS}[{idx}].b.size != sizeof({ty})"));
+        self.args.push(format!("{ARGS}[{idx}].b.size != {sz}"));
         self.pre.push(format!(
             r#" \
                 {ty} {name} = ({ty}*){ARGS}[{idx}].b.ptr;"#
@@ -261,11 +305,14 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
 
     fn visit_output_object(&mut self, ident: &idlc_mir::Ident, ty: Option<&str>) {
         let idx = self.idx();
-        let ty = ty.unwrap_or("Object").to_string();
-
+        let ty = if self.is_typed_objects {
+            "Object".to_string()
+        } else {
+            ty.unwrap_or("Object").to_string()
+        };
         self.pre.push(format!(
             r#" \
-                {ty} {ident}_ptr = ({ty}){ARGS}[{idx}].o;"#
+                {ty} *{ident}_ptr = &{ARGS}[{idx}].o;"#
         ));
     }
 }
@@ -275,10 +322,11 @@ pub fn emit(
     iface_ident: &str,
     signature: &super::signature::Signature,
     counts: &idlc_codegen::counts::Counter,
+    is_typed_objects: bool,
 ) -> String {
     let ident = &function.ident;
 
-    let invoke = Invoke::new(function);
+    let invoke = Invoke::new(function, is_typed_objects);
     let len_intialize = invoke.len_intialize();
     let pre = invoke.pre();
     let post = invoke.post();
