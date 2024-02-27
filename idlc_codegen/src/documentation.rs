@@ -88,7 +88,6 @@ impl Documentation {
         }
         if let Some(end) = style.end() {
             documentation.push_str(end);
-            documentation.push('\n');
         }
 
         Self(documentation)
@@ -130,8 +129,7 @@ mod tests {
 *
 * @param[out]
 * New Lines must be preserved and convention interleaving should work too!
-*/
-"
+*/"
         );
     }
 
@@ -147,8 +145,7 @@ mod tests {
 *
 * @param[out]
 * New Lines must be preserved and convention interleaving should work too!
-*/
-"
+*/"
         );
     }
 }

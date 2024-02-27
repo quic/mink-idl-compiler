@@ -58,6 +58,7 @@ struct Cli {
 
     #[arg(long, group = "lang")]
     /// Generate Java
+    /// Note: Untested but guaranteed to generate same output as the previous versions.
     java: bool,
 
     #[arg(long, group = "lang")]
@@ -191,6 +192,22 @@ fn main() {
                 .open(output)
                 .unwrap();
             file.write_all(content.as_bytes()).unwrap();
+        }
+        (true, false, true, false) => {
+            idlc_errors::warn!(
+                "Note: JavaGen is untested but guaranteed to generate same output as the previous versions.",
+            );
+            for (name, content) in
+                timer::time!(idlc_codegen_java::Generator::generate(&mir), "Java codegen")
+            {
+                let mut file = std::fs::OpenOptions::new()
+                    .create(true)
+                    .write(true)
+                    .truncate(true)
+                    .open(output.join(name))
+                    .unwrap();
+                file.write_all(content.as_bytes()).unwrap();
+            }
         }
         (true, false, false, true) => {
             for (name, content) in

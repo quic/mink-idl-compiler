@@ -36,7 +36,7 @@ pub fn emit_interface_impl(interface: &Interface, is_typed_objects: bool) -> Str
                 let signature = functions::signature::Signature::new(f, &counts, is_typed_objects);
                 let documentation = idlc_codegen::documentation::Documentation::new(
                     f,
-                    idlc_codegen::documentation::DocumentationStyle::Rust,
+                    idlc_codegen::documentation::DocumentationStyle::C,
                 );
 
                 implementations.push_str(&functions::implementation::emit(
@@ -73,7 +73,7 @@ pub fn emit_interface_impl(interface: &Interface, is_typed_objects: bool) -> Str
                 let signature = functions::signature::Signature::new(f, &counts, is_typed_objects);
                 let documentation = idlc_codegen::documentation::Documentation::new(
                     f,
-                    idlc_codegen::documentation::DocumentationStyle::Rust,
+                    idlc_codegen::documentation::DocumentationStyle::C,
                 );
 
                 op_codes.push_str(&format!("#define {}_OP_{} {}\n", ident, f.ident, f.id));
@@ -157,6 +157,7 @@ pub fn emit_interface_invoke(interface: &Interface, is_typed_objects: bool) -> S
     format!(
         r#"
 #define {ident}_DEFINE_INVOKE(func, prefix, type) \
+    typedef Object {ident}; \
     int32_t func(ObjectCxt h, ObjectOp op, ObjectArg *a, ObjectCounts k) \
     {{ \
         type me = (type) h; \

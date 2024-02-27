@@ -40,7 +40,7 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
                 let signature = functions::signature::Signature::new(f, &counts);
                 let documentation = idlc_codegen::documentation::Documentation::new(
                     f,
-                    idlc_codegen::documentation::DocumentationStyle::Rust,
+                    idlc_codegen::documentation::DocumentationStyle::C,
                 );
 
                 implementations.push_str(&functions::implementation::emit(
@@ -77,7 +77,7 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
                 let signature = functions::signature::Signature::new(f, &counts);
                 let documentation = idlc_codegen::documentation::Documentation::new(
                     f,
-                    idlc_codegen::documentation::DocumentationStyle::Rust,
+                    idlc_codegen::documentation::DocumentationStyle::C,
                 );
                 let mut params = idlc_codegen_c::interface::functions::signature::iter_to_string(
                     signature.params(),
