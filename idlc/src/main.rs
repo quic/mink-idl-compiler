@@ -78,7 +78,7 @@ struct Cli {
     /// This option does NOT affect any other codegen backends.
     typed_objects: bool,
 
-    #[arg(long, default_value_t = false)]
+    #[arg(long, default_value_t = true)]
     /// If `idlc` needs to be pedantic about integer widths and overflow (only check for now). This
     /// is undefined behavior and the default should be pedantic however some old code depends on
     /// this.
