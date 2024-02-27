@@ -13,4 +13,4 @@ description = "AST structure for IDL; contains grammar and AST generators"
 idlc_errors = { version = "0.1.0", path = "../idlc_errors" }
 pest = "2.7.7"
 pest_derive = "2.7.7"
-thiserror = "1.0.56"
+thiserror = "1.0.57"

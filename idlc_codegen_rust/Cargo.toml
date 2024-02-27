@@ -11,4 +11,4 @@ idlc_codegen = { path="../idlc_codegen" }
 idlc_errors = { version = "0.1.0", path = "../idlc_errors" }
 idlc_mir = { path="../idlc_mir" }
 prettyplease = "0.2.16"
-syn = { version = "2.0.48", features = ["parsing"], default-features = false }
+syn = { version = "2.0.51", features = ["parsing"], default-features = false }
