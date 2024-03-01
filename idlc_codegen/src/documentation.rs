@@ -6,27 +6,18 @@ pub enum DocumentationStyle {
 }
 
 impl DocumentationStyle {
-    fn apply_replacements(self, doc: &str) -> std::borrow::Cow<'_, str> {
-        // Rust uses Markdown so we need to replace `[` or intra-doc links break
-        if self == Self::Rust && (doc.contains(']') || doc.contains(']')) {
-            std::borrow::Cow::Owned(doc.replace(']', "\\]").replace('[', "\\["))
-        } else {
-            std::borrow::Cow::Borrowed(doc)
+    const fn start(self) -> &'static str {
+        match self {
+            Self::Rust => "///<pre>",
+            Self::C => "/*",
+            Self::Java => "/**",
         }
     }
 
-    const fn start(self) -> Option<&'static str> {
+    const fn end(self) -> &'static str {
         match self {
-            Self::Rust => None,
-            Self::C => Some("/*"),
-            Self::Java => Some("/**"),
-        }
-    }
-
-    const fn end(self) -> Option<&'static str> {
-        match self {
-            Self::Rust => None,
-            Self::C | Self::Java => Some("*/"),
+            Self::Rust => "///</pre>",
+            Self::C | Self::Java => "*/",
         }
     }
 
@@ -69,26 +60,21 @@ impl Documentation {
     }
 
     fn new_with_idlc_doc(doc: &str, style: DocumentationStyle) -> Self {
-        let mut documentation = String::new();
-        if let Some(start) = style.start() {
-            documentation.push_str(start);
-            documentation.push('\n');
-        }
+        let mut documentation = style.start().to_string();
+        documentation.push('\n');
+        let indent = doc.find('*').unwrap_or(0);
 
         for line in doc.lines() {
-            let line = line.trim_start();
-            let docstring = line.strip_prefix('*').unwrap_or(line);
+            let docstring = line.get(indent..).unwrap_or_default();
 
             documentation += style.prefix();
             if !docstring.is_empty() {
                 documentation.push(' ');
-                documentation.push_str(&style.apply_replacements(docstring.trim()));
+                documentation.push_str(docstring.trim_end());
             }
             documentation.push('\n');
         }
-        if let Some(end) = style.end() {
-            documentation.push_str(end);
-        }
+        documentation.push_str(style.end());
 
         Self(documentation)
     }
@@ -97,11 +83,17 @@ impl Documentation {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const DOCUMENTATION: &str = r"* Hello this is a sample documentation
-      I can even contain no asterisk in the beginning and this is style a valid idl doc style
-    *
-    * @param[out]
-    * New Lines must be preserved and convention interleaving should work too!";
+    const DOCUMENTATION: &str = r"
+* Hello this is a sample documentation
+    I can even contain no asterisk in the beginning and this is style a valid idl doc style   
+
+* @param[out]
+* New Lines must be preserved and convention interleaving should work too!
+* @param[in] credentials  Lines that wrap around must ensure
+                          formatting is maintained
+                          a
+                          b
+                          c";
 
     #[test]
     fn rust() {
@@ -109,12 +101,19 @@ mod tests {
             Documentation::new_with_idlc_doc(DOCUMENTATION, DocumentationStyle::Rust);
         assert_eq!(
             documentation.as_ref(),
-            r"/// Hello this is a sample documentation
-/// I can even contain no asterisk in the beginning and this is style a valid idl doc style
+            r"///<pre>
 ///
-/// @param\[out\]
-/// New Lines must be preserved and convention interleaving should work too!
-"
+///  Hello this is a sample documentation
+///    I can even contain no asterisk in the beginning and this is style a valid idl doc style
+///
+///  @param[out]
+///  New Lines must be preserved and convention interleaving should work too!
+///  @param[in] credentials  Lines that wrap around must ensure
+///                          formatting is maintained
+///                          a
+///                          b
+///                          c
+///</pre>"
         );
     }
 
@@ -124,11 +123,17 @@ mod tests {
         assert_eq!(
             documentation.as_ref(),
             r"/*
-* Hello this is a sample documentation
-* I can even contain no asterisk in the beginning and this is style a valid idl doc style
 *
-* @param[out]
-* New Lines must be preserved and convention interleaving should work too!
+*  Hello this is a sample documentation
+*    I can even contain no asterisk in the beginning and this is style a valid idl doc style
+*
+*  @param[out]
+*  New Lines must be preserved and convention interleaving should work too!
+*  @param[in] credentials  Lines that wrap around must ensure
+*                          formatting is maintained
+*                          a
+*                          b
+*                          c
 */"
         );
     }
@@ -140,11 +145,17 @@ mod tests {
         assert_eq!(
             documentation.as_ref(),
             r"/**
-* Hello this is a sample documentation
-* I can even contain no asterisk in the beginning and this is style a valid idl doc style
 *
-* @param[out]
-* New Lines must be preserved and convention interleaving should work too!
+*  Hello this is a sample documentation
+*    I can even contain no asterisk in the beginning and this is style a valid idl doc style
+*
+*  @param[out]
+*  New Lines must be preserved and convention interleaving should work too!
+*  @param[in] credentials  Lines that wrap around must ensure
+*                          formatting is maintained
+*                          a
+*                          b
+*                          c
 */"
         );
     }
