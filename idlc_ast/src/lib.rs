@@ -8,14 +8,22 @@ pub use ast::*;
 pub use pst::Error;
 use std::path::{Path, PathBuf};
 
-pub fn from_file<P: AsRef<Path>>(path: P, pedantic: bool) -> Result<Ast, Error> {
+pub fn from_file<P: AsRef<Path>>(path: P, allow_undefined_behavior: bool) -> Result<Ast, Error> {
     let content = std::fs::read_to_string(&path)
         .map_err(|e| Error::Io(e, path.as_ref().display().to_string()))?;
-    from_string(path.as_ref().to_path_buf(), content, pedantic)
+    from_string(
+        path.as_ref().to_path_buf(),
+        content,
+        allow_undefined_behavior,
+    )
 }
 
-pub fn from_string<S: AsRef<str>>(root: PathBuf, s: S, pedantic: bool) -> Result<Ast, Error> {
-    let nodes = pst::parse_to_ast(s.as_ref(), pedantic)?;
+pub fn from_string<S: AsRef<str>>(
+    root: PathBuf,
+    s: S,
+    allow_undefined_behavior: bool,
+) -> Result<Ast, Error> {
+    let nodes = pst::parse_to_ast(s.as_ref(), allow_undefined_behavior)?;
     Ok(Ast { tag: root, nodes })
 }
 

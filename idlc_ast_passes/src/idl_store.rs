@@ -26,7 +26,7 @@ pub struct IDLStore {
     cycle: Option<Cycle<String>>,
     graph: Graph<String>,
     include_paths: Vec<PathBuf>,
-    pedantic: bool,
+    allow_undefined_behavior: bool,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -70,7 +70,7 @@ impl CompilerPass<'_> for IDLStore {
 impl IDLStore {
     /// takes the vector of include paths as an argument which will be saved in `include_paths` field
     #[must_use]
-    pub fn with_includes(include_paths: &[PathBuf], pedantic: bool) -> Self {
+    pub fn with_includes(include_paths: &[PathBuf], allow_undefined_behavior: bool) -> Self {
         Self {
             ast_store: RefCell::new(HashMap::new()),
             symbols: RefCell::new(HashMap::new()),
@@ -78,7 +78,7 @@ impl IDLStore {
             cycle: None,
             graph: Graph::new(),
             include_paths: include_paths.to_vec(),
-            pedantic,
+            allow_undefined_behavior,
         }
     }
 
@@ -195,8 +195,8 @@ impl IDLStore {
             include_path = file_path
                 .canonicalize()
                 .expect("Failed to canonicalize path.");
-            let node =
-                idlc_ast::from_file(include_path.clone(), self.pedantic).unwrap_or_else(|e| {
+            let node = idlc_ast::from_file(include_path.clone(), self.allow_undefined_behavior)
+                .unwrap_or_else(|e| {
                     idlc_errors::unrecoverable!("Parsing failed: \n{e}\n");
                 });
             Self::insert_canonical(self, &include_path, &node);

@@ -65,13 +65,17 @@ impl<R: pest::RuleType + Ord> From<Pair<'_, R>> for Ident {
 }
 
 impl InterfaceNode {
-    fn new(doc: Option<Documentation>, pair: Pair<'_, Rule>, pedantic: bool) -> Self {
+    fn new(
+        doc: Option<Documentation>,
+        pair: Pair<'_, Rule>,
+        allow_undefined_behavior: bool,
+    ) -> Self {
         match pair.as_rule() {
             Rule::error => Self::Error(Ident {
                 span: pair.as_span().into(),
                 ident: pair.into_inner().as_str().to_string(),
             }),
-            Rule::r#const => Self::Const(parse_const(pair, pedantic)),
+            Rule::r#const => Self::Const(parse_const(pair, allow_undefined_behavior)),
             Rule::function => {
                 let mut inner = pair.into_inner();
                 let ident = ast_unwrap!(inner.next()).into();
@@ -242,18 +246,18 @@ fn parse_struct(pair: Pair<Rule>) -> Rc<Node> {
     Rc::new(Node::Struct(Struct { ident, fields }))
 }
 
-fn parse_const(pair: Pair<Rule>, pedantic: bool) -> Const {
+fn parse_const(pair: Pair<Rule>, allow_undefined_behavior: bool) -> Const {
     let mut inner = pair.into_inner();
 
     let idl_type = ast_unwrap!(inner.next()).as_str();
     let ident = ast_unwrap!(inner.next()).into();
     let value = ast_unwrap!(inner.next()).as_str();
-    let primitive = if pedantic {
+    let primitive = if allow_undefined_behavior {
+        Primitive::try_from(idl_type).unwrap()
+    } else {
         Primitive::new(idl_type, value).unwrap_or_else(|e| {
             idlc_errors::unrecoverable!("'{value}' isn't in range for type '{idl_type}' [{e}]")
         })
-    } else {
-        Primitive::try_from(idl_type).unwrap()
     };
 
     Const {
@@ -263,7 +267,7 @@ fn parse_const(pair: Pair<Rule>, pedantic: bool) -> Const {
     }
 }
 
-fn parse_interface(pair: Pair<Rule>, pedantic: bool) -> Rc<Node> {
+fn parse_interface(pair: Pair<Rule>, allow_undefined_behavior: bool) -> Rc<Node> {
     let span = Span::from(pair.as_span());
     let mut interface = pair.into_inner();
     let mut pairs = ast_unwrap!(interface.next()).into_inner();
@@ -281,7 +285,7 @@ fn parse_interface(pair: Pair<Rule>, pedantic: bool) -> Rc<Node> {
     for rule in interface {
         match rule.as_rule() {
             Rule::r#const | Rule::function | Rule::error => {
-                let node = InterfaceNode::new(comment, rule, pedantic);
+                let node = InterfaceNode::new(comment, rule, allow_undefined_behavior);
                 comment = None;
                 iface_nodes.push(node);
             }
@@ -298,7 +302,7 @@ fn parse_interface(pair: Pair<Rule>, pedantic: bool) -> Rc<Node> {
     }))
 }
 
-pub fn parse_to_ast(input: &str, pedantic: bool) -> Result<Vec<Rc<Node>>, Error> {
+pub fn parse_to_ast(input: &str, allow_undefined_behavior: bool) -> Result<Vec<Rc<Node>>, Error> {
     let mut pairs = IDLParser::parse(Rule::idl, input)?;
     let mut nodes = Vec::new();
 
@@ -306,8 +310,11 @@ pub fn parse_to_ast(input: &str, pedantic: bool) -> Result<Vec<Rc<Node>>, Error>
         match p.as_rule() {
             Rule::include => nodes.push(parse_include(p)),
             Rule::r#struct => nodes.push(parse_struct(p)),
-            Rule::r#const => nodes.push(Rc::new(Node::Const(parse_const(p, pedantic)))),
-            Rule::interface => nodes.push(parse_interface(p, pedantic)),
+            Rule::r#const => nodes.push(Rc::new(Node::Const(parse_const(
+                p,
+                allow_undefined_behavior,
+            )))),
+            Rule::interface => nodes.push(parse_interface(p, allow_undefined_behavior)),
             Rule::EOI => (),
             _ => {}
         }

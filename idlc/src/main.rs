@@ -78,11 +78,12 @@ struct Cli {
     /// This option does NOT affect any other codegen backends.
     typed_objects: bool,
 
-    #[arg(long, default_value_t = true)]
-    /// If `idlc` needs to be pedantic about integer widths and overflow (only check for now). This
-    /// is undefined behavior and the default should be pedantic however some old code depends on
-    /// this.
-    pedantic: bool,
+    #[arg(long, default_value_t = false)]
+    /// `idlc` by default is pedantic about integer widths overflowing.
+    ///
+    /// To allow undefined behavior to go through codegen enable this flag, outputs aren't
+    /// guaranteed!
+    allow_undefined_behavior: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, clap::ValueEnum)]
@@ -118,7 +119,7 @@ fn main() {
     let mut include_paths = args.include_paths.clone().unwrap_or_default();
     include_paths.push(dir_path.to_path_buf());
 
-    let mut idl_store = IDLStore::with_includes(&include_paths, args.pedantic);
+    let mut idl_store = IDLStore::with_includes(&include_paths, args.allow_undefined_behavior);
 
     let ast = idl_store.get_or_insert(input_file);
 
