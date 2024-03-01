@@ -173,7 +173,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         _ty: Option<&str>,
         cnt: idlc_mir::Count,
     ) {
-        for _ in 0..cnt.into() {
+        for i in 0..cnt.into() {
             let idx = self.idx();
             self.args.push(
                 r#"{.o = (Object) { NULL, NULL } },
@@ -181,7 +181,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
                 .to_string(),
             );
             self.post_call.push(format!(
-                r#"(*{ident}_ptr[{cnt}]) = a[{idx}].o;
+                r#"(*{ident}_ptr)[{i}] = a[{idx}].o;
     "#,
             ));
         }
