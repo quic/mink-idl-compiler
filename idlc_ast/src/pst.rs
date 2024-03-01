@@ -191,8 +191,8 @@ impl<'a> TryFrom<Pair<'a, Rule>> for Documentation {
             .ok_or(Error::UnsupportedDocumentation)?;
         match comment.as_rule() {
             Rule::DOCUMENTATION => {
-                let raw = comment.as_str();
-                let window = raw[3..raw.len() - 2].trim();
+                let raw = comment.as_str().trim();
+                let window = &raw[3..raw.len() - 1];
                 Ok(Self(window.to_string()))
             }
             _ => unreachable!(),

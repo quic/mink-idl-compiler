@@ -62,10 +62,11 @@ impl Documentation {
     fn new_with_idlc_doc(doc: &str, style: DocumentationStyle) -> Self {
         let mut documentation = style.start().to_string();
         documentation.push('\n');
-        let indent = doc.find('*').unwrap_or(0);
+        let last_line = doc.lines().last().unwrap();
+        let indent = last_line.find('*').unwrap();
 
         for line in doc.lines() {
-            let docstring = line.get(indent..).unwrap_or_default();
+            let docstring = line.get(indent + 1..).unwrap_or_default();
 
             documentation += style.prefix();
             if !docstring.is_empty() {
@@ -93,7 +94,8 @@ mod tests {
                           formatting is maintained
                           a
                           b
-                          c";
+                          c
+*";
 
     #[test]
     fn rust() {
@@ -113,6 +115,7 @@ mod tests {
 ///                          a
 ///                          b
 ///                          c
+///
 ///</pre>"
         );
     }
@@ -134,6 +137,7 @@ mod tests {
 *                          a
 *                          b
 *                          c
+*
 */"
         );
     }
@@ -156,6 +160,7 @@ mod tests {
 *                          a
 *                          b
 *                          c
+*
 */"
         );
     }
