@@ -192,7 +192,9 @@ impl<'a> TryFrom<Pair<'a, Rule>> for Documentation {
         match comment.as_rule() {
             Rule::DOCUMENTATION => {
                 let raw = comment.as_str().trim();
-                let window = &raw[3..raw.len() - 1];
+                // removes leading `/*\n` and trailing '/'. This is guaranteed to exist since
+                // grammar only accepts doxygen style comments.
+                let window = &raw[2..raw.len() - 1];
                 Ok(Self(window.to_string()))
             }
             _ => unreachable!(),

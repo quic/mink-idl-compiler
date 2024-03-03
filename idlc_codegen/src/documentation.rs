@@ -65,14 +65,27 @@ impl Documentation {
         let last_line = doc.lines().last().unwrap();
         let indent = last_line.find('*').unwrap();
 
-        for line in doc.lines() {
-            let docstring = line.get(indent + 1..).unwrap_or_default();
+        for line in doc.lines().skip_while(|x| x.is_empty()) {
+            let docstring = line.get(indent..).unwrap_or_default().trim_end();
 
             documentation += style.prefix();
-            if !docstring.is_empty() {
-                documentation.push(' ');
-                documentation.push_str(docstring.trim_end());
+            match docstring.chars().next() {
+                Some('*') => {
+                    // User needs asterisk to be the first alignment so lets
+                    // substitute it with a space
+                    documentation.push(' ');
+                    documentation.push_str(&docstring[1..]);
+                }
+                Some(_) => {
+                    // User probably means to keep this content in there, pad it
+                    // with a space to maintain alignment.  `* ` accounts for 2
+                    // spaces
+                    documentation.push(' ');
+                    documentation.push_str(docstring);
+                }
+                None => {}
             }
+
             documentation.push('\n');
         }
         documentation.push_str(style.end());
@@ -84,17 +97,18 @@ impl Documentation {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const DOCUMENTATION: &str = r"
+    const DOCUMENTATION: &str = "\
 * Hello this is a sample documentation
     I can even contain no asterisk in the beginning and this is style a valid idl doc style   
 
 * @param[out]
 * New Lines must be preserved and convention interleaving should work too!
-* @param[in] credentials  Lines that wrap around must ensure
-                          formatting is maintained
-                          a
-                          b
-                          c
+@param[in] credentials  Lines that wrap around must ensure
+                        formatting is maintained
+                        a
+                        b
+                        c
+starts with nothing
 *";
 
     #[test]
@@ -104,18 +118,18 @@ mod tests {
         assert_eq!(
             documentation.as_ref(),
             r"///<pre>
-///
 ///  Hello this is a sample documentation
-///    I can even contain no asterisk in the beginning and this is style a valid idl doc style
+///     I can even contain no asterisk in the beginning and this is style a valid idl doc style
 ///
 ///  @param[out]
 ///  New Lines must be preserved and convention interleaving should work too!
-///  @param[in] credentials  Lines that wrap around must ensure
-///                          formatting is maintained
-///                          a
-///                          b
-///                          c
-///
+/// @param[in] credentials  Lines that wrap around must ensure
+///                         formatting is maintained
+///                         a
+///                         b
+///                         c
+/// starts with nothing
+/// 
 ///</pre>"
         );
     }
@@ -125,19 +139,20 @@ mod tests {
         let documentation = Documentation::new_with_idlc_doc(DOCUMENTATION, DocumentationStyle::C);
         assert_eq!(
             documentation.as_ref(),
-            r"/*
-*
+            "\
+/*
 *  Hello this is a sample documentation
-*    I can even contain no asterisk in the beginning and this is style a valid idl doc style
+*     I can even contain no asterisk in the beginning and this is style a valid idl doc style
 *
 *  @param[out]
 *  New Lines must be preserved and convention interleaving should work too!
-*  @param[in] credentials  Lines that wrap around must ensure
-*                          formatting is maintained
-*                          a
-*                          b
-*                          c
-*
+* @param[in] credentials  Lines that wrap around must ensure
+*                         formatting is maintained
+*                         a
+*                         b
+*                         c
+* starts with nothing
+* 
 */"
         );
     }
@@ -148,19 +163,20 @@ mod tests {
             Documentation::new_with_idlc_doc(DOCUMENTATION, DocumentationStyle::Java);
         assert_eq!(
             documentation.as_ref(),
-            r"/**
-*
+            "\
+/**
 *  Hello this is a sample documentation
-*    I can even contain no asterisk in the beginning and this is style a valid idl doc style
+*     I can even contain no asterisk in the beginning and this is style a valid idl doc style
 *
 *  @param[out]
 *  New Lines must be preserved and convention interleaving should work too!
-*  @param[in] credentials  Lines that wrap around must ensure
-*                          formatting is maintained
-*                          a
-*                          b
-*                          c
-*
+* @param[in] credentials  Lines that wrap around must ensure
+*                         formatting is maintained
+*                         a
+*                         b
+*                         c
+* starts with nothing
+* 
 */"
         );
     }
