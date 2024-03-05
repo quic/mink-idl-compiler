@@ -160,12 +160,10 @@ pub fn emit(
     let ident = &function.ident;
 
     let invoke = Invoke::new(function);
-    let mut len_intialize = invoke.0.len_intialize();
     let mut pre = invoke.0.pre();
     let mut post = invoke.0.post();
     let mut args = invoke.0.args();
 
-    len_intialize = len_intialize.replace(" \\", "");
     args = args.replace(" \\", "");
     pre = pre.replace(" \\", "");
     post = post.replace(" \\\n", "\n    ");
@@ -184,7 +182,6 @@ pub fn emit(
     format!(
         r#"
             case {OP}_{ident}: {{
-                {len_intialize}
                 if (k != ObjectCounts_pack{counts}{args}) {{
                     break;
                 }}

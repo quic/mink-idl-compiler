@@ -28,8 +28,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         for i in 0..cnt.into() {
             let _idx = self.0.idx();
             self.0.args.push(format!(
-                r#"{{.o = ({ident}_ptr)[{i}].get() }},
-        "#
+                r#"
+        {{.o = ({ident}_ptr)[{i}].get() }},"#
             ));
         }
     }
@@ -54,8 +54,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
             packer.bi_assignments(),
         ));
         self.0.args.push(format!(
-            r#"{{.b = ({OBJECTBUF}) {{ &i, {size} }} }},
-        "#
+            r#"
+        {{.b = ({OBJECTBUF}) {{ &i, {size} }} }},"#
         ));
     }
 
@@ -64,8 +64,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let name = format!("&{}_ptr", ident);
         let ty = ty.ident.to_string();
         self.0.args.push(format!(
-            r#"{{.bi = ({OBJECTBUFIN}) {{ {name}, sizeof({ty}) }} }},
-        "#
+            r#"
+        {{.bi = ({OBJECTBUFIN}) {{ {name}, sizeof({ty}) }} }},"#
         ));
     }
 
@@ -77,8 +77,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let _idx = self.0.idx();
         let name = format!("{}_val", ident);
         self.0.args.push(format!(
-            r#"{{.o = {name}.get() }},
-        "#
+            r#"
+        {{.o = {name}.get() }},"#
         ));
     }
 
@@ -100,9 +100,9 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
 
         for _ in 0..cnt.into() {
             self.0.args.push(
-                r#"{.o = (Object) { NULL, NULL } },
-        "#
-                .to_string(),
+                r#"
+        {.o = (Object) { NULL, NULL } },"#
+                    .to_string(),
             );
         }
 
@@ -136,8 +136,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
     "#
         ));
         self.0.args.push(format!(
-            r#"{{.b = ({OBJECTBUF}) {{  &o, {size} }} }},
-        "#
+            r#"
+        {{.b = ({OBJECTBUF}) {{  &o, {size} }} }},"#
         ));
         self.0.post_call.push(packer.post_bo_assignments());
     }
@@ -147,8 +147,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let name = format!("&{}_ptr", ident);
         let ty = ty.ident.to_string();
         self.0.args.push(format!(
-            r#"{{.b = ({OBJECTBUF}) {{  {name}, sizeof({ty}) }} }},
-        "#
+            r#"
+        {{.b = ({OBJECTBUF}) {{  {name}, sizeof({ty}) }} }},"#
         ));
     }
 
@@ -160,9 +160,9 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let idx = self.0.idx();
         let name = format!("{}_val", ident);
         self.0.args.push(
-            r#"{.o = (Object) { NULL, NULL } },
-        "#
-            .to_string(),
+            r#"
+        {.o = (Object) { NULL, NULL } },"#
+                .to_string(),
         );
         self.0.post_call.push(format!(
             r#"{name}.consume({ARGS}[{idx}].o);
@@ -197,8 +197,7 @@ pub fn emit(
 
     if total > 0 {
         object_args = format!(
-            r#"ObjectArg a[] = {{
-            {args}
+            r#"ObjectArg a[] = {{{args}
         }};
             "#
         );
@@ -218,16 +217,23 @@ pub fn emit(
 
     format!(
         r#"
-    {documentation}
+{documentation}
     virtual int32_t {ident}({params}) {{
-        {initializations}
-        {object_args}
-        int32_t result = {returns}
+        {0}{1}int32_t result = {returns}
         if (Object_OK != result) {{ return result; }}
         {post_call_assignments}
-
         return result;
     }}
-    "#
+    "#,
+        if !initializations.is_empty() {
+            format!("{initializations}\n        ")
+        } else {
+            "".to_string()
+        },
+        if !object_args.is_empty() {
+            format!("{object_args}\n        ")
+        } else {
+            "".to_string()
+        },
     )
 }

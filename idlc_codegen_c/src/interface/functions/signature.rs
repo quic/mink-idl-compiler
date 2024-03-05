@@ -20,6 +20,7 @@ pub fn iter_to_string(iter: impl Iterator<Item = impl AsRef<str>>) -> String {
     let mut acc = String::new();
     for item in iter {
         acc.push(',');
+        acc.push(' ');
         acc += item.as_ref();
     }
 

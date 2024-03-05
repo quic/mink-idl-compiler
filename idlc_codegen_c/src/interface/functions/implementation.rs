@@ -59,8 +59,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let ty = change_primitive(ty);
 
         self.args.push(format!(
-            r#"{{.bi = ({OBJECTBUFIN}) {{ {name}, {ident}_len * sizeof({ty}) }} }},
-        "#
+            r#"
+        {{.bi = ({OBJECTBUFIN}) {{ {name}, {ident}_len * sizeof({ty}) }} }},"#
         ));
     }
 
@@ -70,8 +70,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let ty = ty.ident.to_string();
 
         self.args.push(format!(
-            r#"{{.bi = ({OBJECTBUFIN}) {{ {name}, {ident}_len * sizeof({ty}) }} }},
-        "#
+            r#"
+        {{.bi = ({OBJECTBUFIN}) {{ {name}, {ident}_len * sizeof({ty}) }} }},"#
         ));
     }
 
@@ -79,8 +79,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         for i in 0..cnt.into() {
             let _idx = self.idx();
             self.args.push(format!(
-                r#"{{.o = (*{ident}_ptr)[{i}] }},
-        "#
+                r#"
+        {{.o = (*{ident}_ptr)[{i}] }},"#
             ));
         }
     }
@@ -90,8 +90,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let name = format!("{}_val", ident);
         let ty = change_primitive(ty);
         self.args.push(format!(
-            r#"{{.b = ({OBJECTBUF}) {{ &{name}, sizeof({ty}) }} }},
-        "#
+            r#"
+        {{.b = ({OBJECTBUF}) {{ &{name}, sizeof({ty}) }} }},"#
         ));
     }
 
@@ -111,8 +111,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
             packer.bi_assignments(),
         ));
         self.args.push(format!(
-            r#"{{.b = ({OBJECTBUF}) {{ &i, {size} }} }},
-        "#
+            r#"
+        {{.b = ({OBJECTBUF}) {{ &i, {size} }} }},"#
         ));
     }
 
@@ -121,8 +121,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let name = format!("{}_ptr", ident);
         let ty = ty.ident.to_string();
         self.args.push(format!(
-            r#"{{.bi = ({OBJECTBUFIN}) {{ {name}, sizeof({ty}) }} }},
-        "#
+            r#"
+        {{.bi = ({OBJECTBUFIN}) {{ {name}, sizeof({ty}) }} }},"#
         ));
     }
 
@@ -134,8 +134,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let _idx = self.idx();
         let name = format!("{}_val", ident);
         self.args.push(format!(
-            r#"{{.o = {name} }},
-        "#
+            r#"
+        {{.o = {name} }},"#
         ));
     }
 
@@ -148,8 +148,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
     "#
         ));
         self.args.push(format!(
-            r#"{{.b = ({OBJECTBUF}) {{ {name}, {ident}_len * sizeof({ty}) }} }},
-        "#
+            r#"
+        {{.b = ({OBJECTBUF}) {{ {name}, {ident}_len * sizeof({ty}) }} }},"#
         ));
     }
 
@@ -162,8 +162,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
     "#
         ));
         self.args.push(format!(
-            r#"{{.b = ({OBJECTBUF}) {{ {name}, {ident}_len * sizeof({ty}) }} }},
-        "#
+            r#"
+        {{.b = ({OBJECTBUF}) {{ {name}, {ident}_len * sizeof({ty}) }} }},"#
         ));
     }
 
@@ -176,9 +176,9 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         for i in 0..cnt.into() {
             let idx = self.idx();
             self.args.push(
-                r#"{.o = (Object) { NULL, NULL } },
-        "#
-                .to_string(),
+                r#"
+        {.o = (Object) { NULL, NULL } },"#
+                    .to_string(),
             );
             self.post_call.push(format!(
                 r#"(*{ident}_ptr)[{i}] = a[{idx}].o;
@@ -192,8 +192,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let name = format!("{}_ptr", ident);
         let ty = change_primitive(ty);
         self.args.push(format!(
-            r#"{{.b = ({OBJECTBUF}) {{ {name}, sizeof({ty}) }} }},
-        "#
+            r#"
+        {{.b = ({OBJECTBUF}) {{ {name}, sizeof({ty}) }} }},"#
         ));
     }
 
@@ -213,8 +213,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         ));
         self.post_call.push(packer.post_bo_assignments());
         self.args.push(format!(
-            r#"{{.b = ({OBJECTBUF}) {{  &o, {size} }} }},
-        "#
+            r#"
+        {{.b = ({OBJECTBUF}) {{  &o, {size} }} }},"#
         ));
     }
 
@@ -223,8 +223,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let name = format!("{}_ptr", ident);
         let ty = ty.ident.to_string();
         self.args.push(format!(
-            r#"{{.b = ({OBJECTBUF}) {{  {name}, sizeof({ty}) }} }},
-        "#
+            r#"
+        {{.b = ({OBJECTBUF}) {{  {name}, sizeof({ty}) }} }},"#
         ));
     }
 
@@ -240,9 +240,9 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
     "#
         ));
         self.args.push(
-            r#"{.o = (Object) { NULL, NULL } },
-        "#
-            .to_string(),
+            r#"
+        {.o = (Object) { NULL, NULL } },"#
+                .to_string(),
         );
     }
 }
@@ -258,6 +258,7 @@ pub fn emit(
     let ident = &function.ident;
     let total = counts.total();
     let mut object_args = String::new();
+    // let mut returns = String::new();
 
     let params = super::signature::iter_to_string(signature.params());
 
@@ -268,8 +269,7 @@ pub fn emit(
 
     if total > 0 {
         object_args = format!(
-            r#"ObjectArg a[] = {{
-        {args}
+            r#"ObjectArg a[] = {{{args}
     }};
         "#
         );
@@ -277,27 +277,46 @@ pub fn emit(
 
     let returns = if total > 0 {
         format!("Object_invoke(self, {iface_ident}_{OP}_{ident}, a, ObjectCounts_pack({0}, {1}, {2}, {3}));",
-            counts.input_buffers,
-            counts.output_buffers,
-            counts.input_objects,
-            counts.output_objects)
+        counts.input_buffers,
+        counts.output_buffers,
+        counts.input_objects,
+        counts.output_objects)
     } else {
-        format!("Object_invoke(self, {iface_ident}_{OP}_{ident}, 0, 0);")
+        return format!(
+            r#"
+{documentation}
+static inline int32_t {current_iface_ident}_{ident}(Object self{params})
+{{
+    return Object_invoke(self, {iface_ident}_{OP}_{ident}, 0, 0);;
+}}
+"#
+        );
     };
 
     format!(
         r#"
-static inline int32_t
 {documentation}
-{current_iface_ident}_{ident}(Object self{params})
+static inline int32_t {current_iface_ident}_{ident}(Object self{params})
 {{
-    {initializations}
-    {object_args}
-    int32_t result = {returns}
-    {post_call_assignments}
-
+    {0}{1}int32_t result = {returns}
+    {2}
     return result;
 }}
-"#
+"#,
+        if !initializations.is_empty() {
+            format!("{initializations}\n    ")
+        } else {
+            "".to_string()
+        },
+        if !object_args.is_empty() {
+            format!("{object_args}\n    ")
+        } else {
+            "".to_string()
+        },
+        if !post_call_assignments.is_empty() {
+            format!("{post_call_assignments}    ")
+        } else {
+            "".to_string()
+        }
     )
 }

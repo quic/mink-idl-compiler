@@ -8,7 +8,6 @@ use super::serialization::TransportBuffer;
 #[derive(Debug, Default, Clone)]
 pub struct Invoke {
     args: Vec<String>,
-    pub len_intialize: Vec<String>,
     pub pre: Vec<String>,
     pub post: Vec<String>,
 
@@ -21,7 +20,6 @@ impl Invoke {
     pub fn new(function: &idlc_mir::Function, is_typed_objects: bool) -> Self {
         let mut me = Self {
             args: vec![],
-            len_intialize: vec![],
             pre: vec![],
             post: vec![],
             is_typed_objects,
@@ -42,10 +40,6 @@ impl Invoke {
             acc += arg.as_ref();
         }
         acc
-    }
-
-    pub fn len_intialize(&self) -> String {
-        self.len_intialize.concat()
     }
 
     pub fn pre(&self) -> String {
@@ -327,7 +321,6 @@ pub fn emit(
     let ident = &function.ident;
 
     let invoke = Invoke::new(function, is_typed_objects);
-    let len_intialize = invoke.len_intialize();
     let pre = invoke.pre();
     let post = invoke.post();
     let args = invoke.args();
@@ -342,7 +335,6 @@ pub fn emit(
     format!(
         r#" \
             case {iface_ident}_{OP}_{ident}: {{ \
-                {len_intialize} \
                 if (k != ObjectCounts_pack{counts}{args}) {{ \
                     break; \
                 }} \
