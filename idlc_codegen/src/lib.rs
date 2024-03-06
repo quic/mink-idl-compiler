@@ -11,6 +11,12 @@ use std::path::PathBuf;
 // input IDL name to output
 pub type Descriptor = Vec<(PathBuf, String)>;
 
+pub const MINKIDL_HEADER_COMMENT: &str = concat!(
+    "File generated using v",
+    env!("CARGO_PKG_VERSION"),
+    ": DO NOT EDIT"
+);
+
 /// Codegenerator backends for [`idlc_mir`]
 pub trait Generator {
     /// Generates the backend language based on input IDL
