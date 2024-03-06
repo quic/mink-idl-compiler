@@ -131,7 +131,41 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
     }
 
     fn visit_output_big_struct(&mut self, ident: &Ident, ty: &idlc_mir::StructInner) {
-        self.0.visit_output_big_struct(ident, ty);
+        // self.0.visit_output_big_struct(ident, ty);
+        let idx = self.0.idx();
+        let name = format!("{}_ptr", ident);
+        let sz = ty.size();
+        let ty_ident = ty.ident.to_string();
+        self.0.args.push(format!("{ARGS}[{idx}].b.size != {sz}"));
+        if ty.contains_interfaces() {
+            let name = format!("{}_ptr", ident);
+            self.0.pre.push(format!(
+                r#" \
+                {ty_ident} *{name} = &(*({ty_ident}*){ARGS}[{idx}].b.ptr);"#
+            ));
+
+            let objects = ty.objects();
+            for object in objects {
+                let path = object
+                    .0
+                    .iter()
+                    .map(|ident| ident.to_string())
+                    .collect::<Vec<String>>()
+                    .join("->");
+                self.0.visit_output_object(
+                    &idlc_mir::Ident {
+                        ident: format!("{name}->{}", path),
+                        span: object.0.last().unwrap().span,
+                    },
+                    object.1,
+                );
+            }
+        } else {
+            self.0.pre.push(format!(
+                r#" \
+                    {ty_ident} *{name} = ({ty_ident}*){ARGS}[{idx}].b.ptr;"#
+            ));
+        }
     }
 
     fn visit_output_small_struct(&mut self, ident: &Ident, ty: &idlc_mir::StructInner) {

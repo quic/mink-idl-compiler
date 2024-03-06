@@ -1,3 +1,12 @@
+struct ObjInStruct {
+  uint32[4] p1;
+  ITest1 first_obj;
+  uint32[4] p2;
+  ITest1 should_be_empty;
+  uint32[4] p3;
+  ITest1 second_obj;
+};
+
 struct F1 {
     uint32 a;
 };
@@ -36,16 +45,14 @@ interface ITest1 {
   *
   */
   method well_documented_method(in uint32 foo, out uint32 bar);
+  method test_obj_array_in(in ITest1[3] o_in, out uint32 a);
+  method test_obj_array_out(out ITest1[3] out, out uint32 a);
+  method objects_in_struct(in ObjInStruct input, out ObjInStruct output);
+
 };
 
 interface ITest2 {
   error my_custom_error;
 
-  method test_f2(in F1 f);
-  method test_obj_in(in ITest1 o, out uint32 a);
-  method test_obj_out(out ITest1 o);
-  method test_bundle(in buffer xxx, out buffer yyy, in uint32 a, in buffer xxx1, in uint8 b, in uint32 c, out uint32 d, out uint16 e, out uint32 f);
-  method test_array(in F1[] f_in, out F1[] f_out, out F1 f_x, in F1 f_y, in uint32[] a, out uint32[] b, out int32 c, in int16 d);
-  method test_obj_array_in(in ITest1[3] o_in, out uint32 a);
-  method test_obj_array_out(out ITest1[3] out, out uint32 a);
+  method entrypoint(in ITest1 o);
 };

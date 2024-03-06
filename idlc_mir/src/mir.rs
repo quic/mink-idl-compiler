@@ -26,6 +26,7 @@ use idlc_ast::Ast;
 pub use idlc_ast::Ident;
 use idlc_ast_passes::idl_store::IDLStore;
 
+use std::collections::{HashMap, VecDeque};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
@@ -53,7 +54,7 @@ pub enum Node {
     Interface(Interface),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Primitive {
     Uint8,
     Uint16,
@@ -99,7 +100,7 @@ pub struct Const {
 }
 
 pub type Count = std::num::NonZeroU16;
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {
     UntypedBuffer,
     Primitive(Primitive),
@@ -107,7 +108,7 @@ pub enum Type {
     Interface(Option<String>),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct StructField {
     pub ident: Ident,
     pub val: (Type, Count),
@@ -127,7 +128,7 @@ impl StructField {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Struct {
     /// This variant of struct can be bundled with other primitives as it's
     /// guaranteed to be less than [`Struct::BUNDLED_SIZE_MAX`] bytes long.
@@ -170,7 +171,7 @@ impl AsRef<StructInner> for Struct {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct StructInner {
     pub ident: Ident,
     pub fields: Vec<StructField>,
@@ -181,6 +182,43 @@ impl StructInner {
     #[inline]
     pub fn size(&self) -> usize {
         self.fields.iter().fold(0, |acc, e| acc + e.size())
+    }
+
+    pub fn objects(&self) -> Vec<(Vec<&Ident>, Option<&str>)> {
+        let mut queue = VecDeque::new();
+        let mut parents = HashMap::new();
+        let mut objects = Vec::new();
+        queue.push_back(self);
+
+        while let Some(node) = queue.pop_front() {
+            for field in &node.fields {
+                let (ty, _) = &field.val;
+                if let Type::Struct(s) = ty {
+                    parents.insert(s.as_ref(), (node, Some(&field.ident)));
+                    queue.push_back(s.as_ref());
+                } else if let Type::Interface(interface) = ty {
+                    // Reconstruct path information.
+                    let mut path = vec![&field.ident];
+                    let mut current = node;
+                    while let Some((parent, Some(parent_ident))) = parents.get(current) {
+                        path.push(*parent_ident);
+                        current = parent;
+                    }
+                    path.reverse();
+                    objects.push((path, interface.as_deref()));
+                }
+            }
+        }
+
+        objects
+    }
+
+    pub fn is_primitive_struct(&self) -> bool {
+        self.objects().is_empty()
+    }
+
+    pub fn contains_interfaces(&self) -> bool {
+        !self.is_primitive_struct()
     }
 }
 
@@ -349,19 +387,16 @@ impl Ord for Param {
                     }
                 }
                 (
-                    Type::Interface(_),
-                    Type::UntypedBuffer | Type::Primitive(_) | Type::Struct(_),
-                ) => std::cmp::Ordering::Greater,
-                (
                     Type::UntypedBuffer | Type::Primitive(_) | Type::Struct(_),
                     Type::Interface(_),
                 ) => std::cmp::Ordering::Less,
                 _ => std::cmp::Ordering::Greater,
             },
             _ => match (self.r#type(), other.r#type()) {
-                (Type::UntypedBuffer, Type::Interface(_)) => std::cmp::Ordering::Less,
-                (Type::Primitive(_), Type::Interface(_)) => std::cmp::Ordering::Less,
-                (Type::Struct(_), Type::Interface(_)) => std::cmp::Ordering::Less,
+                (
+                    Type::UntypedBuffer | Type::Primitive(_) | Type::Struct(_),
+                    Type::Interface(_),
+                ) => std::cmp::Ordering::Less,
                 (Type::Interface(_), Type::Interface(_)) => {
                     if self.is_array() && !other.is_array() {
                         std::cmp::Ordering::Greater
@@ -659,6 +694,8 @@ impl Interface {
 
 #[cfg(test)]
 mod tests {
+    use std::num::NonZeroU16;
+
     use super::*;
 
     #[test]
@@ -835,5 +872,98 @@ mod tests {
                 "interface6"
             ]
         );
+    }
+
+    #[test]
+    fn search_interfaces() {
+        const ONE: NonZeroU16 = unsafe { NonZeroU16::new_unchecked(1) };
+        let leaf = Struct::Big(StructInner {
+            ident: Ident::new_without_span("leaf".to_owned()),
+            fields: vec![StructField {
+                ident: Ident::new_without_span("leaf_foo".to_string()),
+                val: (Type::Interface(Some("level3".to_string())), ONE),
+            }],
+            origin: None,
+        });
+
+        let middle = Struct::Big(StructInner {
+            ident: Ident::new_without_span("middle".to_owned()),
+            fields: vec![
+                StructField {
+                    ident: Ident::new_without_span("middle_foo".to_string()),
+                    val: (Type::Interface(Some("level2".to_string())), ONE),
+                },
+                StructField {
+                    ident: Ident::new_without_span("leaf_struct".to_string()),
+                    val: (Type::Struct(leaf.clone()), ONE),
+                },
+            ],
+            origin: None,
+        });
+
+        let outer = Struct::Big(StructInner {
+            ident: Ident::new_without_span("outer".to_owned()),
+            fields: vec![
+                StructField {
+                    ident: Ident::new_without_span("a_float".to_owned()),
+                    val: (Type::Primitive(Primitive::Float32), ONE),
+                },
+                StructField {
+                    ident: Ident::new_without_span("a_foo".to_owned()),
+                    val: (Type::Interface(Some("level1".to_string())), ONE),
+                },
+                StructField {
+                    ident: Ident::new_without_span("a_foo2".to_owned()),
+                    val: (Type::Interface(Some("level1".to_string())), ONE),
+                },
+                StructField {
+                    ident: Ident::new_without_span("leaf_struct".to_string()),
+                    val: (Type::Struct(leaf), ONE),
+                },
+                StructField {
+                    ident: Ident::new_without_span("middle_struct".to_string()),
+                    val: (Type::Struct(middle), ONE),
+                },
+            ],
+            origin: None,
+        });
+        // BFS has deterministic ordering
+        assert_eq!(
+            outer.as_ref().objects(),
+            &[
+                (
+                    vec![&Ident::new_without_span("a_foo".to_string())],
+                    Some("level1")
+                ),
+                (
+                    vec![&Ident::new_without_span("a_foo2".to_string())],
+                    Some("level1")
+                ),
+                (
+                    vec![
+                        &Ident::new_without_span("leaf_struct".to_string()),
+                        &Ident::new_without_span("leaf_foo".to_string())
+                    ],
+                    Some("level3")
+                ),
+                (
+                    vec![
+                        &Ident::new_without_span("middle_struct".to_string()),
+                        &Ident::new_without_span("middle_foo".to_string())
+                    ],
+                    Some("level2")
+                ),
+                (
+                    vec![
+                        &Ident::new_without_span("middle_struct".to_string()),
+                        &Ident::new_without_span("leaf_struct".to_string()),
+                        &Ident::new_without_span("leaf_foo".to_string())
+                    ],
+                    Some("level3")
+                )
+            ]
+        );
+        assert!(!outer.as_ref().is_primitive_struct());
+        assert!(outer.as_ref().contains_interfaces());
     }
 }

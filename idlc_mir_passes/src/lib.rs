@@ -5,7 +5,9 @@
 //! 2. Interface error name should not be duplicated
 //! 3. Interface consts should not be duplicated, error definitions are also
 //!    considered consts
-//! 4. Cannot have input Object array + any type of input objects.
+//! 4. Interface function should not have the argument of struct array which
+//!    has the object inside
+//! 5. Cannot have input Object array + any type of input objects.
 //!    Same for Output
 
 pub trait MirCompilerPass<'mir> {

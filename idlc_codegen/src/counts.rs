@@ -37,9 +37,9 @@ impl super::functions::ParameterVisitor for Counter {
     }
 
     #[inline]
-    fn visit_input_big_struct(&mut self, _: &Ident, _: &StructInner) {
+    fn visit_input_big_struct(&mut self, _: &Ident, s: &StructInner) {
         self.input_buffers += 1;
-        self.total_bundled_input += 1;
+        self.input_objects += u8::try_from(s.objects().len()).unwrap();
     }
 
     #[inline]
@@ -74,9 +74,9 @@ impl super::functions::ParameterVisitor for Counter {
     }
 
     #[inline]
-    fn visit_output_big_struct(&mut self, _: &Ident, _: &StructInner) {
+    fn visit_output_big_struct(&mut self, _: &Ident, s: &StructInner) {
         self.output_buffers += 1;
-        self.total_bundled_output += 1;
+        self.output_objects += u8::try_from(s.objects().len()).unwrap();
     }
 
     #[inline]

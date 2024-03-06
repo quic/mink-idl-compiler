@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use crate::MirCompilerPass;
 
-use idlc_mir::{InterfaceNode, Node};
+use idlc_mir::{InterfaceNode, Node, ParamTypeIn, ParamTypeOut, Struct, Type};
 
 pub struct InterfaceVerifier<'mir> {
     mir: &'mir idlc_mir::Mir,
@@ -44,7 +44,7 @@ impl<'mir> MirCompilerPass<'_> for InterfaceVerifier<'mir> {
                             for param in &f.params {
                                 match param {
                                     idlc_mir::Param::In { r#type, ident: _ } => match r#type {
-                                        idlc_mir::ParamTypeIn::Array(t, cnt) => {
+                                        ParamTypeIn::Array(t, cnt) => {
                                             if let idlc_mir::Type::Interface(i) = t {
                                                 let iface_name =
                                                     i.as_deref().unwrap_or("interface").to_string();
@@ -64,9 +64,14 @@ impl<'mir> MirCompilerPass<'_> for InterfaceVerifier<'mir> {
 
                                                 args_array_in = true;
                                             };
-                                            if let idlc_mir::Type::Struct(_)
-                                            | idlc_mir::Type::Primitive(_) = t
-                                            {
+                                            if let Type::Struct(_) | Type::Primitive(_) = t {
+                                                if let Type::Struct(Struct::Big(s)) = t {
+                                                    if s.contains_interfaces() {
+                                                        idlc_errors::unrecoverable!(
+                                                            "Struct with Object inside cannot be used as an array",
+                                                        );
+                                                    }
+                                                }
                                                 if cnt.is_some() {
                                                     idlc_errors::unrecoverable!(
                                                         "Interface `{}`, method `{}` should not have bounded array of primitive/struct",
@@ -75,15 +80,15 @@ impl<'mir> MirCompilerPass<'_> for InterfaceVerifier<'mir> {
                                                 }
                                             }
                                         }
-                                        idlc_mir::ParamTypeIn::Value(t) => {
-                                            if let idlc_mir::Type::Interface(_) = t {
+                                        ParamTypeIn::Value(t) => {
+                                            if let Type::Interface(_) = t {
                                                 args_value_in = true;
                                             };
                                         }
                                     },
                                     idlc_mir::Param::Out { r#type, ident: _ } => match r#type {
-                                        idlc_mir::ParamTypeOut::Array(t, cnt) => {
-                                            if let idlc_mir::Type::Interface(i) = t {
+                                        ParamTypeOut::Array(t, cnt) => {
+                                            if let Type::Interface(i) = t {
                                                 let iface_name =
                                                     i.as_deref().unwrap_or("interface").to_string();
                                                 if !cnt.is_some() {
@@ -101,9 +106,17 @@ impl<'mir> MirCompilerPass<'_> for InterfaceVerifier<'mir> {
                                                 }
                                                 args_array_out = true;
                                             };
-                                            if let idlc_mir::Type::Struct(_)
-                                            | idlc_mir::Type::Primitive(_) = t
-                                            {
+                                            if let Type::Struct(_) | Type::Primitive(_) = t {
+                                                if let Type::Struct(
+                                                    Struct::Big(s) | Struct::Small(s),
+                                                ) = t
+                                                {
+                                                    if s.contains_interfaces() {
+                                                        idlc_errors::unrecoverable!(
+                                                            "Struct with Object inside cannot be used as an array",
+                                                        );
+                                                    }
+                                                }
                                                 if cnt.is_some() {
                                                     idlc_errors::unrecoverable!(
                                                         "Interface `{}`, method `{}` should not have bounded array of primitive/struct",
@@ -112,8 +125,8 @@ impl<'mir> MirCompilerPass<'_> for InterfaceVerifier<'mir> {
                                                 }
                                             }
                                         }
-                                        idlc_mir::ParamTypeOut::Reference(t) => {
-                                            if let idlc_mir::Type::Interface(_) = t {
+                                        ParamTypeOut::Reference(t) => {
+                                            if let Type::Interface(_) = t {
                                                 args_value_out = true;
                                             };
                                         }

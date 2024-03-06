@@ -26,6 +26,12 @@ pub fn iter_to_string(iter: impl Iterator<Item = impl AsRef<str>>) -> String {
     acc
 }
 
+pub fn idents_to_struct_path(objects: &[&Ident]) -> String {
+    objects
+        .iter()
+        .fold(String::new(), |acc, x| acc + "." + x.as_ref())
+}
+
 impl Signature {
     pub fn new(function: &idlc_mir::Function) -> Self {
         let mut me = Self::default();

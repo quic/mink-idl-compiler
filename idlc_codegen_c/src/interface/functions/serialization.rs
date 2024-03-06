@@ -39,7 +39,7 @@ impl<'a> PackedPrimitives<'a> {
     "#
                 );
             }
-            Type::SmallStruct(_) => {
+            Type::SmallStruct(_s) => {
                 assignments += &format!(
                     r#"i.m_{ident} = *{ident}_ptr;
     "#
@@ -47,6 +47,24 @@ impl<'a> PackedPrimitives<'a> {
             }
         });
 
+        assignments
+    }
+
+    pub fn bi_embedded(&self) -> String {
+        let mut assignments = String::new();
+        self.0.inputs_by_idents().for_each(|(ident, ty)| match ty {
+            Type::Primitive(_) => {}
+            Type::SmallStruct(s) => {
+                if s.contains_interfaces() {
+                    let ty = s.ident.to_string();
+
+                    assignments += &format!(
+                        r#"{ty} {ident}_cpy = *{ident}_ptr;
+    "#
+                    );
+                }
+            }
+        });
         assignments
     }
 
@@ -77,6 +95,23 @@ impl<'a> PackedPrimitives<'a> {
         });
 
         assignments
+    }
+
+    pub fn bo_embedded(&self) -> Vec<(idlc_mir::Ident, &idlc_mir::Ident, Option<&str>)> {
+        let mut embedded_objs: Vec<(idlc_mir::Ident, &idlc_mir::Ident, Option<&str>)> = vec![];
+        self.0.outputs_by_idents().for_each(|(ident, ty)| match ty {
+            Type::Primitive(_) => {}
+            Type::SmallStruct(s) => {
+                if s.contains_interfaces() {
+                    for field in &s.fields {
+                        if let idlc_mir::Type::Interface(i) = &field.val.0 {
+                            embedded_objs.push((ident.clone(), &field.ident, i.as_deref()));
+                        }
+                    }
+                }
+            }
+        });
+        embedded_objs
     }
 
     #[inline]

@@ -1,3 +1,5 @@
+use idlc_mir::{Ident, StructInner};
+
 use crate::interface::mink_primitives::GENERIC_ERROR;
 use crate::{
     interface::variable_names::invoke::{ARGS, BI_STRUCT, BO_STRUCT},
@@ -74,15 +76,15 @@ impl Invoke {
 }
 
 impl idlc_codegen::functions::ParameterVisitor for Invoke {
-    fn visit_input_primitive_buffer(&mut self, ident: &idlc_mir::Ident, ty: idlc_mir::Primitive) {
+    fn visit_input_primitive_buffer(&mut self, ident: &Ident, ty: idlc_mir::Primitive) {
         self.generate_for_input_buffer(EscapedIdent::new(ident), change_primitive(ty));
     }
 
-    fn visit_input_struct_buffer(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::StructInner) {
+    fn visit_input_struct_buffer(&mut self, ident: &Ident, ty: &StructInner) {
         self.generate_for_input_buffer(EscapedIdent::new(ident), &namespaced_struct(ty));
     }
 
-    fn visit_input_primitive(&mut self, ident: &idlc_mir::Ident, ty: idlc_mir::Primitive) {
+    fn visit_input_primitive(&mut self, ident: &Ident, ty: idlc_mir::Primitive) {
         let ty: &str = change_primitive(ty);
         let ident = EscapedIdent::new(ident);
         let idx = self.idx();
@@ -121,8 +123,8 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         self.pre.push(packer.post_bi_assignments());
     }
 
-    fn visit_input_big_struct(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::StructInner) {
-        let ty: &str = &namespaced_struct(ty);
+    fn visit_input_big_struct(&mut self, ident: &Ident, r#struct: &StructInner) {
+        let ty: &str = &namespaced_struct(r#struct);
         let ident = EscapedIdent::new(ident);
         let idx = self.idx();
         self.pre.push(format!(
@@ -131,15 +133,30 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         }}"#
         ));
 
-        self.pre.push(format!(
-            "let {ident} = &*{ARGS}[{idx}].bi.ptr.cast::<{ty}>();"
-        ));
+        let objects = r#struct.objects();
+        if objects.is_empty() {
+            self.pre.push(format!(
+                "let {ident} = &*{ARGS}[{idx}].bi.ptr.cast::<{ty}>();"
+            ));
+        } else {
+            self.pre.push(format!(
+                "let mut {ident} = std::mem::ManuallyDrop::new(std::ptr::read({ARGS}[{idx}].bi.ptr.cast::<{ty}>()));"
+            ));
+            for (object, _) in objects {
+                let path = super::signature::idents_to_struct_path(&object);
+                let idx = self.idx();
+                self.pre.push(format!(
+                    "std::ptr::write(&mut {ident}{path}, std::mem::transmute_copy(&{ARGS}[{idx}].o));"
+                ));
+            }
+            self.pre.push(format!("let {ident} = &{ident};"))
+        }
     }
-    fn visit_input_small_struct(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::StructInner) {
+    fn visit_input_small_struct(&mut self, ident: &Ident, ty: &StructInner) {
         self.visit_input_big_struct(ident, ty);
     }
 
-    fn visit_input_object(&mut self, ident: &idlc_mir::Ident, _: Option<&str>) {
+    fn visit_input_object(&mut self, ident: &Ident, _: Option<&str>) {
         let idx = self.idx();
         let ident = EscapedIdent::new(ident);
         self.pre.push(format!(
@@ -147,12 +164,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         ));
     }
 
-    fn visit_input_object_array(
-        &mut self,
-        ident: &idlc_mir::Ident,
-        _: Option<&str>,
-        cnt: idlc_mir::Count,
-    ) {
+    fn visit_input_object_array(&mut self, ident: &Ident, _: Option<&str>, cnt: idlc_mir::Count) {
         let ident = EscapedIdent::new(ident);
         let mut definition = format!("let {ident} = &std::mem::ManuallyDrop::new([");
         for _ in 0..cnt.get() {
@@ -163,31 +175,51 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         self.pre.push(definition);
     }
 
-    fn visit_output_primitive_buffer(&mut self, ident: &idlc_mir::Ident, ty: idlc_mir::Primitive) {
+    fn visit_output_primitive_buffer(&mut self, ident: &Ident, ty: idlc_mir::Primitive) {
         self.generate_for_output_buffer(EscapedIdent::new(ident), change_primitive(ty));
     }
 
-    fn visit_output_struct_buffer(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::StructInner) {
+    fn visit_output_struct_buffer(&mut self, ident: &Ident, ty: &StructInner) {
         self.generate_for_output_buffer(EscapedIdent::new(ident), &namespaced_struct(ty));
     }
 
-    fn visit_output_big_struct(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::StructInner) {
+    fn visit_output_big_struct(&mut self, ident: &Ident, r#struct: &StructInner) {
         let ident = EscapedIdent::new(ident);
-        let ty = &namespaced_struct(ty);
+        let ty = &namespaced_struct(r#struct);
         let idx = self.idx();
         self.pre.push(format!(
             r#"if {ARGS}[{idx}].b.size != std::mem::size_of::<{ty}>() {{
             return std::mem::transmute({GENERIC_ERROR}::SIZE_OUT);
         }}"#
         ));
-        self.post
-            .push(format!("*{ARGS}[{idx}].b.ptr.cast::<{ty}>() = {ident};\n"));
+
+        let objects = r#struct.objects();
+        if objects.is_empty() {
+            self.post
+                .push(format!("*{ARGS}[{idx}].b.ptr.cast::<{ty}>() = {ident};\n"));
+        } else {
+            let struct_idx = idx;
+            self.post.push(format!(
+                "let mut {ident} = std::mem::ManuallyDrop::new({ident});"
+            ));
+            for (object, _) in objects {
+                let idx = self.idx();
+                let path = super::signature::idents_to_struct_path(&object);
+                self.post.push(format!("{ARGS}[{idx}].o = std::mem::ManuallyDrop::new(std::mem::transmute({ident}{path}.take()));"));
+                self.post.push(format!(
+                    "std::ptr::write(std::ptr::addr_of_mut!({ident}{path}), std::mem::zeroed());"
+                ));
+            }
+            self.post.push(format!(
+                "std::ptr::write({ARGS}[{struct_idx}].b.ptr.cast::<{ty}>(), std::mem::transmute_copy(&{ident}));"
+            ));
+        }
     }
-    fn visit_output_small_struct(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::StructInner) {
+    fn visit_output_small_struct(&mut self, ident: &Ident, ty: &StructInner) {
         self.visit_output_big_struct(ident, ty);
     }
 
-    fn visit_output_primitive(&mut self, ident: &idlc_mir::Ident, ty: idlc_mir::Primitive) {
+    fn visit_output_primitive(&mut self, ident: &Ident, ty: idlc_mir::Primitive) {
         let ty = change_primitive(ty);
         let ident = EscapedIdent::new(ident);
         let idx = self.idx();
@@ -226,7 +258,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         ));
     }
 
-    fn visit_output_object(&mut self, ident: &idlc_mir::Ident, _: Option<&str>) {
+    fn visit_output_object(&mut self, ident: &Ident, _: Option<&str>) {
         let idx = self.idx();
         let ident = EscapedIdent::new(ident);
         self.post.push(format!(
@@ -234,12 +266,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         ));
     }
 
-    fn visit_output_object_array(
-        &mut self,
-        ident: &idlc_mir::Ident,
-        _: Option<&str>,
-        cnt: idlc_mir::Count,
-    ) {
+    fn visit_output_object_array(&mut self, ident: &Ident, _: Option<&str>, cnt: idlc_mir::Count) {
         let ident = EscapedIdent::new(ident);
         self.post.push(format!(
             "let {ident} = std::mem::ManuallyDrop::new({ident});"

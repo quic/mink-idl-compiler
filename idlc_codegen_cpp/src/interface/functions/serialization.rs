@@ -39,14 +39,39 @@ impl<'a> PackedPrimitives<'a> {
     "#
                 );
             }
-            Type::SmallStruct(_) => {
-                assignments += &format!(
-                    r#"i.m_{ident} = {ident}_ptr;
+            Type::SmallStruct(s) => {
+                if s.contains_interfaces() {
+                    assignments += &format!(
+                        r#"i.m_{ident} = {ident}_cpy;
     "#
-                );
+                    );
+                } else {
+                    assignments += &format!(
+                        r#"i.m_{ident} = {ident}_ref;
+    "#
+                    );
+                }
             }
         });
 
+        assignments
+    }
+
+    #[allow(clippy::type_complexity)]
+    pub fn bi_embedded(&self) -> String {
+        let mut assignments = String::new();
+        self.0.inputs_by_idents().for_each(|(ident, ty)| match ty {
+            Type::Primitive(_) => {}
+            Type::SmallStruct(s) => {
+                if s.contains_interfaces() {
+                    let ty = s.ident.to_string();
+                    assignments += &format!(
+                        r#"{ty} {ident}_cpy = {ident}_ref;
+    "#
+                    );
+                }
+            }
+        });
         assignments
     }
 
@@ -70,7 +95,7 @@ impl<'a> PackedPrimitives<'a> {
             }
             Type::SmallStruct(_) => {
                 assignments += &format!(
-                    r"{ident}_ptr = o.m_{ident};
+                    r"{ident}_ref = o.m_{ident};
     "
                 );
             }

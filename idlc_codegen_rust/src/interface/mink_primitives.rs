@@ -5,7 +5,6 @@ macro_rules! namespace {
 }
 pub(super) const GENERIC_ERROR: &str = namespace!("error::generic");
 pub(super) const ERROR_STRUCT: &str = namespace!("Error");
-pub(super) const OBJECT: &str = namespace!("Object");
 pub(super) const TYPED_OBJECT_TRAIT: &str = namespace!("TypedObject");
 pub(super) const INVOKE_FN: &str = namespace!("Invoke");
 pub(super) const PACK_COUNTS: &str = namespace!("pack_counts");
@@ -22,5 +21,6 @@ pub(super) const OP_RETAIN: &str = namespace!("OP_RETAIN");
 pub(super) const WRAPPER: &str = namespace!("wrapper");
 
 pub const INTERFACES_BASE: &str = "crate::interfaces";
+pub const OBJECT: &str = namespace!("Object");
 
 pub(super) use namespace;

@@ -111,6 +111,7 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
 
     format!(
         r#"
+class {ident};
 class I{ident} {base_iface}{{
   public:
     {constants}

@@ -10,6 +10,7 @@ use super::serialization::TransportBuffer;
 pub struct Implementation {
     pub args: Vec<String>,
     pub initializations: Vec<String>,
+    pub pre_call: Vec<String>,
     pub post_call: Vec<String>,
 
     idx: usize,
@@ -20,6 +21,7 @@ impl Implementation {
         let mut me = Self {
             args: vec![],
             initializations: vec![],
+            pre_call: vec![],
             post_call: vec![],
             idx: 0,
         };
@@ -35,6 +37,10 @@ impl Implementation {
 
     pub fn initializations(&self) -> String {
         self.initializations.concat()
+    }
+
+    pub fn pre_call_assignments(&self) -> String {
+        self.pre_call.concat()
     }
 
     pub fn post_call_assignments(&self) -> String {
@@ -104,10 +110,11 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
             unreachable!()
         };
         let _idx = self.idx();
-
+        let bi_embedded = packer.bi_embedded();
         self.initializations.push(format!(
             r#"{definition} i;
-    {0}"#,
+    {0}{1}"#,
+            bi_embedded,
             packer.bi_assignments(),
         ));
         self.args.push(format!(
@@ -119,11 +126,42 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
     fn visit_input_big_struct(&mut self, ident: &Ident, ty: &idlc_mir::StructInner) {
         let _idx = self.idx();
         let name = format!("{}_ptr", ident);
-        let ty = ty.ident.to_string();
-        self.args.push(format!(
-            r#"
-        {{.bi = ({OBJECTBUFIN}) {{ {name}, sizeof({ty}) }} }},"#
-        ));
+        let ty_ident = ty.ident.to_string();
+        if ty.contains_interfaces() {
+            self.initializations.push(format!(
+                r#"{ty_ident} {ident}_cpy = *{name};
+    "#
+            ));
+            self.args.push(format!(
+                r#"
+            {{.bi = ({OBJECTBUFIN}) {{ &{ident}_cpy, sizeof({ty_ident}) }} }},"#
+            ));
+            let objects = ty.objects();
+            for object in objects {
+                let path = object
+                    .0
+                    .iter()
+                    .map(|ident| ident.to_string())
+                    .collect::<Vec<String>>()
+                    .join(".");
+                self.pre_call.push(format!(
+                    r#"{ident}_cpy.{path} = Object_NULL;
+    "#
+                ));
+                self.visit_input_object(
+                    &idlc_mir::Ident {
+                        ident: format!("{ident}_cpy.{}", path),
+                        span: object.0.last().unwrap().span,
+                    },
+                    object.1,
+                );
+            }
+        } else {
+            self.args.push(format!(
+                r#"
+            {{.bi = ({OBJECTBUFIN}) {{ {name}, sizeof({ty_ident}) }} }},"#
+            ));
+        }
     }
 
     fn visit_input_small_struct(&mut self, ident: &Ident, ty: &idlc_mir::StructInner) {
@@ -132,10 +170,9 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
 
     fn visit_input_object(&mut self, ident: &Ident, _: Option<&str>) {
         let _idx = self.idx();
-        let name = format!("{}_val", ident);
         self.args.push(format!(
             r#"
-        {{.o = {name} }},"#
+        {{.o = {ident} }},"#
         ));
     }
 
@@ -221,11 +258,31 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
     fn visit_output_big_struct(&mut self, ident: &Ident, ty: &idlc_mir::StructInner) {
         let _idx = self.idx();
         let name = format!("{}_ptr", ident);
-        let ty = ty.ident.to_string();
+        let ty_ident = ty.ident.to_string();
         self.args.push(format!(
             r#"
-        {{.b = ({OBJECTBUF}) {{  {name}, sizeof({ty}) }} }},"#
+        {{.b = ({OBJECTBUF}) {{  {name}, sizeof({ty_ident}) }} }},"#
         ));
+        let objects = ty.objects();
+        for object in objects {
+            let path = object
+                .0
+                .iter()
+                .map(|ident| ident.to_string())
+                .collect::<Vec<String>>()
+                .join(".");
+            self.initializations.push(format!(
+                r#"{name}->{path} = Object_NULL;
+    "#
+            ));
+            self.visit_output_object(
+                &idlc_mir::Ident {
+                    ident: format!("{name}->{}", path),
+                    span: object.0.last().unwrap().span,
+                },
+                object.1,
+            )
+        }
     }
 
     fn visit_output_small_struct(&mut self, ident: &Ident, ty: &idlc_mir::StructInner) {
@@ -234,14 +291,17 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
 
     fn visit_output_object(&mut self, ident: &Ident, _: Option<&str>) {
         let idx = self.idx();
-        let name = format!("{}_ptr", ident);
+        let mut name = format!("{ident}");
+        if !ident.contains("->") {
+            name = format!("*{name}");
+        }
         self.post_call.push(format!(
-            r#"*{name} = {ARGS}[{idx}].o;
+            r#"{name} = {ARGS}[{idx}].o;
     "#
         ));
         self.args.push(
             r#"
-        {.o = (Object) { NULL, NULL } },"#
+        {.o = Object_NULL },"#
                 .to_string(),
         );
     }
@@ -264,6 +324,7 @@ pub fn emit(
 
     let implementation = Implementation::new(function);
     let initializations = implementation.initializations();
+    let pre_call_assignments = implementation.pre_call_assignments();
     let args = implementation.args();
     let post_call_assignments = implementation.post_call_assignments();
 
@@ -298,8 +359,8 @@ static inline int32_t {current_iface_ident}_{ident}(Object self{params})
 {documentation}
 static inline int32_t {current_iface_ident}_{ident}(Object self{params})
 {{
-    {0}{1}int32_t result = {returns}
-    {2}
+    {0}{1}{2}int32_t result = {returns}
+    {3}
     return result;
 }}
 "#,
@@ -310,6 +371,11 @@ static inline int32_t {current_iface_ident}_{ident}(Object self{params})
         },
         if !object_args.is_empty() {
             format!("{object_args}\n    ")
+        } else {
+            "".to_string()
+        },
+        if !pre_call_assignments.is_empty() {
+            format!("{pre_call_assignments}\n    ")
         } else {
             "".to_string()
         },

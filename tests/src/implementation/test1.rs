@@ -136,6 +136,58 @@ macro_rules! generate_itest1_impl {
                     Err(itest1::MISMATCH)
                 }
             }
+
+            fn test_obj_array_in(
+                &mut self,
+                o_in: &[Option<crate::interfaces::itest1::ITest1>; 3],
+            ) -> Result<u32, itest1::Error> {
+                for o in o_in.iter().filter(|o| o.is_some()) {
+                    assert_eq!(super::test_singlular_object(o.as_ref()), Ok(()));
+                }
+
+                Ok(SUCCESS_FLAG)
+            }
+
+            fn r#test_obj_array_out(
+                &mut self,
+            ) -> Result<([Option<crate::interfaces::itest1::ITest1>; 3], u32), itest1::Error> {
+                Ok((
+                    [
+                        Some(super::ITest1::new(0).into()),
+                        Some(super::ITest1::new(1).into()),
+                        Some(super::ITest1::new(2).into()),
+                    ],
+                    SUCCESS_FLAG,
+                ))
+            }
+
+            fn r#objects_in_struct(
+                &mut self,
+                r#input: &crate::interfaces::itest::r#ObjInStruct,
+            ) -> Result<crate::interfaces::itest::r#ObjInStruct, itest1::Error> {
+                assert_eq!(
+                    super::test_singlular_object(input.first_obj.as_ref()),
+                    Ok(())
+                );
+                assert_eq!(
+                    super::test_singlular_object(input.second_obj.as_ref()),
+                    Ok(())
+                );
+                assert!(input.should_be_empty.is_none());
+
+                assert!(input.p1.iter().all(|x| *x == SUCCESS_FLAG));
+                assert!(input.p1.iter().all(|x| *x == SUCCESS_FLAG));
+                assert!(input.p1.iter().all(|x| *x == SUCCESS_FLAG));
+
+                Ok(crate::interfaces::itest::ObjInStruct {
+                    p1: [SUCCESS_FLAG; 4],
+                    first_obj: Some(super::ITest1::new(1).into()),
+                    p2: [SUCCESS_FLAG; 4],
+                    should_be_empty: None,
+                    p3: [SUCCESS_FLAG; 4],
+                    second_obj: Some(super::ITest1::new(2).into()),
+                })
+            }
         }
     };
 }

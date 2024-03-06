@@ -61,11 +61,10 @@ impl<'a> Param<'a> {
                             &Type::Primitive(p) => visitor.visit_input_primitive(ident, p),
                             Type::Interface(i) => visitor.visit_input_object(ident, i.as_deref()),
                             Type::Struct(Struct::Big(s)) => {
-                                visitor.visit_input_big_struct(ident, s)
+                                visitor.visit_input_big_struct(ident, s);
                             }
-
                             Type::Struct(Struct::Small(s)) => {
-                                visitor.visit_input_small_struct(ident, s)
+                                visitor.visit_input_small_struct(ident, s);
                             }
                         },
                     },
@@ -85,10 +84,10 @@ impl<'a> Param<'a> {
                             &Type::Primitive(p) => visitor.visit_output_primitive(ident, p),
                             Type::Interface(i) => visitor.visit_output_object(ident, i.as_deref()),
                             Type::Struct(Struct::Big(s)) => {
-                                visitor.visit_output_big_struct(ident, s)
+                                visitor.visit_output_big_struct(ident, s);
                             }
                             Type::Struct(Struct::Small(s)) => {
-                                visitor.visit_output_small_struct(ident, s)
+                                visitor.visit_output_small_struct(ident, s);
                             }
                         },
                     },

@@ -48,5 +48,5 @@ jobs:
         cd tests
         cargo test
         cargo test --release
-        cargo clean && RUSTC_BOOTSTRAP=1 RUSTFLAGS="-Zsanitizer=address" CFLAGS="-fsanitize=address" cargo test -Zbuild-std --target $(rustc -vV | awk '/^host/ { print $2 }')
-        cargo clean && RUSTC_BOOTSTRAP=1 RUSTFLAGS="-Zsanitizer=address" CFLAGS="-fsanitize=address" cargo test -Zbuild-std --target $(rustc -vV | awk '/^host/ { print $2 }') --release
+        cargo clean && RUSTC_BOOTSTRAP=1 RUSTFLAGS="-Zsanitizer=address" CFLAGS="-fsanitize=address" CXXFLAGS="-fsanitize=address" cargo test -Zbuild-std --target $(rustc -vV | awk '/^host/ { print $2 }')
+        cargo clean && RUSTC_BOOTSTRAP=1 RUSTFLAGS="-Zsanitizer=address" CFLAGS="-fsanitize=address" CXXFLAGS="-fsanitize=address" cargo test -Zbuild-std --target $(rustc -vV | awk '/^host/ { print $2 }') --release

@@ -16,16 +16,16 @@ const Collection TRUTH = {
   do {                                                                         \
     int32_t ret = (expr);                                                      \
     if (ret != Object_OK) {                                                    \
-      printf(#expr " returned %d\n", ret);                                     \
-      return ret;                                                              \
+      printf("[%s:%d] " #expr " returned %d\n", __FILE__, __LINE__, ret);      \
+      abort();                                                                 \
     }                                                                          \
   } while (0)
 
 #define ASSERT(expr)                                                           \
   do {                                                                         \
     if (!(expr)) {                                                             \
-      printf("Assertion failed: " #expr "\n");                                 \
-      return Object_ERROR;                                                     \
+      printf("[%s:%d] Assertion failed: " #expr "\n", __FILE__, __LINE__);     \
+      abort();                                                                 \
     }                                                                          \
   } while (0)
 
@@ -37,6 +37,8 @@ struct CTest1 {
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+int32_t test_singular_object(Object itest1);
 
 int32_t itest1_release(struct CTest1 *ctx);
 
@@ -84,31 +86,14 @@ int32_t itest1_bundled_with_unbundled(void *ctx,
 int32_t itest1_well_documented_method(void *ctx, uint32_t foo_val,
                                       uint32_t *bar_ptr);
 
-int32_t itest2_release(void *ctx);
+int32_t itest1_test_obj_array_in(void *ctx, const Object (*o_in_ptr)[3],
+                                 uint32_t *a_ptr);
 
-int32_t itest2_retain(void *ctx);
+int32_t itest1_test_obj_array_out(void *ctx, Object (*o_ptr)[3],
+                                  uint32_t *a_ptr);
 
-int32_t itest2_test_f2(void *ctx, const F1 *f_ptr);
-
-int32_t itest2_test_obj_in(void *ctx, Object o_val, uint32_t *a_ptr);
-
-int32_t itest2_test_obj_out(void *ctx, Object *o_ptr);
-
-int32_t itest2_test_bundle(void *ctx, const void *xxx_ptr, size_t xxx_len,
-                           void *yyy_ptr, size_t yyy_len, size_t *yyy_lenout,
-                           uint32_t a_val, const void *xxx1_ptr,
-                           size_t xxx1_len, uint8_t b_val, uint32_t c_val,
-                           uint32_t *d_ptr, uint16_t *e_ptr, uint32_t *f_ptr);
-
-int32_t itest2_test_array(void *ctx, const F1 *f_in_ptr, size_t f_in_len,
-                          F1 *f_out_ptr, size_t f_out_len, size_t *f_out_lenout,
-                          F1 *f_x_ptr, const F1 *f_y_ptr, const uint32_t *a_ptr,
-                          size_t a_len, uint32_t *b_ptr, size_t b_len,
-                          size_t *b_lenout, int32_t *c_ptr, int16_t d_val);
-
-int32_t itest2_test_obj_array_in(void *ctx, const Object (*o_in_ptr)[3], uint32_t *a_ptr);
-
-int32_t itest2_test_obj_array_out(void *ctx, Object (*o_out_ptr)[3], uint32_t *a_ptr);
+int32_t itest1_objects_in_struct(void *ctx, const ObjInStruct *input,
+                                 ObjInStruct *output);
 
 #ifdef __cplusplus
 }

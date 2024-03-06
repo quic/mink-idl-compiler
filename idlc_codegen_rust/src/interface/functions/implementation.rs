@@ -40,6 +40,14 @@ impl Implementation {
     pub fn post_call_assignments(&self) -> String {
         self.post_call.concat()
     }
+
+    fn add_output_object(&mut self) {
+        self.args.push(format!(
+            r#"{ARG} {{
+                o: std::mem::ManuallyDrop::new(None)
+            }}"#
+        ));
+    }
 }
 
 impl Implementation {
@@ -120,18 +128,51 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         ));
     }
 
-    fn visit_input_big_struct(&mut self, ident: &Ident, ty: &idlc_mir::StructInner) {
-        let ty: &str = &namespaced_struct(ty);
-        let ident = EscapedIdent::new(ident);
-        self.args.push(format!(
-            r#"{ARG} {{
+    fn visit_input_big_struct(&mut self, ident: &Ident, r#struct: &idlc_mir::StructInner) {
+        let ty: &str = &namespaced_struct(r#struct);
+        let escaped_ident = EscapedIdent::new(ident);
+
+        let objects = r#struct.objects();
+        if objects.is_empty() {
+            self.args.push(format!(
+                r#"{ARG} {{
                 bi: {INPUT_BUFFER} {{
-                    ptr: ({ident} as *const {ty}).cast(),
+                    ptr: ({escaped_ident} as *const {ty}).cast(),
                     size: std::mem::size_of::<{ty}>(),
                 }}
             }}"#
-        ));
+            ));
+        } else {
+            self.initializations.push(format!(
+                r#"
+                let {escaped_ident} = std::mem::ManuallyDrop::new(std::cell::UnsafeCell::new(unsafe {{ std::ptr::read({escaped_ident}) }}));
+            "#
+            ));
+            self.args.push(format!(
+                r#"{ARG} {{
+                bi: {INPUT_BUFFER} {{
+                    ptr: {escaped_ident}.get().cast(),
+                    size: std::mem::size_of::<{ty}>(),
+                }}
+            }}"#
+            ));
+            for (object, _) in objects {
+                let path = super::signature::idents_to_struct_path(&object);
+                self.args.push(format!(
+                    r#"{ARG} {{
+                o: std::mem::ManuallyDrop::new(unsafe {{
+                    let ptr = &mut (*{escaped_ident}.get()){path};
+                    let obj = std::mem::ManuallyDrop::new(std::ptr::read(ptr));
+                    std::ptr::write_volatile(ptr, std::mem::zeroed());
+
+                    std::mem::transmute_copy(&obj)
+                }})
+            }}"#
+                ));
+            }
+        }
     }
+
     fn visit_input_small_struct(&mut self, ident: &Ident, ty: &idlc_mir::StructInner) {
         self.visit_input_big_struct(ident, ty);
     }
@@ -208,23 +249,40 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         ));
     }
 
-    fn visit_output_big_struct(&mut self, ident: &Ident, ty: &idlc_mir::StructInner) {
-        let ty: &str = &namespaced_struct(ty);
-        let ident = EscapedIdent::new(ident);
+    fn visit_output_big_struct(&mut self, ident: &Ident, r#struct: &idlc_mir::StructInner) {
+        let ty: &str = &namespaced_struct(r#struct);
+        let escaped_ident = EscapedIdent::new(ident);
         self.initializations.push(format!(
             "let mut {ident} = std::mem::MaybeUninit::<{ty}>::uninit();\n"
         ));
-        self.post_call
-            .push(format!("let {ident} = unsafe {{ {ident}.assume_init() }};"));
         self.args.push(format!(
             r#"{ARG} {{
                 b: {OUTPUT_BUFFER} {{
-                    ptr: std::ptr::addr_of_mut!({ident}).cast(),
+                    ptr: std::ptr::addr_of_mut!({escaped_ident}).cast(),
                     size: std::mem::size_of::<{ty}>(),
                 }}
             }}"#
         ));
+
+        let objects = r#struct.objects();
+        for (object, _) in objects {
+            let path = super::signature::idents_to_struct_path(&object);
+            let idx = self.args.len();
+            self.post_call.push(format!(
+                r#"unsafe {{ std::ptr::write(
+                    std::ptr::addr_of_mut!((*{escaped_ident}.as_mut_ptr()){path}),
+                    std::mem::transmute(std::mem::ManuallyDrop::take(&mut {ARGS}[{idx}].o))
+                ); }}
+            "#
+            ));
+
+            self.add_output_object();
+        }
+        self.post_call.push(format!(
+            "let {escaped_ident} = unsafe {{ {escaped_ident}.assume_init() }};"
+        ));
     }
+
     fn visit_output_small_struct(&mut self, ident: &Ident, ty: &idlc_mir::StructInner) {
         self.visit_output_big_struct(ident, ty);
     }
@@ -235,11 +293,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         self.post_call.push(format!(
             "let {ident} = unsafe {{ std::mem::transmute(std::mem::ManuallyDrop::take(&mut {ARGS}[{idx}].o)) }};"
         ));
-        self.args.push(format!(
-            r#"{ARG} {{
-                o: std::mem::ManuallyDrop::new(None)
-            }}"#
-        ));
+        self.add_output_object();
     }
 
     fn visit_output_object_array(&mut self, ident: &Ident, ty: Option<&str>, cnt: idlc_mir::Count) {

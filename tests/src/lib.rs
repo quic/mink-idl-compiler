@@ -43,6 +43,5 @@ pub mod cpp {
 
         #[link_name = "create_cpp_itest2"]
         pub fn create_itest2() -> Option<crate::interfaces::itest2::ITest2>;
-
     }
 }

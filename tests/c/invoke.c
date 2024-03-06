@@ -3,6 +3,61 @@
 #include <string.h>
 
 #include "ITest_invoke.h"
+#include "object.h"
+
+Object create_c_itest1(uint32_t value);
+
+int32_t test_singular_object(Object itest1) {
+  if (Object_isNull(itest1)) {
+    return Object_ERROR_BADOBJ;
+  }
+  uint8_t empty[] = {};
+  size_t lenout = 0;
+  Object empty_o = Object_NULL;
+  uint16_t flag1 = 0;
+  uint64_t flag2 = 0;
+  const SingleEncapsulated single_encapsulated = {.inner = SUCCESS_FLAG};
+
+  CHECK_OK(ITest1_single_in(itest1, SUCCESS_FLAG));
+  CHECK_OK(ITest1_single_primitive_in(itest1, empty, sizeof(empty), empty,
+                                      sizeof(empty), &lenout, SUCCESS_FLAG));
+  CHECK_OK(ITest1_primitive_plus_struct_in(itest1, &single_encapsulated,
+                                           SUCCESS_FLAG));
+  CHECK_OK(ITest1_multiple_primitive(
+      itest1, empty, sizeof(empty), empty, sizeof(empty), &lenout, SUCCESS_FLAG,
+      &flag1, Object_NULL, &empty_o, SUCCESS_FLAG, &flag2, empty, sizeof(empty),
+      &lenout));
+  ASSERT(flag1 == SUCCESS_FLAG);
+  ASSERT(flag2 == SUCCESS_FLAG);
+  CHECK_OK(ITest1_bundled_with_unbundled(itest1, &single_encapsulated,
+                                         SUCCESS_FLAG, &TRUTH));
+  {
+    uint32_t out = 0;
+    CHECK_OK(ITest1_single_out(itest1, &out));
+    ASSERT(out == SUCCESS_FLAG);
+  }
+  {
+    uint32_t out = 0;
+    CHECK_OK(ITest1_single_primitive_out(itest1, empty, sizeof(empty), empty,
+                                         sizeof(empty), &lenout, &out));
+    ASSERT(out == SUCCESS_FLAG);
+  }
+  {
+    SingleEncapsulated single_encapsulated = {0};
+    uint32_t out = 0;
+    CHECK_OK(
+        ITest1_primitive_plus_struct_out(itest1, &single_encapsulated, &out));
+    ASSERT(out == SUCCESS_FLAG);
+    ASSERT(single_encapsulated.inner == SUCCESS_FLAG);
+  }
+  {
+    uint32_t out = 0;
+    CHECK_OK(ITest1_well_documented_method(itest1, SUCCESS_FLAG, &out));
+    ASSERT(out == SUCCESS_FLAG);
+  }
+
+  return Object_OK;
+}
 
 int32_t itest1_release(struct CTest1 *ctx) {
   if (--ctx->refs == 0) {
@@ -105,6 +160,49 @@ int32_t itest1_well_documented_method(void *ctx, uint32_t foo_val,
   return Object_OK;
 }
 
+int32_t itest1_test_obj_array_in(void *ctx, const Object (*o_in_ptr)[3],
+                                 uint32_t *a_ptr) {
+  for (size_t i = 0; i < 3; i++) {
+    Object o = (*o_in_ptr)[i];
+    if (!Object_isNull(o)) {
+      CHECK_OK(test_singular_object(o));
+    }
+  }
+  *a_ptr = SUCCESS_FLAG;
+  return Object_OK;
+}
+
+int32_t itest1_test_obj_array_out(void *ctx, Object (*o_ptr)[3],
+                                  uint32_t *a_ptr) {
+  (*o_ptr)[0] = create_c_itest1(0);
+  (*o_ptr)[1] = create_c_itest1(1);
+  (*o_ptr)[2] = create_c_itest1(2);
+  *a_ptr = SUCCESS_FLAG;
+  return Object_OK;
+}
+
+int32_t itest1_objects_in_struct(void *ctx, const ObjInStruct *input,
+                                 ObjInStruct *output) {
+  CHECK_OK(test_singular_object(input->first_obj));
+  ASSERT(Object_isNull(input->should_be_empty));
+  CHECK_OK(test_singular_object(input->second_obj));
+
+  for (size_t i = 0; i < sizeof(input->p1) / sizeof(input->p1[0]); i++) {
+    ASSERT(input->p1[i] == SUCCESS_FLAG);
+    ASSERT(input->p2[i] == SUCCESS_FLAG);
+    ASSERT(input->p3[i] == SUCCESS_FLAG);
+
+    output->p1[i] = SUCCESS_FLAG;
+    output->p2[i] = SUCCESS_FLAG;
+    output->p3[i] = SUCCESS_FLAG;
+  }
+  output->first_obj = create_c_itest1(1);
+  output->second_obj = create_c_itest1(2);
+  output->should_be_empty = Object_NULL;
+
+  return Object_OK;
+}
+
 ITest1_DEFINE_INVOKE(itest1_invoke, itest1_, struct CTest1 *);
 
 Object create_c_itest1(uint32_t value) {
@@ -121,96 +219,54 @@ int32_t itest2_release(void *ctx) { return Object_OK; }
 
 int32_t itest2_retain(void *ctx) { return Object_OK; }
 
-int32_t itest2_test_f2(void *ctx, const F1 *f_ptr) { return Object_OK; }
+int32_t itest2_entrypoint(void *ctx, Object itest1) {
+  ASSERT(!Object_isNull(itest1));
+  CHECK_OK(test_singular_object(itest1));
 
-int32_t itest2_test_obj_in(void *ctx, Object o_val, uint32_t *a_ptr) {
-  if (Object_isNull(o_val)) {
-    return Object_ERROR_BADOBJ;
-  }
-  uint8_t empty[] = {};
-  size_t lenout = 0;
-  Object empty_o = Object_NULL;
-  uint16_t flag1 = 0;
-  uint64_t flag2 = 0;
-  const SingleEncapsulated single_encapsulated = {.inner = SUCCESS_FLAG};
+  Object objects[3] = {create_c_itest1(1), Object_NULL, create_c_itest1(2)};
+  Object objects_out[3] = {0};
+  uint32_t a = 0;
+  CHECK_OK(ITest1_test_obj_array_in(itest1, &objects, &a));
+  ASSERT(a == SUCCESS_FLAG);
+  a = 0;
+  CHECK_OK(ITest1_test_obj_array_out(itest1, &objects_out, &a));
+  ASSERT(a == SUCCESS_FLAG);
 
-  CHECK_OK(ITest1_single_in(o_val, SUCCESS_FLAG));
-  CHECK_OK(ITest1_single_primitive_in(o_val, empty, sizeof(empty), empty,
-                                      sizeof(empty), &lenout, SUCCESS_FLAG));
-  CHECK_OK(ITest1_primitive_plus_struct_in(o_val, &single_encapsulated,
-                                           SUCCESS_FLAG));
-  CHECK_OK(ITest1_multiple_primitive(
-      o_val, empty, sizeof(empty), empty, sizeof(empty), &lenout, SUCCESS_FLAG,
-      &flag1, Object_NULL, &empty_o, SUCCESS_FLAG, &flag2, empty, sizeof(empty),
-      &lenout));
-  ASSERT(flag1 == SUCCESS_FLAG);
-  ASSERT(flag2 == SUCCESS_FLAG);
-  CHECK_OK(ITest1_bundled_with_unbundled(o_val, &single_encapsulated,
-                                         SUCCESS_FLAG, &TRUTH));
-  {
-    uint32_t out = 0;
-    CHECK_OK(ITest1_single_out(o_val, &out));
-    ASSERT(out == SUCCESS_FLAG);
-  }
-  {
-    uint32_t out = 0;
-    CHECK_OK(ITest1_single_primitive_out(o_val, empty, sizeof(empty), empty,
-                                         sizeof(empty), &lenout, &out));
-    ASSERT(out == SUCCESS_FLAG);
-  }
-  {
-    SingleEncapsulated single_encapsulated = {0};
-    uint32_t out = 0;
-    CHECK_OK(
-        ITest1_primitive_plus_struct_out(o_val, &single_encapsulated, &out));
-    ASSERT(out == SUCCESS_FLAG);
-    ASSERT(single_encapsulated.inner == SUCCESS_FLAG);
-  }
-  {
-    uint32_t out = 0;
-    CHECK_OK(ITest1_well_documented_method(o_val, SUCCESS_FLAG, &out));
-    ASSERT(out == SUCCESS_FLAG);
+  for (size_t i = 0; i < sizeof(objects) / sizeof(objects[0]); i++) {
+    Object_ASSIGN_NULL(objects[i]);
+
+    CHECK_OK(test_singular_object(objects_out[i]));
+    Object_ASSIGN_NULL(objects_out[i]);
   }
 
-  *a_ptr = SUCCESS_FLAG;
-  return Object_OK;
-}
+  const uint32_t VALID_PS[4] = {SUCCESS_FLAG, SUCCESS_FLAG, SUCCESS_FLAG,
+                                SUCCESS_FLAG};
 
-int32_t itest2_test_obj_out(void *ctx, Object *o_ptr) {
-  *o_ptr = create_c_itest1(42);
-  return Object_OK;
-}
+  ObjInStruct input_struct = {
+      .first_obj = create_c_itest1(1),
+      .should_be_empty = Object_NULL,
+      .second_obj = create_c_itest1(2),
+  };
+  memcpy(&input_struct.p1, VALID_PS, sizeof(VALID_PS));
+  memcpy(&input_struct.p2, VALID_PS, sizeof(VALID_PS));
+  memcpy(&input_struct.p3, VALID_PS, sizeof(VALID_PS));
+  ObjInStruct output_struct = {0};
+  CHECK_OK(ITest1_objects_in_struct(itest1, &input_struct, &output_struct));
+  ASSERT(memcmp(&output_struct.p1, VALID_PS, sizeof(VALID_PS)) == 0);
+  ASSERT(memcmp(&output_struct.p2, VALID_PS, sizeof(VALID_PS)) == 0);
+  ASSERT(memcmp(&output_struct.p3, VALID_PS, sizeof(VALID_PS)) == 0);
+  CHECK_OK(test_singular_object(output_struct.first_obj));
+  CHECK_OK(test_singular_object(output_struct.second_obj));
+  ASSERT(Object_isNull(output_struct.should_be_empty));
 
-int32_t itest2_test_bundle(void *ctx, const void *xxx_ptr, size_t xxx_len,
-                           void *yyy_ptr, size_t yyy_len, size_t *yyy_lenout,
-                           uint32_t a_val, const void *xxx1_ptr,
-                           size_t xxx1_len, uint8_t b_val, uint32_t c_val,
-                           uint32_t *d_ptr, uint16_t *e_ptr, uint32_t *f_ptr) {
-  return Object_ERROR;
-}
+  Object_ASSIGN_NULL(input_struct.first_obj);
+  Object_ASSIGN_NULL(input_struct.second_obj);
+  Object_ASSIGN_NULL(input_struct.should_be_empty);
 
-int32_t itest2_test_array(void *ctx, const F1 *f_in_ptr, size_t f_in_len,
-                          F1 *f_out_ptr, size_t f_out_len, size_t *f_out_lenout,
-                          F1 *f_x_ptr, const F1 *f_y_ptr, const uint32_t *a_ptr,
-                          size_t a_len, uint32_t *b_ptr, size_t b_len,
-                          size_t *b_lenout, int32_t *c_ptr, int16_t d_val) {
-  return Object_ERROR;
-}
+  Object_ASSIGN_NULL(output_struct.first_obj);
+  Object_ASSIGN_NULL(output_struct.second_obj);
+  Object_ASSIGN_NULL(output_struct.should_be_empty);
 
-int32_t itest2_test_obj_array_in(void *ctx, const Object (*o_in_ptr)[3],
-                                 uint32_t *a_ptr) {
-  for (size_t i = 0; i < 3; i++) {
-    CHECK_OK(itest2_test_obj_in(ctx, (*o_in_ptr)[i], a_ptr));
-  }
-  *a_ptr = SUCCESS_FLAG;
-  return Object_OK;
-}
-
-int32_t itest2_test_obj_array_out(void *ctx, Object (*o_ptr)[3], uint32_t *a_ptr) {
-  (*o_ptr)[0] = create_c_itest1(0);
-  (*o_ptr)[1] = create_c_itest1(1);
-  (*o_ptr)[2] = create_c_itest1(2);
-  *a_ptr = SUCCESS_FLAG;
   return Object_OK;
 }
 

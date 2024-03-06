@@ -1,5 +1,6 @@
 #include <object.h>
 #include <stdint.h>
+#include <string.h>
 
 namespace cpp {
 #include "ITest.hpp"
@@ -9,6 +10,10 @@ namespace cpp {
 #include "../c/header.h"
 
 using cpp::ProxyBase;
+
+extern "C" {
+Object create_cpp_itest1(uint32_t value);
+}
 
 class ITest1Impl : public cpp::ITest1ImplBase {
 public:
@@ -21,8 +26,8 @@ public:
   int32_t in_struct(const cpp::Collection &input_ref) {
     return itest1_in_struct(&this->ctest, (const Collection *)(&input_ref));
   }
-  int32_t out_struct(cpp::Collection &output_ref) {
-    return itest1_out_struct(&this->ctest, (Collection *)&output_ref);
+  int32_t out_struct(cpp::Collection *output_ptr) {
+    return itest1_out_struct(&this->ctest, (Collection *)output_ptr);
   }
   int32_t single_out(uint32_t *output_ptr) {
     return itest1_single_out(&this->ctest, output_ptr);
@@ -83,6 +88,43 @@ public:
   int32_t well_documented_method(uint32_t foo_val, uint32_t *bar_ptr) {
     return itest1_well_documented_method(&this->ctest, foo_val, bar_ptr);
   }
+  int32_t test_obj_array_in(const cpp::ITest1 (&o_in_ptr)[3], uint32_t *a_ptr) {
+    for (size_t i = 0; i < 3; i++) {
+      Object o = (o_in_ptr)[i].get();
+      if (!Object_isNull(o)) {
+        CHECK_OK(test_singular_object(o));
+      }
+    }
+    *a_ptr = SUCCESS_FLAG;
+    return Object_OK;
+  }
+  int32_t test_obj_array_out(cpp::ITest1 (&out_ref)[3], uint32_t *a_ptr) {
+    (out_ref)[0] = create_cpp_itest1(0);
+    (out_ref)[1] = create_cpp_itest1(1);
+    (out_ref)[2] = create_cpp_itest1(2);
+    *a_ptr = SUCCESS_FLAG;
+    return Object_OK;
+  }
+  int32_t objects_in_struct(const cpp::ObjInStruct &input_ref,
+                            cpp::ObjInStruct *output_ptr) {
+    CHECK_OK(test_singular_object(input_ref.first_obj));
+    ASSERT(Object_isNull(input_ref.should_be_empty));
+    CHECK_OK(test_singular_object(input_ref.second_obj));
+
+    for (size_t i = 0; i < sizeof(input_ref.p1) / sizeof(input_ref.p1[0]); i++) {
+      ASSERT(input_ref.p1[i] == SUCCESS_FLAG);
+      ASSERT(input_ref.p2[i] == SUCCESS_FLAG);
+      ASSERT(input_ref.p3[i] == SUCCESS_FLAG);
+
+      output_ptr->p1[i] = SUCCESS_FLAG;
+      output_ptr->p2[i] = SUCCESS_FLAG;
+      output_ptr->p3[i] = SUCCESS_FLAG;
+    }
+    output_ptr->first_obj = create_cpp_itest1(1);
+    output_ptr->second_obj = create_cpp_itest1(2);
+    output_ptr->should_be_empty = Object_NULL;
+    return Object_OK;
+  }
 
 private:
   struct CTest1 ctest;
@@ -103,51 +145,56 @@ Object create_cpp_itest1(uint32_t value) {
 
 class ITest2Impl : public cpp::ITest2ImplBase {
 public:
-  int32_t test_f2(const cpp::F1 &f_ref) {
-    return itest2_test_f2(NULL, (const F1 *)&f_ref);
-  }
+  int32_t entrypoint(const cpp::ITest1 &o) {
+    struct CTest1 ctest = {.refs = 1, .value = 1};
+    ITest1Impl me(ctest);
+    const Object itest1 = o.get();
+    ASSERT(!Object_isNull(itest1));
+    CHECK_OK(test_singular_object(itest1));
 
-  int32_t test_obj_in(const cpp::ITest1 &o_ref, uint32_t *a_ptr) {
-    return itest2_test_obj_in(NULL, o_ref.get(), a_ptr);
-  }
-  int32_t test_obj_out(cpp::ITest1 &o_ref) {
-    Object tmp = Object_NULL;
-    CHECK_OK(itest2_test_obj_out(NULL, &tmp));
-    o_ref = cpp::ITest1(tmp);
-    return Object_OK;
-  }
+    cpp::ITest1 objects[3] = {create_cpp_itest1(1), Object_NULL, create_cpp_itest1(2)};
+    cpp::ITest1 objects_out[3] = {Object_NULL, Object_NULL, Object_NULL};
+    uint32_t a = 0;
+    CHECK_OK(me.test_obj_array_in(objects, &a));
+    ASSERT(a == SUCCESS_FLAG);
+    a = 0;
+    CHECK_OK(me.test_obj_array_out(objects_out, &a));
+    ASSERT(a == SUCCESS_FLAG);
 
-  int32_t test_bundle(const void *xxx_ptr, size_t xxx_len, void *yyy_ptr,
-                      size_t yyy_len, size_t *yyy_lenout, uint32_t a_val,
-                      const void *xxx1_ptr, size_t xxx1_len, uint8_t b_val,
-                      uint32_t c_val, uint32_t *d_ptr, uint16_t *e_ptr,
-                      uint32_t *f_ptr) {
-    return itest2_test_bundle(NULL, xxx_ptr, xxx_len, yyy_ptr, yyy_len,
-                              yyy_lenout, a_val, xxx1_ptr, xxx1_len, b_val,
-                              c_val, d_ptr, e_ptr, f_ptr);
-  }
-  int32_t test_array(const cpp::F1 *f_in_ptr, size_t f_in_len,
-                     cpp::F1 *f_out_ptr, size_t f_out_len, size_t *f_out_lenout,
-                     cpp::F1 &f_x_ref, const cpp::F1 &f_y_ref,
-                     const uint32_t *a_ptr, size_t a_len, uint32_t *b_ptr,
-                     size_t b_len, size_t *b_lenout, int32_t *c_ptr,
-                     int16_t d_val) {
-    return Object_OK;
-  }
-  int32_t test_obj_array_in(const cpp::ITest1 (&o_in_ptr)[3], uint32_t *a_ptr) {
-    for (size_t i = 0; i < 3; i++) {
-      CHECK_OK(itest2_test_obj_in(NULL, (o_in_ptr)[i].get(), a_ptr));
+    for (size_t i = 0; i < sizeof(objects) / sizeof(objects[0]); i++) {
+
+      CHECK_OK(test_singular_object(objects_out[i].get()));
     }
-    *a_ptr = SUCCESS_FLAG;
-    return Object_OK;
-  }
-  int32_t test_obj_array_out(cpp::ITest1 (&o_out_ptr)[3], uint32_t *a_ptr) {
-    Object tmp[3];
-    for (size_t i=0; i<3; i++) {
-      tmp[i] = create_cpp_itest1(i);
-      o_out_ptr[i] = cpp::ITest1(tmp[i]);
-    }
-    *a_ptr = SUCCESS_FLAG;
+
+    const uint32_t VALID_PS[4] = {SUCCESS_FLAG, SUCCESS_FLAG, SUCCESS_FLAG,
+                                  SUCCESS_FLAG};
+
+    cpp::ObjInStruct input_struct = {
+        .first_obj = create_cpp_itest1(1),
+        .should_be_empty = Object_NULL,
+        .second_obj = create_cpp_itest1(2),
+    };
+    memcpy(&input_struct.p1, VALID_PS, sizeof(VALID_PS));
+    memcpy(&input_struct.p2, VALID_PS, sizeof(VALID_PS));
+    memcpy(&input_struct.p3, VALID_PS, sizeof(VALID_PS));
+    cpp::ObjInStruct output_struct = {0};
+    CHECK_OK(me.objects_in_struct(input_struct, &output_struct));
+    ASSERT(memcmp(&output_struct.p1, VALID_PS, sizeof(VALID_PS)) == 0);
+    ASSERT(memcmp(&output_struct.p2, VALID_PS, sizeof(VALID_PS)) == 0);
+    ASSERT(memcmp(&output_struct.p3, VALID_PS, sizeof(VALID_PS)) == 0);
+
+    CHECK_OK(test_singular_object(output_struct.first_obj));
+    CHECK_OK(test_singular_object(output_struct.second_obj));
+    ASSERT(Object_isNull(output_struct.should_be_empty));
+
+    Object_ASSIGN_NULL(input_struct.first_obj);
+    Object_ASSIGN_NULL(input_struct.second_obj);
+    Object_ASSIGN_NULL(input_struct.should_be_empty);
+
+    Object_ASSIGN_NULL(output_struct.first_obj);
+    Object_ASSIGN_NULL(output_struct.second_obj);
+    Object_ASSIGN_NULL(output_struct.should_be_empty);
+
     return Object_OK;
   }
 };

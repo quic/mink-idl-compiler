@@ -156,6 +156,9 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
         {
             self.outputs
                 .push((format!("&i->m_{}", ident), format!("{CONST} {}", ty.ident)));
+        } else if ty.contains_interfaces() {
+            self.outputs
+                .push((format!("&{}_ptr", ident), format!("{CONST} {}", ty.ident)));
         } else {
             self.outputs
                 .push((format!("{}_ptr", ident), format!("{CONST} {}", ty.ident)));
@@ -170,6 +173,9 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
         {
             self.outputs
                 .push((format!("&i->m_{}", ident), format!("{CONST} {}", ty.ident)));
+        } else if ty.contains_interfaces() {
+            self.outputs
+                .push((format!("&{}_ptr", ident), format!("{CONST} {}", ty.ident)));
         } else {
             self.outputs
                 .push((format!("{}_ptr", ident), format!("{CONST} {}", ty.ident)));
@@ -182,7 +188,7 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
         } else {
             ty.unwrap_or("Object")
         };
-        self.inputs.push((format!("{}_val", ident), ty.to_string()));
+        self.inputs.push((format!("{ident}"), ty.to_string()));
         self.outputs
             .push((format!("*{}_ptr", ident), ty.to_string()));
     }
@@ -297,9 +303,7 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
         } else {
             ty.unwrap_or("Object")
         };
-        self.inputs
-            .push((format!("*{}_ptr", ident), ty.to_string()));
-        self.outputs
-            .push((format!("{}_ptr", ident), ty.to_string()));
+        self.inputs.push((format!("*{}", ident), ty.to_string()));
+        self.outputs.push((format!("{}", ident), ty.to_string()));
     }
 }

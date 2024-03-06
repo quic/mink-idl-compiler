@@ -1,8 +1,10 @@
-use super::TRUTH;
-use qcom_core::object::error::transport::BADOBJ;
-
-use crate::interfaces::itest::{SingleEncapsulated, SUCCESS_FLAG};
-use crate::interfaces::itest2::{self, IITest2};
+use crate::{
+    implementation::ITest1,
+    interfaces::{
+        itest::{ObjInStruct, SUCCESS_FLAG},
+        itest2::{self, IITest2},
+    },
+};
 
 pub struct ITest2;
 impl ITest2 {
@@ -13,138 +15,42 @@ impl ITest2 {
 }
 
 impl IITest2 for ITest2 {
-    fn test_f2(&mut self, _f: &crate::interfaces::itest::F1) -> Result<(), itest2::Error> {
-        Err(itest2::MY_CUSTOM_ERROR)
-    }
-
-    fn test_obj_in(
+    fn r#entrypoint(
         &mut self,
         o: Option<&crate::interfaces::itest1::ITest1>,
-    ) -> Result<u32, itest2::Error> {
-        let Some(o) = o else {
-            return Err(BADOBJ.into());
-        };
-        assert_eq!(o.single_in(SUCCESS_FLAG), Ok(()));
-        assert_eq!(
-            o.single_primitive_in(&[], &mut [], &mut 0, SUCCESS_FLAG),
-            Ok(())
-        );
-        assert_eq!(
-            o.multiple_primitive(
-                &[],
-                &mut [],
-                &mut 0,
-                SUCCESS_FLAG as u16,
-                None,
-                SUCCESS_FLAG,
-                &mut [],
-                &mut 0
-            ),
-            Ok((SUCCESS_FLAG as u16, None, SUCCESS_FLAG as u64))
-        );
-        assert_eq!(
-            o.bundled_with_unbundled(
-                &SingleEncapsulated {
-                    inner: SUCCESS_FLAG
-                },
-                SUCCESS_FLAG,
-                &TRUTH
-            ),
-            Ok(())
-        );
-        assert_eq!(
-            o.primitive_plus_struct_in(
-                &SingleEncapsulated {
-                    inner: SUCCESS_FLAG,
-                },
-                SUCCESS_FLAG
-            ),
-            Ok(())
-        );
-
-        assert_eq!(o.single_out(), Ok(SUCCESS_FLAG));
-        assert_eq!(
-            o.single_primitive_out(&[], &mut [], &mut 0),
-            Ok(SUCCESS_FLAG)
-        );
-        assert_eq!(
-            o.primitive_plus_struct_out(),
-            Ok((
-                SingleEncapsulated {
-                    inner: SUCCESS_FLAG,
-                },
-                SUCCESS_FLAG
-            ))
-        );
-
-        assert_eq!(o.well_documented_method(SUCCESS_FLAG), Ok(SUCCESS_FLAG));
-
-        Ok(SUCCESS_FLAG)
-    }
-
-    fn test_obj_out(&mut self) -> Result<Option<crate::interfaces::itest1::ITest1>, itest2::Error> {
-        Ok(Some(super::ITest1::new(96).into()))
-    }
-
-    fn test_bundle(
-        &mut self,
-        _xxx: &[u8],
-        _yyy: &mut [u8],
-        yyy_lenout: &mut usize,
-        a: u32,
-        _xxx1: &[u8],
-        b: u8,
-        c: u32,
-    ) -> Result<(u32, u16, u32), itest2::Error> {
-        *yyy_lenout = 0;
-        Ok((a + 10, (b + 20) as u16, c + 30))
-    }
-
-    fn test_array(
-        &mut self,
-        f_in: &[crate::interfaces::itest::F1],
-        f_out: &mut [crate::interfaces::itest::F1],
-        f_out_lenout: &mut usize,
-        _f_y: &crate::interfaces::itest::F1,
-        _a: &[u32],
-        _b: &mut [u32],
-        _b_lenout: &mut usize,
-        d: i16,
-    ) -> Result<(crate::interfaces::itest::F1, i32), itest2::Error> {
-        if f_in.len() <= f_out.len() {
-            f_out.iter_mut().zip(f_in).for_each(|(o, i)| o.a = i.a + 5);
-            *f_out_lenout = f_in.len();
-            return Ok((
-                crate::interfaces::itest::F1 {
-                    a: f_in.len() as u32,
-                },
-                d as i32,
-            ));
-        }
-        Err(crate::object::error::generic::INVALID.into())
-    }
-
-    fn test_obj_array_in(
-        &mut self,
-        o_in: &[Option<crate::interfaces::itest1::ITest1>; 3],
-    ) -> Result<u32, itest2::Error> {
-        for o in o_in.iter().filter(|o| o.is_some()) {
-            assert_eq!(self.test_obj_in(o.as_ref()), Ok(SUCCESS_FLAG));
+    ) -> Result<(), itest2::Error> {
+        assert_eq!(super::test_singlular_object(o), Ok(()));
+        let o = o.unwrap();
+        let objects: [Option<crate::interfaces::itest1::ITest1>; 3] = [
+            Some(super::ITest1::new(1).into()),
+            None,
+            Some(super::ITest1::new(2).into()),
+        ];
+        assert_eq!(o.test_obj_array_in(&objects), Ok(SUCCESS_FLAG));
+        let (objects, flag) = o.test_obj_array_out().unwrap();
+        assert_eq!(flag, SUCCESS_FLAG);
+        for object in objects {
+            assert_eq!(super::test_singlular_object(object.as_ref()), Ok(()));
         }
 
-        Ok(SUCCESS_FLAG)
-    }
+        const VALID_PS: [u32; 4] = [SUCCESS_FLAG; 4];
+        let output = o
+            .objects_in_struct(&ObjInStruct {
+                p1: VALID_PS,
+                first_obj: Some(ITest1::new(1).into()),
+                p2: VALID_PS,
+                should_be_empty: None,
+                p3: VALID_PS,
+                second_obj: Some(ITest1::new(2).into()),
+            })
+            .unwrap();
+        assert_eq!(output.p1, VALID_PS);
+        assert_eq!(output.p2, VALID_PS);
+        assert_eq!(output.p3, VALID_PS);
+        super::test_singlular_object(output.first_obj.as_ref()).unwrap();
+        assert_eq!(output.should_be_empty, None);
+        super::test_singlular_object(output.second_obj.as_ref()).unwrap();
 
-    fn r#test_obj_array_out(
-        &mut self,
-    ) -> Result<([Option<crate::interfaces::itest1::ITest1>; 3], u32), itest2::Error> {
-        Ok((
-            [
-                Some(super::ITest1::new(0).into()),
-                Some(super::ITest1::new(1).into()),
-                Some(super::ITest1::new(2).into()),
-            ],
-            SUCCESS_FLAG,
-        ))
+        Ok(())
     }
 }
