@@ -6,12 +6,14 @@ use crate::{
 };
 
 pub struct Generator {
-    is_typed_objects: bool,
+    is_no_typed_objects: bool,
 }
 
 impl Generator {
-    pub fn new(is_typed_objects: bool) -> Self {
-        Self { is_typed_objects }
+    pub fn new(is_no_typed_objects: bool) -> Self {
+        Self {
+            is_no_typed_objects,
+        }
     }
 }
 
@@ -32,7 +34,7 @@ impl idlc_codegen::SplitInvokeGenerator for Generator {
                     result.push_str(&emit_struct(s.as_ref()));
                 }
                 Node::Interface(i) => {
-                    result.push_str(&emit_interface_impl(i, self.is_typed_objects));
+                    result.push_str(&emit_interface_impl(i, self.is_no_typed_objects));
                 }
             }
         }
@@ -52,7 +54,7 @@ impl idlc_codegen::SplitInvokeGenerator for Generator {
                     result.push_str(&emit_include(i));
                 }
                 Node::Interface(i) => {
-                    result.push_str(&emit_interface_invoke(i, self.is_typed_objects));
+                    result.push_str(&emit_interface_invoke(i, self.is_no_typed_objects));
                 }
                 _ => (),
             }

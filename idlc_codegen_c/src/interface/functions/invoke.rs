@@ -11,18 +11,18 @@ pub struct Invoke {
     pub pre: Vec<String>,
     pub post: Vec<String>,
 
-    is_typed_objects: bool,
+    is_no_typed_objects: bool,
 
     idx: usize,
 }
 
 impl Invoke {
-    pub fn new(function: &idlc_mir::Function, is_typed_objects: bool) -> Self {
+    pub fn new(function: &idlc_mir::Function, is_no_typed_objects: bool) -> Self {
         let mut me = Self {
             args: vec![],
             pre: vec![],
             post: vec![],
-            is_typed_objects,
+            is_no_typed_objects,
             idx: 0,
         };
 
@@ -102,7 +102,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         ty: Option<&str>,
         cnt: idlc_mir::Count,
     ) {
-        let ty = if self.is_typed_objects {
+        let ty = if self.is_no_typed_objects {
             "Object".to_string()
         } else {
             ty.unwrap_or("Object").to_string()
@@ -163,7 +163,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
 
     fn visit_input_object(&mut self, ident: &idlc_mir::Ident, ty: Option<&str>) {
         let idx = self.idx();
-        let ty = if self.is_typed_objects {
+        let ty = if self.is_no_typed_objects {
             "Object".to_string()
         } else {
             ty.unwrap_or("Object").to_string()
@@ -228,7 +228,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         cnt: idlc_mir::Count,
     ) {
         let name = format!("{}", ident);
-        let ty = if self.is_typed_objects {
+        let ty = if self.is_no_typed_objects {
             "Object".to_string()
         } else {
             ty.unwrap_or("Object").to_string()
@@ -299,7 +299,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
 
     fn visit_output_object(&mut self, ident: &idlc_mir::Ident, ty: Option<&str>) {
         let idx = self.idx();
-        let ty = if self.is_typed_objects {
+        let ty = if self.is_no_typed_objects {
             "Object".to_string()
         } else {
             ty.unwrap_or("Object").to_string()
@@ -316,11 +316,11 @@ pub fn emit(
     iface_ident: &str,
     signature: &super::signature::Signature,
     counts: &idlc_codegen::counts::Counter,
-    is_typed_objects: bool,
+    is_no_typed_objects: bool,
 ) -> String {
     let ident = &function.ident;
 
-    let invoke = Invoke::new(function, is_typed_objects);
+    let invoke = Invoke::new(function, is_no_typed_objects);
     let pre = invoke.pre();
     let post = invoke.post();
     let args = invoke.args();

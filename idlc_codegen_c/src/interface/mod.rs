@@ -5,7 +5,7 @@ pub mod variable_names;
 
 use crate::types::change_const_primitive;
 
-pub fn emit_interface_impl(interface: &Interface, is_typed_objects: bool) -> String {
+pub fn emit_interface_impl(interface: &Interface, is_no_typed_objects: bool) -> String {
     let ident = interface.ident.to_string();
 
     let mut constants = String::new();
@@ -33,7 +33,8 @@ pub fn emit_interface_impl(interface: &Interface, is_typed_objects: bool) -> Str
             }
             InterfaceNode::Function(f) => {
                 let counts = idlc_codegen::counts::Counter::new(f);
-                let signature = functions::signature::Signature::new(f, &counts, is_typed_objects);
+                let signature =
+                    functions::signature::Signature::new(f, &counts, is_no_typed_objects);
                 let documentation = idlc_codegen::documentation::Documentation::new(
                     f,
                     idlc_codegen::documentation::DocumentationStyle::C,
@@ -70,7 +71,8 @@ pub fn emit_interface_impl(interface: &Interface, is_typed_objects: bool) -> Str
             }
             InterfaceNode::Function(f) => {
                 let counts = idlc_codegen::counts::Counter::new(f);
-                let signature = functions::signature::Signature::new(f, &counts, is_typed_objects);
+                let signature =
+                    functions::signature::Signature::new(f, &counts, is_no_typed_objects);
                 let documentation = idlc_codegen::documentation::Documentation::new(
                     f,
                     idlc_codegen::documentation::DocumentationStyle::C,
@@ -88,7 +90,7 @@ pub fn emit_interface_impl(interface: &Interface, is_typed_objects: bool) -> Str
             }
         }
     }
-    let object_defined = if is_typed_objects {
+    let object_defined = if is_no_typed_objects {
         "".to_string()
     } else {
         format!("typedef Object {ident};")
@@ -116,7 +118,7 @@ static inline int32_t
     )
 }
 
-pub fn emit_interface_invoke(interface: &Interface, is_typed_objects: bool) -> String {
+pub fn emit_interface_invoke(interface: &Interface, is_no_typed_objects: bool) -> String {
     let ident = interface.ident.to_string();
 
     let mut invokes = String::new();
@@ -126,14 +128,15 @@ pub fn emit_interface_invoke(interface: &Interface, is_typed_objects: bool) -> S
         iface.nodes.iter().for_each(|node| {
             if let InterfaceNode::Function(f) = node {
                 let counts = idlc_codegen::counts::Counter::new(f);
-                let signature = functions::signature::Signature::new(f, &counts, is_typed_objects);
+                let signature =
+                    functions::signature::Signature::new(f, &counts, is_no_typed_objects);
 
                 invokes.push_str(&functions::invoke::emit(
                     f,
                     &iface.ident,
                     &signature,
                     &counts,
-                    is_typed_objects,
+                    is_no_typed_objects,
                 ));
             }
         })
@@ -142,22 +145,25 @@ pub fn emit_interface_invoke(interface: &Interface, is_typed_objects: bool) -> S
     for node in &interface.nodes {
         if let InterfaceNode::Function(f) = node {
             let counts = idlc_codegen::counts::Counter::new(f);
-            let signature = functions::signature::Signature::new(f, &counts, is_typed_objects);
+            let signature = functions::signature::Signature::new(f, &counts, is_no_typed_objects);
 
             invokes.push_str(&functions::invoke::emit(
                 f,
                 &ident,
                 &signature,
                 &counts,
-                is_typed_objects,
+                is_no_typed_objects,
             ));
         }
     }
 
+    let typed_objects = (!is_no_typed_objects)
+        .then_some(format!(r#"typedef Object {ident};"#))
+        .unwrap_or_default();
+
     format!(
-        r#"
+        r#"{typed_objects}
 #define {ident}_DEFINE_INVOKE(func, prefix, type) \
-    typedef Object {ident}; \
     int32_t func(ObjectCxt h, ObjectOp op, ObjectArg *a, ObjectCounts k) \
     {{ \
         type me = (type) h; \

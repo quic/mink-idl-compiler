@@ -73,10 +73,10 @@ struct Cli {
     /// Dump various phases of the compiler and exit.
     dump: Option<Dumpable>,
 
-    #[arg(long = "typed-objects", default_value_t = false)]
+    #[arg(long = "no-typed-objects", default_value_t = false)]
     /// Forces C codegen to emit 'Object' as a object type instead of its own type.
     /// This option does NOT affect any other codegen backends.
-    typed_objects: bool,
+    no_typed_objects: bool,
 
     #[arg(long, default_value_t = false)]
     /// `idlc` by default is pedantic about integer widths overflowing.
@@ -157,7 +157,7 @@ fn main() {
         .unwrap_or_else(|| std::env::current_dir().unwrap());
     match (args.c, args.cpp, args.java, args.rust) {
         (true, false, false, false) => {
-            let c_gen = idlc_codegen_c::Generator::new(args.typed_objects);
+            let c_gen = idlc_codegen_c::Generator::new(args.no_typed_objects);
             let content = if args.skel {
                 timer::time!(c_gen.generate_invoke(&mir), "C invoke codegen")
             } else {

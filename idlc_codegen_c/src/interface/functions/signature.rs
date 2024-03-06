@@ -13,7 +13,7 @@ pub struct Signature {
 
     total_bundled_input: u8,
     total_bundled_output: u8,
-    is_typed_objects: bool,
+    is_no_typed_objects: bool,
 }
 
 pub fn iter_to_string(iter: impl Iterator<Item = impl AsRef<str>>) -> String {
@@ -41,7 +41,7 @@ impl Signature {
     pub fn new(
         function: &idlc_mir::Function,
         counts: &idlc_codegen::counts::Counter,
-        is_typed_objects: bool,
+        is_no_typed_objects: bool,
     ) -> Self {
         let mut me = Self {
             inputs: vec![],
@@ -51,7 +51,7 @@ impl Signature {
             input_obj_arg: vec![],
             total_bundled_input: counts.total_bundled_input,
             total_bundled_output: counts.total_bundled_output,
-            is_typed_objects,
+            is_no_typed_objects,
         };
 
         let packed_primitives = idlc_codegen::serialization::PackedPrimitives::new(function);
@@ -121,7 +121,7 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
 
     fn visit_input_object_array(&mut self, ident: &Ident, ty: Option<&str>, cnt: idlc_mir::Count) {
         let name = format!("(*{}_ptr)[{cnt}]", ident);
-        let ty = if self.is_typed_objects {
+        let ty = if self.is_no_typed_objects {
             "Object".to_string()
         } else {
             format!("{CONST} {}", ty.unwrap_or("Object"))
@@ -177,7 +177,7 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
     }
 
     fn visit_input_object(&mut self, ident: &Ident, ty: Option<&str>) {
-        let ty = if self.is_typed_objects {
+        let ty = if self.is_no_typed_objects {
             "Object"
         } else {
             ty.unwrap_or("Object")
@@ -237,7 +237,7 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
 
     fn visit_output_object_array(&mut self, ident: &Ident, ty: Option<&str>, cnt: idlc_mir::Count) {
         let name = format!("(*{}_ptr)[{cnt}]", ident);
-        let ty = if self.is_typed_objects {
+        let ty = if self.is_no_typed_objects {
             "Object".to_string()
         } else {
             ty.unwrap_or("Object").to_string()
@@ -292,7 +292,7 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
     }
 
     fn visit_output_object(&mut self, ident: &Ident, ty: Option<&str>) {
-        let ty = if self.is_typed_objects {
+        let ty = if self.is_no_typed_objects {
             "Object"
         } else {
             ty.unwrap_or("Object")
