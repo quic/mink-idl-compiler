@@ -1,9 +1,9 @@
-COMMENT_VARIANT_DOUBLESLASH = _{ "//" ~ (!NEWLINE ~ ANY)* ~ NEWLINE }
+COMMENT_VARIANT_DOUBLESLASH = _{ "//" ~ (!NEWLINE ~ ANY)* }
 COMMENT_VARIANT_ASTERISK    = _{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
 DOCUMENTATION               = @{ "/**" ~ NEWLINE ~ (!"*/" ~ ANY)* ~ "*/" }
 
 WHITESPACE = _{ " " | "\t" | NEWLINE }
-COMMENT    = _{ COMMENT_VARIANT_ASTERISK | COMMENT_VARIANT_DOUBLESLASH }
+COMMENT    = ${ DOCUMENTATION | COMMENT_VARIANT_ASTERISK | COMMENT_VARIANT_DOUBLESLASH }
 
 path    = @{ (!".idl" ~ ANY)+ ~ ".idl" }
 include = ${ "include" ~ " "+ ~ "\"" ~ path ~ "\"" }

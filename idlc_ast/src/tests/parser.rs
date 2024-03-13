@@ -184,10 +184,35 @@ fn comments() {
         COMMENT,
         [
             "// foo\n",
+            "// foo",
+            "/// foo\n",
             "// foo\n//bar\n",
+            "//** foo */",
             "/** foo */",
-            "/** foo \n bar */",
-            "/** foo \n bar */\n\n\n",
+            "/**foo \n bar */",
+            "/* foo \n bar */\n\n\n",
+            "/** @} */",
+        ]
+    );
+}
+
+#[test]
+fn documentation() {
+    valid!(
+        DOCUMENTATION,
+        [
+            "/**\nfoo\nbar */",
+            "/**\n foo \n bar */",
+            "/**\n foo\n\n\n bar */\n",
+        ]
+    );
+
+    invalid!(
+        DOCUMENTATION,
+        [
+            "/** foo */",
+            "/** \nfoo \n /**  bar\n */",
+            "/**    \n   foo \n bar \n*/\n\n\n",
         ]
     );
 }
