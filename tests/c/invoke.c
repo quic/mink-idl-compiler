@@ -76,7 +76,7 @@ int32_t itest1_test_f1(struct CTest1 *ctx, uint32_t a_val, uint32_t *b_ptr) {
   return Object_OK;
 }
 
-int32_t itest1_single_in(void *ctx, uint32_t input_val) {
+int32_t itest1_single_in(struct CTest1 *ctx, uint32_t input_val) {
   if (input_val == 0xdead) {
     return Object_OK;
   } else {
@@ -84,35 +84,35 @@ int32_t itest1_single_in(void *ctx, uint32_t input_val) {
   }
 }
 
-int32_t itest1_single_out(void *ctx, uint32_t *output_ptr) {
+int32_t itest1_single_out(struct CTest1 *ctx, uint32_t *output_ptr) {
   *output_ptr = 0xdead;
   return Object_OK;
 }
 
-int32_t itest1_single_primitive_in(void *ctx, const void *unused_ptr,
+int32_t itest1_single_primitive_in(struct CTest1 *ctx, const void *unused_ptr,
                                    size_t unused_len, void *unused2_ptr,
                                    size_t unused2_len, size_t *unused2_lenout,
                                    uint32_t input_val) {
   return itest1_single_in(ctx, input_val);
 }
-int32_t itest1_single_primitive_out(void *ctx, const void *unused_ptr,
+int32_t itest1_single_primitive_out(struct CTest1 *ctx, const void *unused_ptr,
                                     size_t unused_len, void *unused2_ptr,
                                     size_t unused2_len, size_t *unused2_lenout,
                                     uint32_t *output_ptr) {
   return itest1_single_out(ctx, output_ptr);
 }
 
-int32_t itest1_out_struct(void *ctx, Collection *output) {
+int32_t itest1_out_struct(struct CTest1 *ctx, Collection *output) {
   memcpy(output, &TRUTH, sizeof(TRUTH));
   return Object_OK;
 }
 
-int32_t itest1_in_struct(void *ctx, const Collection *input) {
+int32_t itest1_in_struct(struct CTest1 *ctx, const Collection *input) {
   ASSERT(memcmp(input, &TRUTH, sizeof(TRUTH)) == 0);
   return Object_OK;
 }
 
-int32_t itest1_multiple_primitive(void *ctx, const void *unused_ptr,
+int32_t itest1_multiple_primitive(struct CTest1 *ctx, const void *unused_ptr,
                                   size_t unused_len, void *unused2_ptr,
                                   size_t unused2_len, size_t *unused2_lenout,
                                   uint16_t input_val, uint16_t *output_ptr,
@@ -129,12 +129,12 @@ int32_t itest1_multiple_primitive(void *ctx, const void *unused_ptr,
 }
 
 int32_t itest1_primitive_plus_struct_in(
-    void *ctx, const SingleEncapsulated *encapsulated_ptr, uint32_t magic_val) {
+    struct CTest1 *ctx, const SingleEncapsulated *encapsulated_ptr, uint32_t magic_val) {
   ASSERT(encapsulated_ptr->inner == SUCCESS_FLAG && magic_val == SUCCESS_FLAG);
   return Object_OK;
 }
 
-int32_t itest1_primitive_plus_struct_out(void *ctx,
+int32_t itest1_primitive_plus_struct_out(struct CTest1 *ctx,
                                          SingleEncapsulated *encapsulated_ptr,
                                          uint32_t *magic_ptr) {
   encapsulated_ptr->inner = SUCCESS_FLAG;
@@ -142,7 +142,7 @@ int32_t itest1_primitive_plus_struct_out(void *ctx,
   return Object_OK;
 }
 
-int32_t itest1_bundled_with_unbundled(void *ctx,
+int32_t itest1_bundled_with_unbundled(struct CTest1 *ctx,
                                       const SingleEncapsulated *bundled_ptr,
                                       uint32_t magic_val,
                                       const Collection *unbundled_ptr) {
@@ -153,14 +153,14 @@ int32_t itest1_bundled_with_unbundled(void *ctx,
   return Object_OK;
 }
 
-int32_t itest1_well_documented_method(void *ctx, uint32_t foo_val,
+int32_t itest1_well_documented_method(struct CTest1 *ctx, uint32_t foo_val,
                                       uint32_t *bar_ptr) {
   ASSERT(foo_val == SUCCESS_FLAG);
   *bar_ptr = SUCCESS_FLAG;
   return Object_OK;
 }
 
-int32_t itest1_test_obj_array_in(void *ctx, const Object (*o_in_ptr)[3],
+int32_t itest1_test_obj_array_in(struct CTest1 *ctx, const Object (*o_in_ptr)[3],
                                  uint32_t *a_ptr) {
   for (size_t i = 0; i < 3; i++) {
     Object o = (*o_in_ptr)[i];
@@ -172,7 +172,7 @@ int32_t itest1_test_obj_array_in(void *ctx, const Object (*o_in_ptr)[3],
   return Object_OK;
 }
 
-int32_t itest1_test_obj_array_out(void *ctx, Object (*o_ptr)[3],
+int32_t itest1_test_obj_array_out(struct CTest1 *ctx, Object (*o_ptr)[3],
                                   uint32_t *a_ptr) {
   (*o_ptr)[0] = create_c_itest1(0);
   (*o_ptr)[1] = create_c_itest1(1);
@@ -181,7 +181,7 @@ int32_t itest1_test_obj_array_out(void *ctx, Object (*o_ptr)[3],
   return Object_OK;
 }
 
-int32_t itest1_objects_in_struct(void *ctx, const ObjInStruct *input,
+int32_t itest1_objects_in_struct(struct CTest1 *ctx, const ObjInStruct *input,
                                  ObjInStruct *output) {
   CHECK_OK(test_singular_object(input->first_obj));
   ASSERT(Object_isNull(input->should_be_empty));
@@ -266,6 +266,8 @@ int32_t itest2_entrypoint(void *ctx, Object itest1) {
   Object_ASSIGN_NULL(output_struct.first_obj);
   Object_ASSIGN_NULL(output_struct.second_obj);
   Object_ASSIGN_NULL(output_struct.should_be_empty);
+
+  ASSERT(ITest1_un_implemented(itest1, 3) == Object_ERROR_INVALID);
 
   return Object_OK;
 }

@@ -46,24 +46,24 @@ int32_t itest1_retain(struct CTest1 *ctx);
 
 int32_t itest1_test_f1(struct CTest1 *ctx, uint32_t a_val, uint32_t *b_ptr);
 
-int32_t itest1_single_in(void *ctx, uint32_t input_val);
+int32_t itest1_single_in(struct CTest1 *ctx, uint32_t input_val);
 
-int32_t itest1_single_out(void *ctx, uint32_t *output_ptr);
+int32_t itest1_single_out(struct CTest1 *ctx, uint32_t *output_ptr);
 
-int32_t itest1_single_primitive_in(void *ctx, const void *unused_ptr,
+int32_t itest1_single_primitive_in(struct CTest1 *ctx, const void *unused_ptr,
                                    size_t unused_len, void *unused2_ptr,
                                    size_t unused2_len, size_t *unused2_lenout,
                                    uint32_t input_val);
-int32_t itest1_single_primitive_out(void *ctx, const void *unused_ptr,
+int32_t itest1_single_primitive_out(struct CTest1 *ctx, const void *unused_ptr,
                                     size_t unused_len, void *unused2_ptr,
                                     size_t unused2_len, size_t *unused2_lenout,
                                     uint32_t *output_ptr);
 
-int32_t itest1_out_struct(void *ctx, Collection *output);
+int32_t itest1_out_struct(struct CTest1 *ctx, Collection *output);
 
-int32_t itest1_in_struct(void *ctx, const Collection *input);
+int32_t itest1_in_struct(struct CTest1 *ctx, const Collection *input);
 
-int32_t itest1_multiple_primitive(void *ctx, const void *unused_ptr,
+int32_t itest1_multiple_primitive(struct CTest1 *ctx, const void *unused_ptr,
                                   size_t unused_len, void *unused2_ptr,
                                   size_t unused2_len, size_t *unused2_lenout,
                                   uint16_t input_val, uint16_t *output_ptr,
@@ -73,26 +73,26 @@ int32_t itest1_multiple_primitive(void *ctx, const void *unused_ptr,
                                   size_t *unused5_lenout);
 
 int32_t itest1_primitive_plus_struct_in(
-    void *ctx, const SingleEncapsulated *encapsulated_ptr, uint32_t magic_val);
+    struct CTest1 *ctx, const SingleEncapsulated *encapsulated_ptr, uint32_t magic_val);
 
-int32_t itest1_primitive_plus_struct_out(void *ctx,
+int32_t itest1_primitive_plus_struct_out(struct CTest1 *ctx,
                                          SingleEncapsulated *encapsulated_ptr,
                                          uint32_t *magic_ptr);
 
-int32_t itest1_bundled_with_unbundled(void *ctx,
+int32_t itest1_bundled_with_unbundled(struct CTest1 *ctx,
                                       const SingleEncapsulated *bundled_ptr,
                                       uint32_t magic_val,
                                       const Collection *unbundled_ptr);
-int32_t itest1_well_documented_method(void *ctx, uint32_t foo_val,
+int32_t itest1_well_documented_method(struct CTest1 *ctx, uint32_t foo_val,
                                       uint32_t *bar_ptr);
 
-int32_t itest1_test_obj_array_in(void *ctx, const Object (*o_in_ptr)[3],
+int32_t itest1_test_obj_array_in(struct CTest1 *ctx, const Object (*o_in_ptr)[3],
                                  uint32_t *a_ptr);
 
-int32_t itest1_test_obj_array_out(void *ctx, Object (*o_ptr)[3],
+int32_t itest1_test_obj_array_out(struct CTest1 *ctx, Object (*o_ptr)[3],
                                   uint32_t *a_ptr);
 
-int32_t itest1_objects_in_struct(void *ctx, const ObjInStruct *input,
+int32_t itest1_objects_in_struct(struct CTest1 *ctx, const ObjInStruct *input,
                                  ObjInStruct *output);
 
 #ifdef __cplusplus

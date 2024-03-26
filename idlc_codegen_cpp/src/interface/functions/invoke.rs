@@ -188,6 +188,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
 
 pub fn emit(
     function: &idlc_mir::Function,
+    weak_declarations: &mut String,
     signature: &super::signature::Signature,
     counts: &idlc_codegen::counts::Counter,
 ) -> String {
@@ -207,6 +208,16 @@ pub fn emit(
     if !return_idents.is_empty() {
         return_idents.remove(0);
     }
+
+    let mut params =
+        idlc_codegen_c::interface::functions::signature::iter_to_string(signature.params());
+    if !params.is_empty() {
+        params.remove(0);
+    }
+    weak_declarations.push_str(&format!(
+        r#"virtual int32_t {ident}({params}) {{ return Object_ERROR_INVALID; }}
+    "#
+    ));
 
     let counts = format!(
         "({0}, {1}, {2}, {3})",

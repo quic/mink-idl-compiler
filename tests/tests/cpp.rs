@@ -8,9 +8,9 @@ use idlc_test::{
 
 #[test]
 fn implementation() {
-    let c_wrapper = unsafe { create_itest2().unwrap() };
+    let cpp_wrapper = unsafe { create_itest2().unwrap() };
     let input = implementation::ITest1::default().into();
-    assert_eq!(c_wrapper.entrypoint(Some(&input)), Ok(()));
+    assert_eq!(cpp_wrapper.entrypoint(Some(&input)), Ok(()));
 }
 
 #[test]

@@ -51,6 +51,8 @@ impl IITest2 for ITest2 {
         assert_eq!(output.should_be_empty, None);
         super::test_singlular_object(output.second_obj.as_ref()).unwrap();
 
+        assert_eq!(o.un_implemented(3), Err(crate::object::error::generic::INVALID.into()));
+
         Ok(())
     }
 }

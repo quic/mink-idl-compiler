@@ -373,6 +373,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
 
 pub fn emit(
     function: &idlc_mir::Function,
+    weak_declarations: &mut String,
     iface_ident: &str,
     signature: &super::signature::Signature,
     counts: &idlc_codegen::counts::Counter,
@@ -386,6 +387,11 @@ pub fn emit(
     let args = invoke.args();
 
     let return_idents = super::signature::iter_to_string(signature.return_idents());
+    let params = super::signature::iter_to_string(signature.params());
+    weak_declarations.push_str(&format!(
+        r#"int32_t prefix##{ident}(type ctx{params}) __attribute__((weak)); \
+        "#
+    ));
 
     let counts = format!(
         "({0},{1},{2},{3})",
@@ -399,7 +405,12 @@ pub fn emit(
                     break; \
                 }} \
                 {pre} \
-                int32_t r = prefix##{ident}(me{return_idents}); \
+                int32_t r; \
+                if (prefix##{ident} != NULL) {{ \
+                    r = prefix##{ident}(me{return_idents}); \
+                }} else {{ \
+                    return Object_ERROR_INVALID; \
+                }} \
                 {post} \
                 return r; \
             }} "#

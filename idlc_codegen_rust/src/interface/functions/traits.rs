@@ -1,3 +1,4 @@
+use crate::interface::mink_primitives::GENERIC_ERROR;
 pub fn emit(
     function: &idlc_mir::Function,
     documentation: &str,
@@ -9,7 +10,9 @@ pub fn emit(
     format!(
         r#"
     {documentation}
-    fn r#{ident}(&mut self, {params}) -> Result<({returns}), Error>
+    fn r#{ident}(&mut self, {params}) -> Result<({returns}), Error> {{
+        Err({GENERIC_ERROR}::INVALID.into())
+    }}
     "#
     )
 }

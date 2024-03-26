@@ -48,6 +48,7 @@ interface ITest1 {
   method test_obj_array_in(in ITest1[3] o_in, out uint32 a);
   method test_obj_array_out(out ITest1[3] out, out uint32 a);
   method objects_in_struct(in ObjInStruct input, out ObjInStruct output);
+  method un_implemented(in uint32 foo); // this method should NOT have an implementation and that is OK
 
 };
 

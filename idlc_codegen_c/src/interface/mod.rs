@@ -122,6 +122,7 @@ pub fn emit_interface_invoke(interface: &Interface, is_no_typed_objects: bool) -
     let ident = interface.ident.to_string();
 
     let mut invokes = String::new();
+    let mut weak_declarations = String::new();
 
     // need to have all of the base-class functions
     interface.iter().skip(1).for_each(|iface| {
@@ -130,9 +131,9 @@ pub fn emit_interface_invoke(interface: &Interface, is_no_typed_objects: bool) -
                 let counts = idlc_codegen::counts::Counter::new(f);
                 let signature =
                     functions::signature::Signature::new(f, &counts, is_no_typed_objects);
-
                 invokes.push_str(&functions::invoke::emit(
                     f,
+                    &mut weak_declarations,
                     &iface.ident,
                     &signature,
                     &counts,
@@ -146,9 +147,9 @@ pub fn emit_interface_invoke(interface: &Interface, is_no_typed_objects: bool) -
         if let InterfaceNode::Function(f) = node {
             let counts = idlc_codegen::counts::Counter::new(f);
             let signature = functions::signature::Signature::new(f, &counts, is_no_typed_objects);
-
             invokes.push_str(&functions::invoke::emit(
                 f,
+                &mut weak_declarations,
                 &ident,
                 &signature,
                 &counts,
@@ -161,11 +162,14 @@ pub fn emit_interface_invoke(interface: &Interface, is_no_typed_objects: bool) -
         .then_some(format!(r#"typedef Object {ident};"#))
         .unwrap_or_default();
 
+    // weak_delcarations goes inside `func` to preserve the expected when the macro is instantiated
+    // with `static IFoo_DEFINE_INVOKE`. It is OK to declare functions within functions for C.
     format!(
         r#"{typed_objects}
 #define {ident}_DEFINE_INVOKE(func, prefix, type) \
     int32_t func(ObjectCxt h, ObjectOp op, ObjectArg *a, ObjectCounts k) \
     {{ \
+        {weak_declarations} \
         type me = (type) h; \
         switch (ObjectOp_methodID(op)) {{ \
             case Object_OP_release: {{ \

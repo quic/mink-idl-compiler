@@ -66,10 +66,7 @@ pub fn emit(interface: &Interface) -> String {
             });
     });
 
-    let mut trait_functions = trait_functions.join(";");
-    if !trait_functions.is_empty() {
-        trait_functions.push(';');
-    }
+    let trait_functions = trait_functions.concat();
     let implementations = implementations.concat();
     let invoke_arms = invoke_arms.join(",");
 

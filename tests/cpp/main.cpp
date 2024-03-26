@@ -195,6 +195,8 @@ public:
     Object_ASSIGN_NULL(output_struct.second_obj);
     Object_ASSIGN_NULL(output_struct.should_be_empty);
 
+    ASSERT(me.un_implemented(3) == Object_ERROR_INVALID);
+
     return Object_OK;
   }
 };

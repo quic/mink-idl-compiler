@@ -7,7 +7,7 @@ pub fn emit(
     let params = super::signature::iter_to_string(signature.params());
     format!(
         r#"{documentation}
-    void {ident}({params}) throws IMinkObject.InvokeException;
+    default void {ident}({params}) throws IMinkObject.InvokeException {{ throw new IMinkObject.InvokeException(IMinkObject.ERROR_INVALID); }}
     "#
     )
 }
