@@ -166,10 +166,22 @@ pub fn emit_interface_invoke(interface: &Interface, is_no_typed_objects: bool) -
     // with `static IFoo_DEFINE_INVOKE`. It is OK to declare functions within functions for C.
     format!(
         r#"{typed_objects}
+#ifdef __clang__
+#define __compiler_pragma_pre \
+    _Pragma("clang diagnostic push") \
+    _Pragma("clang diagnostic ignored \"-Wignored-attributes\"")
+#define __compiler_pragma_post _Pragma("clang diagnostic pop")
+#else
+#define __compiler_pragma_pre
+#define __compiler_pragma_post
+#endif
+
 #define {ident}_DEFINE_INVOKE(func, prefix, type) \
     int32_t func(ObjectCxt h, ObjectOp op, ObjectArg *a, ObjectCounts k) \
     {{ \
+        __compiler_pragma_pre \
         {weak_declarations} \
+        __compiler_pragma_post \
         type me = (type) h; \
         switch (ObjectOp_methodID(op)) {{ \
             case Object_OP_release: {{ \

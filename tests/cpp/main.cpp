@@ -111,7 +111,8 @@ public:
     ASSERT(Object_isNull(input_ref.should_be_empty));
     CHECK_OK(test_singular_object(input_ref.second_obj));
 
-    for (size_t i = 0; i < sizeof(input_ref.p1) / sizeof(input_ref.p1[0]); i++) {
+    for (size_t i = 0; i < sizeof(input_ref.p1) / sizeof(input_ref.p1[0]);
+         i++) {
       ASSERT(input_ref.p1[i] == SUCCESS_FLAG);
       ASSERT(input_ref.p2[i] == SUCCESS_FLAG);
       ASSERT(input_ref.p3[i] == SUCCESS_FLAG);
@@ -152,7 +153,8 @@ public:
     ASSERT(!Object_isNull(itest1));
     CHECK_OK(test_singular_object(itest1));
 
-    cpp::ITest1 objects[3] = {create_cpp_itest1(1), Object_NULL, create_cpp_itest1(2)};
+    cpp::ITest1 objects[3] = {create_cpp_itest1(1), Object_NULL,
+                              create_cpp_itest1(2)};
     cpp::ITest1 objects_out[3] = {Object_NULL, Object_NULL, Object_NULL};
     uint32_t a = 0;
     CHECK_OK(me.test_obj_array_in(objects, &a));
@@ -177,7 +179,7 @@ public:
     memcpy(&input_struct.p1, VALID_PS, sizeof(VALID_PS));
     memcpy(&input_struct.p2, VALID_PS, sizeof(VALID_PS));
     memcpy(&input_struct.p3, VALID_PS, sizeof(VALID_PS));
-    cpp::ObjInStruct output_struct = {0};
+    cpp::ObjInStruct output_struct{};
     CHECK_OK(me.objects_in_struct(input_struct, &output_struct));
     ASSERT(memcmp(&output_struct.p1, VALID_PS, sizeof(VALID_PS)) == 0);
     ASSERT(memcmp(&output_struct.p2, VALID_PS, sizeof(VALID_PS)) == 0);
