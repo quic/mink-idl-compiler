@@ -10,6 +10,8 @@ env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
   RUSTDOCFLAGS: -D warnings
+  CC: clang
+  CXX: clang++
 
 jobs:
   build:
