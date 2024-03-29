@@ -6,7 +6,7 @@ WHITESPACE = _{ " " | "\t" | NEWLINE }
 COMMENT    = ${ DOCUMENTATION | COMMENT_VARIANT_ASTERISK | COMMENT_VARIANT_DOUBLESLASH }
 
 path    = @{ (!".idl" ~ ANY)+ ~ ".idl" }
-include = ${ "include" ~ " "+ ~ "\"" ~ path ~ "\"" }
+include = ${ "include" ~ WHITESPACE+ ~ "\"" ~ path ~ "\"" }
 
 ident          = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
 integer_type   = @{ "u"? ~ "int" ~ ("8" | "16" | "32" | "64") }
@@ -18,18 +18,24 @@ array_size      = @{ ASCII_DIGIT+ }
 bounded_array   =  { "[" ~ array_size ~ "]" }
 unbounded_array =  { "[" ~ "]" }
 
-struct_field = { (primitive_type | ident) ~ bounded_array? ~ ident ~ ";" }
-struct       = { "struct " ~ (!"interface" ~ ident) ~ "{" ~ (struct_field)+ ~ "};" }
+struct_field   =  { (primitive_type | ident) ~ bounded_array? ~ ident ~ ";" }
+struct_keyword = @{ "struct" ~ WHITESPACE }
+struct         =  { struct_keyword ~ (!"interface" ~ ident) ~ "{" ~ (struct_field)+ ~ "};" }
 
-const = { "const " ~ primitive_type ~ ident ~ "=" ~ value ~ ";" }
+const_keyword = @{ "const" ~ WHITESPACE }
+const         =  { const_keyword ~ primitive_type ~ ident ~ "=" ~ value ~ ";" }
 
-param_type =  { ((ident | "interface") ~ bounded_array) | ((primitive_type | !"interface" ~ ident) ~ unbounded_array) | primitive_type | ident | "interface" | "buffer" }
-mutability = @{ ("in" | "out") }
-param      =  { mutability ~ param_type ~ ident }
-function   =  { "method " ~ ident ~ "(" ~ param? ~ ("," ~ param)* ~ ");" }
+param_type       =  { ((ident | "interface") ~ bounded_array) | ((primitive_type | !"interface" ~ ident) ~ unbounded_array) | primitive_type | ident | "interface" | "buffer" }
+mutability       = @{ ("in" | "out") }
+param            =  { mutability ~ param_type ~ ident }
+function_keyword = @{ "method" ~ WHITESPACE }
+function         =  { function_keyword ~ ident ~ "(" ~ param? ~ ("," ~ param)* ~ ");" }
 
-error     = { "error " ~ ident ~ ";" }
-iname     = { ident ~ (":" ~ ident)? }
-interface = { "interface " ~ iname ~ "{" ~ (function | const | error)* ~ "};" }
+error_keyword = @{ "error" ~ WHITESPACE }
+error         =  { error_keyword ~ ident ~ ";" }
+
+iname             =  { ident ~ (":" ~ ident)? }
+interface_keyword = @{ "interface" ~ WHITESPACE }
+interface         =  { interface_keyword ~ iname ~ "{" ~ (function | const | error)* ~ "};" }
 
 idl = { SOI ~ include* ~ (const | struct | interface)* ~ EOI }

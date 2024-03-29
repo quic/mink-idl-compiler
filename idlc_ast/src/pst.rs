@@ -81,11 +81,11 @@ impl InterfaceNode {
         match pair.as_rule() {
             Rule::error => Self::Error(Ident {
                 span: pair.as_span().into(),
-                ident: pair.into_inner().as_str().to_string(),
+                ident: pair.into_inner().nth(1).unwrap().as_str().to_string(),
             }),
             Rule::r#const => Self::Const(parse_const(pair, allow_undefined_behavior)),
             Rule::function => {
-                let mut inner = pair.into_inner();
+                let mut inner = pair.into_inner().skip(1);
                 let ident = ast_unwrap!(inner.next()).into();
                 let mut params = Vec::new();
                 for param in inner {
@@ -216,7 +216,7 @@ fn parse_include(pair: Pair<Rule>) -> Rc<Node> {
 }
 
 fn parse_struct(pair: Pair<Rule>) -> Rc<Node> {
-    let mut struct_pst = pair.into_inner();
+    let mut struct_pst = pair.into_inner().skip(1);
     let ident: Ident = ast_unwrap!(struct_pst.next()).into();
     let mut fields = Vec::<StructField>::new();
     for rule in struct_pst {
@@ -250,23 +250,23 @@ fn parse_struct(pair: Pair<Rule>) -> Rc<Node> {
             Rule::COMMENT => {
                 // Currently unsupported for structs due to varying styles
             }
-            _ => unreachable!(),
+            r => unreachable!("Unknown rule `{r:?}`"),
         }
     }
     Rc::new(Node::Struct(Struct { ident, fields }))
 }
 
 fn parse_const(pair: Pair<Rule>, allow_undefined_behavior: bool) -> Const {
-    let mut inner = pair.into_inner();
+    let mut inner = pair.into_inner().skip(1);
 
-    let idl_type = ast_unwrap!(inner.next()).as_str();
+    let ty = ast_unwrap!(inner.next()).as_str();
     let ident = ast_unwrap!(inner.next()).into();
     let value = ast_unwrap!(inner.next()).as_str();
     let primitive = if allow_undefined_behavior {
-        Primitive::try_from(idl_type).unwrap()
+        Primitive::try_from(ty).unwrap()
     } else {
-        Primitive::new(idl_type, value).unwrap_or_else(|e| {
-            idlc_errors::unrecoverable!("'{value}' isn't in range for type '{idl_type}' [{e}]")
+        Primitive::new(ty, value).unwrap_or_else(|e| {
+            idlc_errors::unrecoverable!("'{value}' isn't in range for type '{ty}' [{e}]")
         })
     };
 
@@ -279,7 +279,7 @@ fn parse_const(pair: Pair<Rule>, allow_undefined_behavior: bool) -> Const {
 
 fn parse_interface(pair: Pair<Rule>, allow_undefined_behavior: bool) -> Rc<Node> {
     let span = Span::from(pair.as_span());
-    let mut interface = pair.into_inner();
+    let mut interface = pair.into_inner().skip(1);
     let mut pairs = ast_unwrap!(interface.next()).into_inner();
     let ident = ast_unwrap!(pairs.next()).as_str().to_string();
     let base = pairs

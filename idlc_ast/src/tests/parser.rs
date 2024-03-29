@@ -12,6 +12,7 @@ fn invalid_includes() {
             r#"include "header.idl.xyz""#,
             r#"include "header.idl.idl""#,
             r#"include"header.idl""#,
+            r#"include"header.idl""#,
         ]
     );
 }
@@ -30,6 +31,8 @@ fn valid_includes() {
             r#"include   "/path/to/.header with space.idl""#,
             r#"include   "/.path/to/.header.idl""#,
             r#"include "../path/to/header.idl""#,
+            "include\t\"header.idl\"",
+            "include\n\"header.idl\"",
         ]
     );
 }
@@ -93,6 +96,8 @@ fn r#struct() {
                   uint64 g;
                   uint64 h;
             };",
+            "struct\ttest {uint8 test;};",
+            "struct\ntest {uint8 test;};",
         ]
     );
 
@@ -103,6 +108,7 @@ fn r#struct() {
             "struct interface {uint8 test;};",
             "struct test { uint8[32] 123test; };",
             "struct test { buffer untyped_buffer };",
+            "structtest {uint8 test;};",
         ]
     );
 }
@@ -123,6 +129,9 @@ fn consts() {
             "const float32 foo = -5.123213;",
             "const float32 bar = 5.123213;",
             "const uint8 bar = -0xabc;",
+            "const               uint8 foo = 123;",
+            "const\tuint8 bar = -0xabc;",
+            "const\n\nuint8 bar = -0xabc;",
         ]
     );
 
@@ -134,6 +143,7 @@ fn consts() {
             "const uint8 bar = abc;",
             "const uint8 bar = -abc;",
             "const float32 bar = 5.;",
+            "constuint8 foo = 123;",
         ]
     );
 }
@@ -156,6 +166,8 @@ fn function() {
             r"method bar(in uint32 req,
                           out uint32 foo,
                           out uint32 bar);",
+            "method\tfoo(in buffer req, out buffer rsp);",
+            "method\nfoo(in buffer req, out buffer rsp);",
         ]
     );
 
@@ -174,6 +186,7 @@ fn function() {
             "method foo(in uint32 123req);",
             "method foo()",
             "method bar(in 2IHWKey x,    out IHWKeyFactory2 y);",
+            "methodfoo();",
         ]
     );
 }
@@ -224,6 +237,8 @@ fn interface() {
         [
             "interface ITest {};",
             "interface ITest: IBase { error tmp; };",
+            "interface\tITest: IBase { error tmp; };",
+            "interface\nITest: IBase { error tmp; };",
         ]
     );
 
@@ -233,6 +248,23 @@ fn interface() {
             "interface 12ITest {};",
             "interface 12ITest {abc};",
             "interface ITest: IBase IBase2 {};",
+            "interfaceITest {};",
         ]
     );
+}
+
+#[test]
+fn errors() {
+    valid!(
+        error,
+        [
+            "error ERROR_FOO;",
+            "error ERROR_BAR ; ",
+            "error axybs;",
+            "error\naxybs;",
+            "error\taxybs;",
+        ]
+    );
+
+    invalid!(error, ["error 12ERROR;", "errorERROR;",]);
 }
