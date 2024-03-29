@@ -37,10 +37,18 @@ impl From<pest::error::Error<Rule>> for Error {
 pub(crate) struct IDLParser;
 
 macro_rules! ast_unwrap {
-    ($e: expr) => {
+    ($e: expr) => {{
+        #[cfg(debug_assertions)]
+        {
+            $e.unwrap()
+        }
+
+        #[cfg(not(debug_assertions))]
         // Safety: PST to AST is a 1-to-1 transition and can never fail.
-        unsafe { ($e).unwrap_unchecked() }
-    };
+        unsafe {
+            ($e).unwrap_unchecked()
+        }
+    }};
 }
 
 impl From<pest::Span<'_>> for Span {
