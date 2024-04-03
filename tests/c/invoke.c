@@ -128,8 +128,10 @@ int32_t itest1_multiple_primitive(struct CTest1 *ctx, const void *unused_ptr,
   return Object_OK;
 }
 
-int32_t itest1_primitive_plus_struct_in(
-    struct CTest1 *ctx, const SingleEncapsulated *encapsulated_ptr, uint32_t magic_val) {
+int32_t
+itest1_primitive_plus_struct_in(struct CTest1 *ctx,
+                                const SingleEncapsulated *encapsulated_ptr,
+                                uint32_t magic_val) {
   ASSERT(encapsulated_ptr->inner == SUCCESS_FLAG && magic_val == SUCCESS_FLAG);
   return Object_OK;
 }
@@ -153,15 +155,18 @@ int32_t itest1_bundled_with_unbundled(struct CTest1 *ctx,
   return Object_OK;
 }
 
-int32_t itest1_well_documented_method(struct CTest1 *ctx, uint32_t foo_val,
-                                      uint32_t *bar_ptr) {
+int32_t itest1_well_documented_method_real(struct CTest1 *ctx, uint32_t foo_val,
+                                           uint32_t *bar_ptr) {
   ASSERT(foo_val == SUCCESS_FLAG);
   *bar_ptr = SUCCESS_FLAG;
   return Object_OK;
 }
 
-int32_t itest1_test_obj_array_in(struct CTest1 *ctx, const Object (*o_in_ptr)[3],
-                                 uint32_t *a_ptr) {
+#define itest1_well_documented_method(a, b, c)                                 \
+  itest1_well_documented_method_real(a, b, c)
+
+int32_t itest1_test_obj_array_in(struct CTest1 *ctx,
+                                 const Object (*o_in_ptr)[3], uint32_t *a_ptr) {
   for (size_t i = 0; i < 3; i++) {
     Object o = (*o_in_ptr)[i];
     if (!Object_isNull(o)) {
@@ -267,7 +272,7 @@ int32_t itest2_entrypoint(void *ctx, Object itest1) {
   Object_ASSIGN_NULL(output_struct.second_obj);
   Object_ASSIGN_NULL(output_struct.should_be_empty);
 
-  ASSERT(ITest1_un_implemented(itest1, 3) == Object_ERROR_INVALID);
+  ASSERT(ITest1_unimplemented(itest1, 3) == Object_ERROR_INVALID);
 
   return Object_OK;
 }

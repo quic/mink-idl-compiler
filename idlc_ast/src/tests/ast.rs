@@ -76,3 +76,18 @@ fn ensure_boundaries() {
     f64_min.push('1'); // underflow f64
     check!("float64", Primitive::Float64, f64, &f64_max, &f64_min);
 }
+
+#[test]
+#[should_panic = "Duplicate attribute"]
+fn duplicately_defined_function_attribute() {
+    crate::from_string(
+        std::path::PathBuf::new(),
+        r"interface IFoo {
+        #[optional]
+        #[optional]
+        method tmp();
+    };",
+        false,
+    )
+    .unwrap_err();
+}

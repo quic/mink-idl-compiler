@@ -86,7 +86,7 @@ public:
         (const Collection *)&unbundled_ref);
   }
   int32_t well_documented_method(uint32_t foo_val, uint32_t *bar_ptr) {
-    return itest1_well_documented_method(&this->ctest, foo_val, bar_ptr);
+    return itest1_well_documented_method_real(&this->ctest, foo_val, bar_ptr);
   }
   int32_t test_obj_array_in(const cpp::ITest1 (&o_in_ptr)[3], uint32_t *a_ptr) {
     for (size_t i = 0; i < 3; i++) {
@@ -197,7 +197,7 @@ public:
     Object_ASSIGN_NULL(output_struct.second_obj);
     Object_ASSIGN_NULL(output_struct.should_be_empty);
 
-    ASSERT(me.un_implemented(3) == Object_ERROR_INVALID);
+    ASSERT(me.unimplemented(3) == Object_ERROR_INVALID);
 
     return Object_OK;
   }

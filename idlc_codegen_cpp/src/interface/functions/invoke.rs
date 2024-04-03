@@ -214,10 +214,11 @@ pub fn emit(
     if !params.is_empty() {
         params.remove(0);
     }
-    weak_declarations.push_str(&format!(
-        r#"virtual int32_t {ident}({params}) {{ return Object_ERROR_INVALID; }}
-    "#
-    ));
+    if function.is_optional() {
+        weak_declarations.push_str(&format!(
+            "virtual int32_t {ident}({params}) {{ return Object_ERROR_INVALID; }}\n"
+        ));
+    }
 
     let counts = format!(
         "({0}, {1}, {2}, {3})",

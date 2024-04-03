@@ -25,11 +25,13 @@ struct         =  { struct_keyword ~ (!"interface" ~ ident) ~ "{" ~ (struct_fiel
 const_keyword = @{ "const" ~ WHITESPACE }
 const         =  { const_keyword ~ primitive_type ~ ident ~ "=" ~ value ~ ";" }
 
-param_type       =  { ((ident | "interface") ~ bounded_array) | ((primitive_type | !"interface" ~ ident) ~ unbounded_array) | primitive_type | ident | "interface" | "buffer" }
-mutability       = @{ ("in" | "out") }
-param            =  { mutability ~ param_type ~ ident }
-function_keyword = @{ "method" ~ WHITESPACE }
-function         =  { function_keyword ~ ident ~ "(" ~ param? ~ ("," ~ param)* ~ ");" }
+supported_attributes = @{ "optional" }
+attribute            = ${ "#[" ~ supported_attributes ~ "]" }
+param_type           =  { ((ident | "interface") ~ bounded_array) | ((primitive_type | !"interface" ~ ident) ~ unbounded_array) | primitive_type | ident | "interface" | "buffer" }
+mutability           = @{ ("in" | "out") }
+param                =  { mutability ~ param_type ~ ident }
+function_keyword     = @{ (WHITESPACE* ~ attribute ~ WHITESPACE)* ~ WHITESPACE* ~ "method" ~ WHITESPACE }
+function             =  { function_keyword ~ ident ~ "(" ~ param? ~ ("," ~ param)* ~ ");" }
 
 error_keyword = @{ "error" ~ WHITESPACE }
 error         =  { error_keyword ~ ident ~ ";" }

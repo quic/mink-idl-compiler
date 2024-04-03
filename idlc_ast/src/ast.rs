@@ -100,11 +100,17 @@ pub enum InterfaceNode {
     Error(Ident),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum FunctionAttribute {
+    Optional,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Function {
     pub doc: Option<Documentation>,
     pub ident: Ident,
     pub params: Vec<Param>,
+    pub attributes: Vec<FunctionAttribute>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

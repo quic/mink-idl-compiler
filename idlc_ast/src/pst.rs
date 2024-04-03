@@ -5,8 +5,8 @@ use pest_derive::Parser;
 
 // Import all AST types
 use super::ast::{
-    Const, Count, Documentation, Function, Ident, Interface, InterfaceNode, Node, Param,
-    ParamTypeIn, ParamTypeOut, Primitive, Span, Struct, StructField, Type,
+    Const, Count, Documentation, Function, FunctionAttribute, Ident, Interface, InterfaceNode,
+    Node, Param, ParamTypeIn, ParamTypeOut, Primitive, Span, Struct, StructField, Type,
 };
 
 #[derive(thiserror::Error, Debug)]
@@ -85,7 +85,22 @@ impl InterfaceNode {
             }),
             Rule::r#const => Self::Const(parse_const(pair, allow_undefined_behavior)),
             Rule::function => {
-                let mut inner = pair.into_inner().skip(1);
+                let mut inner = pair.into_inner();
+                let mut attributes = Vec::new();
+                let function_keyword = ast_unwrap!(inner.next());
+                for attribute in function_keyword.into_inner() {
+                    if attribute.as_rule() != Rule::attribute {
+                        break;
+                    }
+
+                    let span = attribute.as_span();
+                    let attr = FunctionAttribute::from(attribute);
+                    if attributes.contains(&attr) {
+                        idlc_errors::unrecoverable!("Duplicate attribute at:\n`{span:#?}`");
+                    } else {
+                        attributes.push(attr);
+                    }
+                }
                 let ident = ast_unwrap!(inner.next()).into();
                 let mut params = Vec::new();
                 for param in inner {
@@ -93,9 +108,28 @@ impl InterfaceNode {
                         params.push(Param::from(param));
                     }
                 }
-                Self::Function(Function { doc, ident, params })
+                Self::Function(Function {
+                    doc,
+                    ident,
+                    params,
+                    attributes,
+                })
             }
             _ => unreachable!(),
+        }
+    }
+}
+
+impl<'a> From<Pair<'a, Rule>> for FunctionAttribute {
+    fn from(value: Pair<'a, Rule>) -> Self {
+        debug_assert_eq!(value.as_rule(), Rule::attribute);
+        let attribute = ast_unwrap!(value.into_inner().next());
+        debug_assert_eq!(attribute.as_rule(), Rule::supported_attributes);
+        match attribute.as_str() {
+            "optional" => Self::Optional,
+            attr => {
+                idlc_errors::unrecoverable!("Unknown function attribute `{attr}`")
+            }
         }
     }
 }

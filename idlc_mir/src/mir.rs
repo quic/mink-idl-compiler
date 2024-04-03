@@ -419,6 +419,14 @@ pub struct Function {
     pub ident: Ident,
     pub params: Vec<Param>,
     pub id: u32,
+    pub attributes: Vec<idlc_ast::FunctionAttribute>,
+}
+
+impl Function {
+    pub fn is_optional(&self) -> bool {
+        self.attributes
+            .contains(&idlc_ast::FunctionAttribute::Optional)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -510,6 +518,7 @@ fn parse_interface(
                     ident,
                     params,
                     id: *op_code,
+                    attributes: function.attributes.clone(),
                 }));
                 if *op_code > MAX_OP_CODE {
                     panic!("Numbers of functions should be lesser than 0x3fff");
