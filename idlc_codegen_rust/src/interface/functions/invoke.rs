@@ -314,7 +314,7 @@ pub fn emit(
 
         {pre}
 
-        match (*{CONTEXT}).inner.r#{ident}({params}) {{
+        match (*{CONTEXT}).inner.lock().map_err(|_| std::mem::transmute({GENERIC_ERROR}::INVALID)).and_then(|mut cx| cx.r#{ident}({params})) {{
             Ok(({returns})) => {{
                 {post}
                 {OK}

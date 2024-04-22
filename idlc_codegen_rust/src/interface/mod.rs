@@ -88,6 +88,8 @@ pub fn emit(interface: &Interface) -> String {
     #[repr(transparent)]
     #[derive(Debug, Clone, PartialEq)]
     pub struct {ident}({OBJECT});
+    unsafe impl Sync for {ident} {{}}
+    unsafe impl Send for {ident} {{}}
     unsafe impl {TYPED_OBJECT_TRAIT} for {ident} {{}}
 
     pub trait I{ident}: {base_ident} 'static {{
@@ -155,8 +157,8 @@ pub fn emit(interface: &Interface) -> String {
     /// This function is useful when an implementation gives out an _opaque_ [`{OBJECT}`]
     /// which it recieves later but needs to get the concrete struct behind the object.
     #[inline]
-    pub fn downcast_concrete<T: I{ident} + 'static>(obj: &{OBJECT}) -> Option<&T> {{
-        {WRAPPER}::downcast_concrete::<T, dyn I{ident}>(obj, {MARKER})
+    pub fn downcast_concrete<R, T: I{ident} + 'static>(obj: &{OBJECT}, f: impl Fn(&T) -> R) -> Option<R> {{
+        {WRAPPER}::downcast_concrete::<R, T, dyn I{ident}>(obj, {MARKER}, f)
     }}
     "#,
         h = variable_names::invoke::HANDLE,
