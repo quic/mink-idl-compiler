@@ -219,29 +219,25 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
     }
 
     fn visit_output_big_struct(&mut self, ident: &Ident, ty: &StructInner) {
+        self.inputs
+            .push((format!("&{}_ref", ident), ty.ident.to_string()));
         if self.total_bundled_output > 1 && self.bundled_outputs.contains(&ident.to_string()) {
-            self.inputs
-                .push((format!("&{}_ref", ident), ty.ident.to_string()));
             self.outputs
                 .push((format!("o->m_{}", ident), ty.ident.to_string()));
         } else {
-            self.inputs
-                .push((format!("*{}_ptr", ident), ty.ident.to_string()));
             self.outputs
-                .push((format!("{}_ptr", ident), ty.ident.to_string()));
+                .push((format!("*{}_ptr", ident), ty.ident.to_string()));
         }
     }
     fn visit_output_small_struct(&mut self, ident: &Ident, ty: &StructInner) {
+        self.inputs
+            .push((format!("&{}_ref", ident), ty.ident.to_string()));
         if self.total_bundled_output > 1 && self.bundled_outputs.contains(&ident.to_string()) {
-            self.inputs
-                .push((format!("&{}_ref", ident), ty.ident.to_string()));
             self.outputs
                 .push((format!("o->m_{}", ident), ty.ident.to_string()));
         } else {
-            self.inputs
-                .push((format!("*{}_ptr", ident), ty.ident.to_string()));
             self.outputs
-                .push((format!("{}_ptr", ident), ty.ident.to_string()));
+                .push((format!("*{}_ptr", ident), ty.ident.to_string()));
         }
     }
 

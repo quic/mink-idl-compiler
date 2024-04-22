@@ -26,8 +26,8 @@ public:
   int32_t in_struct(const cpp::Collection &input_ref) {
     return itest1_in_struct(&this->ctest, (const Collection *)(&input_ref));
   }
-  int32_t out_struct(cpp::Collection *output_ptr) {
-    return itest1_out_struct(&this->ctest, (Collection *)output_ptr);
+  int32_t out_struct(cpp::Collection &output_ref) {
+    return itest1_out_struct(&this->ctest, (Collection *)(&output_ref));
   }
   int32_t single_out(uint32_t *output_ptr) {
     return itest1_single_out(&this->ctest, output_ptr);
@@ -106,7 +106,7 @@ public:
     return Object_OK;
   }
   int32_t objects_in_struct(const cpp::ObjInStruct &input_ref,
-                            cpp::ObjInStruct *output_ptr) {
+                            cpp::ObjInStruct &output_ref) {
     CHECK_OK(test_singular_object(input_ref.first_obj));
     ASSERT(Object_isNull(input_ref.should_be_empty));
     CHECK_OK(test_singular_object(input_ref.second_obj));
@@ -117,13 +117,13 @@ public:
       ASSERT(input_ref.p2[i] == SUCCESS_FLAG);
       ASSERT(input_ref.p3[i] == SUCCESS_FLAG);
 
-      output_ptr->p1[i] = SUCCESS_FLAG;
-      output_ptr->p2[i] = SUCCESS_FLAG;
-      output_ptr->p3[i] = SUCCESS_FLAG;
+      output_ref.p1[i] = SUCCESS_FLAG;
+      output_ref.p2[i] = SUCCESS_FLAG;
+      output_ref.p3[i] = SUCCESS_FLAG;
     }
-    output_ptr->first_obj = create_cpp_itest1(1);
-    output_ptr->second_obj = create_cpp_itest1(2);
-    output_ptr->should_be_empty = Object_NULL;
+    output_ref.first_obj = create_cpp_itest1(1);
+    output_ref.second_obj = create_cpp_itest1(2);
+    output_ref.should_be_empty = Object_NULL;
     return Object_OK;
   }
 
@@ -180,7 +180,7 @@ public:
     memcpy(&input_struct.p2, VALID_PS, sizeof(VALID_PS));
     memcpy(&input_struct.p3, VALID_PS, sizeof(VALID_PS));
     cpp::ObjInStruct output_struct{};
-    CHECK_OK(me.objects_in_struct(input_struct, &output_struct));
+    CHECK_OK(me.objects_in_struct(input_struct, output_struct));
     ASSERT(memcmp(&output_struct.p1, VALID_PS, sizeof(VALID_PS)) == 0);
     ASSERT(memcmp(&output_struct.p2, VALID_PS, sizeof(VALID_PS)) == 0);
     ASSERT(memcmp(&output_struct.p3, VALID_PS, sizeof(VALID_PS)) == 0);

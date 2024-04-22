@@ -183,11 +183,11 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
 
     fn visit_output_big_struct(&mut self, ident: &Ident, ty: &idlc_mir::StructInner) {
         let _idx = self.0.idx();
-        let name = format!("{}_ptr", ident);
+        let name = format!("{}_ref", ident);
         let ty_ident = ty.ident.to_string();
         self.0.args.push(format!(
             r#"
-        {{.b = ({OBJECTBUF}) {{  {name}, sizeof({ty_ident}) }} }},"#
+        {{.b = ({OBJECTBUF}) {{  &{name}, sizeof({ty_ident}) }} }},"#
         ));
 
         let objects = ty.objects();
@@ -199,12 +199,12 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
                 .collect::<Vec<String>>()
                 .join(".");
             self.0.initializations.push(format!(
-                r#"{name}->{path} = Object_NULL;
+                r#"{name}.{path} = Object_NULL;
     "#
             ));
             self.visit_output_object(
                 &idlc_mir::Ident {
-                    ident: format!("({name}->{})", path),
+                    ident: format!("({name}.{})", path),
                     span: object.0.last().unwrap().span,
                 },
                 object.1,
