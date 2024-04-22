@@ -5,6 +5,10 @@ const TRUTH: crate::interfaces::itest::Collection = crate::interfaces::itest::Co
     d: 3,
 };
 
+const TRUTH2: crate::interfaces::itest::SingleEncapsulated = crate::interfaces::itest::SingleEncapsulated {
+    inner: 0,
+};
+
 mod test1;
 mod test2;
 

@@ -29,6 +29,12 @@ public:
   int32_t out_struct(cpp::Collection &output_ref) {
     return itest1_out_struct(&this->ctest, (Collection *)(&output_ref));
   }
+  int32_t in_small_struct(const cpp::SingleEncapsulated &input_ref) {
+    return itest1_in_small_struct(&this->ctest, (const SingleEncapsulated *)(&input_ref));
+  }
+  int32_t out_small_struct(cpp::SingleEncapsulated &output_ref) {
+    return itest1_out_small_struct(&this->ctest, (SingleEncapsulated *)(&output_ref));
+  }
   int32_t single_out(uint32_t *output_ptr) {
     return itest1_single_out(&this->ctest, output_ptr);
   }
@@ -84,6 +90,14 @@ public:
     return itest1_bundled_with_unbundled(
         &this->ctest, (const SingleEncapsulated *)&bundled_ref, magic_val,
         (const Collection *)&unbundled_ref);
+  }
+  int32_t struct_array_in(const cpp::Collection *s_in_ptr, size_t s_in_len) {
+    return itest1_struct_array_in(
+        &this->ctest, (const Collection *)s_in_ptr, s_in_len);
+  }
+  int32_t struct_array_out( cpp::Collection *s_out_ptr, size_t s_out_len, size_t *s_out_lenout) {
+    return itest1_struct_array_out(
+        &this->ctest, (Collection *)s_out_ptr, s_out_len, s_out_lenout);
   }
   int32_t well_documented_method(uint32_t foo_val, uint32_t *bar_ptr) {
     return itest1_well_documented_method_real(&this->ctest, foo_val, bar_ptr);

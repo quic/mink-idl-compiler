@@ -1,4 +1,4 @@
-use super::TRUTH;
+use super::{TRUTH, TRUTH2};
 use crate::interfaces::itest::{self, SingleEncapsulated, SUCCESS_FLAG};
 use crate::interfaces::itest1::{self, IITest1};
 use crate::interfaces::itest3::{self, IITest3};
@@ -38,6 +38,24 @@ macro_rules! generate_itest1_impl {
                 &mut self,
             ) -> Result<crate::interfaces::itest::r#Collection, itest1::Error> {
                 Ok(TRUTH)
+            }
+
+            fn in_small_struct(
+                &mut self,
+                input: &crate::interfaces::itest::r#SingleEncapsulated,
+            ) -> Result<(), itest1::Error> {
+                if input == &TRUTH2 {
+                    Ok(())
+                } else {
+                    dbg!(input);
+                    Err(itest1::MISMATCH)
+                }
+            }
+
+            fn r#out_small_struct(
+                &mut self,
+            ) -> Result<crate::interfaces::itest::r#SingleEncapsulated, itest1::Error> {
+                Ok(TRUTH2)
             }
 
             fn r#single_out(&mut self) -> Result<u32, itest1::Error> {
@@ -127,6 +145,31 @@ macro_rules! generate_itest1_impl {
                     dbg!(bundled, magic, unbundled);
                     Err(itest1::MISMATCH)
                 }
+            }
+
+            fn r#struct_array_in(
+                &mut self,
+                r#s_in: &[crate::interfaces::itest::r#Collection],
+            ) -> Result<(), itest1::Error> {
+                for s in s_in.iter() {
+                    if s != &TRUTH {
+                        dbg!(s);
+                        return Err(itest1::MISMATCH);
+                    }
+                }
+                Ok(())
+            }
+
+            fn r#struct_array_out(
+                &mut self,
+                r#s_out: &mut [crate::interfaces::itest::r#Collection],
+                r#s_out_lenout: &mut usize,
+            ) -> Result<(), itest1::Error> {
+                for s in s_out.iter_mut() {
+                    *s = TRUTH;
+                }
+                *s_out_lenout = s_out.len();
+                Ok(())
             }
 
             fn r#well_documented_method(&mut self, r#foo: u32) -> Result<u32, itest1::Error> {

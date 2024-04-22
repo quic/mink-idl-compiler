@@ -112,6 +112,16 @@ int32_t itest1_in_struct(struct CTest1 *ctx, const Collection *input) {
   return Object_OK;
 }
 
+int32_t itest1_out_small_struct(struct CTest1 *ctx, SingleEncapsulated *output) {
+  memcpy(output, &TRUTH2, sizeof(TRUTH2));
+  return Object_OK;
+}
+
+int32_t itest1_in_small_struct(struct CTest1 *ctx, const SingleEncapsulated *input) {
+  ASSERT(memcmp(input, &TRUTH2, sizeof(TRUTH2)) == 0);
+  return Object_OK;
+}
+
 int32_t itest1_multiple_primitive(struct CTest1 *ctx, const void *unused_ptr,
                                   size_t unused_len, void *unused2_ptr,
                                   size_t unused2_len, size_t *unused2_lenout,
@@ -152,6 +162,21 @@ int32_t itest1_bundled_with_unbundled(struct CTest1 *ctx,
   ASSERT(magic_val == SUCCESS_FLAG);
   ASSERT(memcmp(unbundled_ptr, &TRUTH, sizeof(TRUTH)) == 0);
 
+  return Object_OK;
+}
+
+int32_t itest1_struct_array_in(struct CTest1 *ctx, const Collection *s_in_ptr, size_t s_in_len) {
+  for (size_t i = 0; i < s_in_len; i++) {
+    ASSERT(memcmp(&s_in_ptr[i], &TRUTH, sizeof(TRUTH)) == 0);
+  }
+  return Object_OK;
+}
+
+int32_t itest1_struct_array_out(struct CTest1 *ctx, Collection *s_out_ptr, size_t s_out_len, size_t *s_out_lenout) {
+  for (size_t i = 0; i < s_out_len; i++) {
+    memcpy(&s_out_ptr[i], &TRUTH, sizeof(TRUTH));
+  }
+  *s_out_lenout = s_out_len;
   return Object_OK;
 }
 

@@ -32,6 +32,8 @@ interface ITest1 {
   method test_f1(in uint32 a, out uint32 b);
   method in_struct(in Collection input);
   method out_struct(out Collection output);
+  method in_small_struct(in SingleEncapsulated input);
+  method out_small_struct(out SingleEncapsulated output);
   method single_out(out uint32 output);
   method single_in(in uint32 input);
   method single_primitive_in(in buffer unused, out buffer unused2, in uint32 input);
@@ -40,6 +42,8 @@ interface ITest1 {
   method primitive_plus_struct_in(in SingleEncapsulated encapsulated, in uint32 magic);
   method primitive_plus_struct_out(out SingleEncapsulated encapsulated, out uint32 magic);
   method bundled_with_unbundled(in SingleEncapsulated bundled, in uint32 magic, in Collection unbundled);
+  method struct_array_in(in Collection[] s_in);
+  method struct_array_out(out Collection[] s_out);
   /**
   * This documentation serves the purpose of ensuring codegen doesn't break when documentation exists.
   *
