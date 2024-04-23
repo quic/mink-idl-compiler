@@ -3,6 +3,10 @@ pub mod documentation;
 pub mod functions;
 pub mod serialization;
 
+// TODO: Remove this when we indeed start banning idents matching reserved keywords
+#[allow(dead_code)]
+mod keywords;
+
 use std::path::PathBuf;
 
 // FIXME: This probably doesn't even need to contain the first part of the tuple
