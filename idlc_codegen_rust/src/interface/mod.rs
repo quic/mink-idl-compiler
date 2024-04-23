@@ -157,7 +157,7 @@ pub fn emit(interface: &Interface) -> String {
     /// This function is useful when an implementation gives out an _opaque_ [`{OBJECT}`]
     /// which it recieves later but needs to get the concrete struct behind the object.
     #[inline]
-    pub fn downcast_concrete<R, T: I{ident} + 'static>(obj: &{OBJECT}, f: impl Fn(&T) -> R) -> Option<R> {{
+    pub fn downcast_concrete<R, T: I{ident} + 'static>(obj: &{OBJECT}, f: impl FnMut(&T) -> R) -> Option<R> {{
         {WRAPPER}::downcast_concrete::<R, T, dyn I{ident}>(obj, {MARKER}, f)
     }}
     "#,
