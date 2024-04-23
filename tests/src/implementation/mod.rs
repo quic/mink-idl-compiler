@@ -21,7 +21,7 @@ fn test_singlular_object(
     o: Option<&crate::interfaces::itest1::ITest1>,
 ) -> Result<(), crate::object::Error> {
     use crate::interfaces::itest::*;
-    use qcom_core::object::error::transport::BADOBJ;
+    use crate::object::error::transport::BADOBJ;
 
     let Some(o) = o else {
         return Err(BADOBJ);
