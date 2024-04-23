@@ -1,3 +1,6 @@
+// Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+
 use idlc_mir::Node;
 
 use idlc_codegen::MINKIDL_HEADER_COMMENT;

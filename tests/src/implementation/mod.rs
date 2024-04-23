@@ -1,3 +1,6 @@
+// Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+
 const TRUTH: crate::interfaces::itest::Collection = crate::interfaces::itest::Collection {
     a: 0,
     b: 1,

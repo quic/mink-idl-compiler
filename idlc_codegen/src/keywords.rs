@@ -1,3 +1,6 @@
+// Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+
 macro_rules! keyword_gen {
     ($($lang: literal: [$($value: literal),*]),*) => {
         &[$($($value,)*)*]

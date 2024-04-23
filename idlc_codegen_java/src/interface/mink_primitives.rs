@@ -1,3 +1,6 @@
+// Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+
 pub(super) const OP_ID: &str = "OP";
 pub(super) const JMINK_OBJECT: &str = "JMinkObject";
 pub(super) const IMINK_OBJECT: &str = "IMinkObject";

@@ -1,3 +1,6 @@
+// Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+
 pub const fn change_primitive(primitive: idlc_mir::Primitive) -> &'static str {
     match primitive {
         idlc_mir::Primitive::Uint8 => "u8",

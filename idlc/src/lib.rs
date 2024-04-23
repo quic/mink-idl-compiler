@@ -1,3 +1,6 @@
+// Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+
 use idlc_ast_passes::{cycles, functions, idl_store::IDLStore, struct_verifier, CompilerPass};
 use idlc_codegen::{Descriptor, Generator};
 use idlc_errors::trace;

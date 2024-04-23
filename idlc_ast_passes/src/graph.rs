@@ -1,3 +1,6 @@
+// Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+
 //! Implementation of a directed graph that allows for toposorting and cycle detection.
 
 use std::collections::{HashMap, HashSet};

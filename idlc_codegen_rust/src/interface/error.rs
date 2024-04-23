@@ -1,3 +1,6 @@
+// Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+
 use convert_case::Casing;
 
 pub fn emit(errors: &[&idlc_mir::mir::Error]) -> String {

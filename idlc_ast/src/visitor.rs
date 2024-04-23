@@ -1,3 +1,6 @@
+// Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+
 use super::{
     Ast, Const, Count, Documentation, Function, Ident, Interface, InterfaceNode, Node, Param,
     Primitive, Struct, StructField, Type,

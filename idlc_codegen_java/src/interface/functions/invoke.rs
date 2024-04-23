@@ -1,3 +1,6 @@
+// Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+
 use crate::interface::mink_primitives::{
     BI, BO, BUNDLE_IN, BUNDLE_OUT, BYTE_BUFFER, BYTE_ORDER, IMINK_OBJECT, OI, OO, OP_ID,
 };

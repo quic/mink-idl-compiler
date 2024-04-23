@@ -1,3 +1,6 @@
+// Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+
 //! Implementation of struct alignment and member checker
 //!
 //! Ensures every struct is aligned to the size of the largest member, this rule

@@ -1,3 +1,6 @@
+// Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+
 use super::{TRUTH, TRUTH2};
 use crate::interfaces::itest::{self, SingleEncapsulated, SUCCESS_FLAG};
 use crate::interfaces::itest1::{self, IITest1};

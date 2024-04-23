@@ -1,4 +1,6 @@
-//! This library adds in the [Mink](http://go/mink) architecture over the input AST.
+// Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+
 //!
 //! # MIR Additions
 //!

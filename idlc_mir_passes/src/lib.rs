@@ -1,3 +1,6 @@
+// Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+
 //! Contains passes made on the MIR before validating that it's a valid MIR.
 //!
 //! This involves

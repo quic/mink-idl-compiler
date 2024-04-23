@@ -1,3 +1,6 @@
+// Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+
 //! Tests to validate cyclical imports in structs and interfaces.
 use idlc_ast_passes::cycles::Cycles;
 use idlc_ast_passes::*;

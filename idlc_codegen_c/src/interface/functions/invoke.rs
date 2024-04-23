@@ -1,3 +1,6 @@
+// Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause
+
 use crate::{
     interface::variable_names::invoke::{ARGS, BI, BO, CONST, OP},
     types::change_primitive,
