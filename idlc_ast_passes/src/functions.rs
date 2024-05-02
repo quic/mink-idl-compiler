@@ -7,6 +7,7 @@ use idlc_ast::{InterfaceNode, Node};
 
 use crate::CompilerPass;
 
+#[derive(Default)]
 pub struct Functions;
 
 impl Functions {
