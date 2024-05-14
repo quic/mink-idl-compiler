@@ -46,7 +46,10 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         packed_primitives: &idlc_codegen::serialization::PackedPrimitives,
     ) {
         let packer = super::serialization::PackedPrimitives::new(packed_primitives);
-        let Some(TransportBuffer { definition, size }) = packer.bi_definition(false) else {
+        let Some(TransportBuffer {
+            definition, size, ..
+        }) = packer.bi_definition(false)
+        else {
             unreachable!()
         };
         let _idx = self.0.idx();
@@ -168,13 +171,18 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         packed_primitives: &idlc_codegen::serialization::PackedPrimitives,
     ) {
         let packer = super::serialization::PackedPrimitives::new(packed_primitives);
-        let Some(TransportBuffer { definition, size }) = packer.bo_definition(false) else {
+        let Some(TransportBuffer {
+            definition,
+            size,
+            initialization,
+        }) = packer.bo_definition(false)
+        else {
             unreachable!()
         };
         let _idx = self.0.idx();
 
         self.0.initializations.push(format!(
-            r#"{definition} o;
+            r#"{definition} o = {{{initialization}}};
     "#
         ));
         self.0.args.push(format!(

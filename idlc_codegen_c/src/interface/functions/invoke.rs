@@ -138,7 +138,10 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         packed_primitives: &idlc_codegen::serialization::PackedPrimitives,
     ) {
         let packer = super::serialization::PackedPrimitives::new(packed_primitives);
-        let Some(TransportBuffer { definition, size }) = packer.bi_definition(true) else {
+        let Some(TransportBuffer {
+            definition, size, ..
+        }) = packer.bi_definition(true)
+        else {
             unreachable!()
         };
         let idx = self.idx();
@@ -335,7 +338,10 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         packed_primitives: &idlc_codegen::serialization::PackedPrimitives,
     ) {
         let packer = super::serialization::PackedPrimitives::new(packed_primitives);
-        let Some(TransportBuffer { definition, size }) = packer.bo_definition(true) else {
+        let Some(TransportBuffer {
+            definition, size, ..
+        }) = packer.bo_definition(true)
+        else {
             unreachable!()
         };
         let idx = self.idx();

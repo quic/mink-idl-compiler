@@ -13,6 +13,7 @@ use crate::types::change_primitive;
 pub struct TransportBuffer {
     pub definition: String,
     pub size: usize,
+    pub initialization: String,
 }
 
 #[derive(Debug)]
@@ -117,6 +118,20 @@ impl<'a> PackedPrimitives<'a> {
         embedded_objs
     }
 
+    fn struct_init(s: &idlc_mir::StructInner, initialization: &mut String) {
+        initialization.push('{');
+        for field in &s.fields {
+            match &field.val.0 {
+                idlc_mir::Type::Primitive(_) => initialization.push_str("0,"),
+                idlc_mir::Type::Struct(s) => Self::struct_init(s.as_ref(), initialization),
+                idlc_mir::Type::Interface(_) => initialization.push_str("Object_NULL,"),
+                _ => unreachable!(),
+            }
+        }
+        initialization.pop();
+        initialization.push_str("},");
+    }
+
     #[inline]
     fn generate_struct(
         pairs: impl Iterator<Item = (&'a idlc_mir::Ident, &'a Type)>,
@@ -129,10 +144,17 @@ impl<'a> PackedPrimitives<'a> {
         }
 
         let mut fields = String::new();
+        let mut initialization = String::new();
         for (ident, ty) in pairs {
             let ty = match ty {
-                &Type::Primitive(p) => Cow::Borrowed(change_primitive(p)),
-                Type::SmallStruct(s) => Cow::Owned(s.ident.to_string()),
+                &Type::Primitive(p) => {
+                    initialization.push_str("0,");
+                    Cow::Borrowed(change_primitive(p))
+                }
+                Type::SmallStruct(s) => {
+                    Self::struct_init(s, &mut initialization);
+                    Cow::Owned(s.ident.to_string())
+                }
             };
             if is_invoke {
                 fields.push_str(&format!(
@@ -148,7 +170,7 @@ impl<'a> PackedPrimitives<'a> {
                 ));
             }
         }
-
+        initialization.pop();
         let definition = if is_invoke {
             format!(
                 r#"struct {in_out} {{ \{fields}
@@ -160,6 +182,10 @@ impl<'a> PackedPrimitives<'a> {
     }}"#
             )
         };
-        Some(TransportBuffer { definition, size })
+        Some(TransportBuffer {
+            definition,
+            size,
+            initialization,
+        })
     }
 }
