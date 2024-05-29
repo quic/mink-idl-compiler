@@ -15,38 +15,40 @@ env:
 
 jobs:
   build:
-    runs-on: [ self-hosted ]
+    runs-on: "ubuntu-latest"
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Lint
       run: cargo clippy --all-targets -- -D clippy::all -D unused
     - name: Build statically linked compiler
-      run: cargo build --target x86_64-unknown-linux-musl --profile opt
+      run: |
+        rustup target add x86_64-unknown-linux-musl
+        cargo build --target x86_64-unknown-linux-musl --profile opt
     - name: Upload statically linked compiler
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: idlc
         path: target/x86_64-unknown-linux-musl/opt/idlc
 
   format:
-    runs-on: [ self-hosted ]
+    runs-on: "ubuntu-latest"
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Formatting
       run: cargo fmt --check
 
   documentation:
-    runs-on: [ self-hosted ]
+    runs-on: "ubuntu-latest"
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Documentation
       run: cargo doc --document-private-items
 
   tests:
     needs: build
-    runs-on: [ self-hosted ]
+    runs-on: "ubuntu-latest"
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Run unit tests
       run: cargo test
     - name: Run Rust+C integration test
@@ -57,5 +59,6 @@ jobs:
         cd tests
         cargo test
         cargo test --release
+        rustup component add rust-src
         cargo clean && RUSTC_BOOTSTRAP=1 RUSTFLAGS="-Zsanitizer=address" CFLAGS="-fsanitize=address" CXXFLAGS="-fsanitize=address" cargo test -Zbuild-std --target $(rustc -vV | awk '/^host/ { print $2 }')
         cargo clean && RUSTC_BOOTSTRAP=1 RUSTFLAGS="-Zsanitizer=address" CFLAGS="-fsanitize=address" CXXFLAGS="-fsanitize=address" cargo test -Zbuild-std --target $(rustc -vV | awk '/^host/ { print $2 }') --release
