@@ -59,6 +59,8 @@ jobs:
         cd tests
         cargo test
         cargo test --release
-        rustup component add rust-src
-        cargo clean && RUSTC_BOOTSTRAP=1 RUSTFLAGS="-Zsanitizer=address" CFLAGS="-fsanitize=address" CXXFLAGS="-fsanitize=address" cargo test -Zbuild-std --target $(rustc -vV | awk '/^host/ { print $2 }')
-        cargo clean && RUSTC_BOOTSTRAP=1 RUSTFLAGS="-Zsanitizer=address" CFLAGS="-fsanitize=address" CXXFLAGS="-fsanitize=address" cargo test -Zbuild-std --target $(rustc -vV | awk '/^host/ { print $2 }') --release
+        rustup toolchain install nightly
+        rustup +nightly component add rust-src miri
+        cargo clean && RUSTFLAGS="-Zsanitizer=address" CFLAGS="-fsanitize=address" CXXFLAGS="-fsanitize=address" cargo +nightly test -Zbuild-std --target $(rustc -vV | awk '/^host/ { print $2 }')
+        cargo clean && RUSTFLAGS="-Zsanitizer=address" CFLAGS="-fsanitize=address" CXXFLAGS="-fsanitize=address" cargo +nightly test -Zbuild-std --target $(rustc -vV | awk '/^host/ { print $2 }') --release
+        cargo clean && cargo +nightly miri test
