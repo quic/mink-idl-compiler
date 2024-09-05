@@ -314,28 +314,31 @@ mod tests {
 
     #[test]
     fn get_raw_context_valid_context() {
+        static MARKER1: Invoke = invoke1;
         unsafe extern "C" fn invoke1(_h: Ctx, _op: Op, _args: *mut Arg, _counts: Counts) -> i32 {
             0
         }
+        static MARKER2: Invoke = invoke2;
         unsafe extern "C" fn invoke2(_h: Ctx, _op: Op, _args: *mut Arg, _counts: Counts) -> i32 {
             1
         }
 
         let context = core::ptr::NonNull::dangling().as_ptr();
-        let obj = unsafe { Object::create(invoke1, context) };
+        let obj = unsafe { Object::create(MARKER1, context) };
 
-        assert_eq!(obj.get_raw_context(invoke1).unwrap(), context);
-        assert!(obj.get_raw_context(invoke2).is_none());
+        assert_eq!(obj.get_raw_context(MARKER1).unwrap(), context);
+        assert!(obj.get_raw_context(MARKER2).is_none());
     }
 
     #[test]
     fn get_raw_context_invalid_context() {
+        static MARKER1: Invoke = invoke1;
         unsafe extern "C" fn invoke1(_h: Ctx, _op: Op, _args: *mut Arg, _counts: Counts) -> i32 {
             0
         }
 
-        let obj = unsafe { Object::create(invoke1, core::ptr::null_mut()) };
-        assert!(obj.get_raw_context(invoke1).is_none());
+        let obj = unsafe { Object::create(MARKER1, core::ptr::null_mut()) };
+        assert!(obj.get_raw_context(MARKER1).is_none());
     }
 
     #[test]
