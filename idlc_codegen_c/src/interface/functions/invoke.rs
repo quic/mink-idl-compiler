@@ -181,7 +181,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         } else {
             self.pre.push(format!(
                 r#" \
-                    {CONST} {ty_ident} *{name} = ({CONST} {ty_ident}*){ARGS}[{idx}].b.ptr;"#
+                {CONST} {ty_ident} *{name} = ({CONST} {ty_ident}*){ARGS}[{idx}].b.ptr;"#
             ));
         }
     }
@@ -312,7 +312,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         } else {
             self.pre.push(format!(
                 r#" \
-                    {ty_ident} *{name} = ({ty_ident}*){ARGS}[{idx}].b.ptr;"#
+                {ty_ident} *{name} = ({ty_ident}*){ARGS}[{idx}].b.ptr;"#
             ));
         }
     }

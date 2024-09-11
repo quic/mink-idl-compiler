@@ -39,14 +39,14 @@ impl<'a> PackedPrimitives<'a> {
         self.0.inputs_by_idents().for_each(|(ident, ty)| match ty {
             Type::Primitive(_) => {
                 assignments += &format!(
-                    r#"i.m_{ident} = {ident}_val;
-    "#
+                    r#"
+    i.m_{ident} = {ident}_val;"#
                 );
             }
             Type::SmallStruct(_s) => {
                 assignments += &format!(
-                    r#"i.m_{ident} = *{ident}_ptr;
-    "#
+                    r#"
+    i.m_{ident} = *{ident}_ptr;"#
                 );
             }
         });
@@ -63,8 +63,8 @@ impl<'a> PackedPrimitives<'a> {
                     let ty = s.ident.to_string();
 
                     assignments += &format!(
-                        r#"{ty} {ident}_cpy = *{ident}_ptr;
-    "#
+                        r#"
+    {ty} {ident}_cpy = *{ident}_ptr;"#
                     );
                 }
             }
@@ -86,14 +86,14 @@ impl<'a> PackedPrimitives<'a> {
         self.0.outputs_by_idents().for_each(|(ident, ty)| match ty {
             Type::Primitive(_) => {
                 assignments += &format!(
-                    r"*{ident}_ptr = o.m_{ident};
-    "
+                    r"
+    *{ident}_ptr = o.m_{ident};"
                 );
             }
             Type::SmallStruct(_) => {
                 assignments += &format!(
-                    r"*{ident}_ptr = o.m_{ident};
-    "
+                    r"
+    *{ident}_ptr = o.m_{ident};"
                 );
             }
         });

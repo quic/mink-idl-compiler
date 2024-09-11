@@ -23,8 +23,8 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
         iface.nodes.iter().for_each(|node| match node {
             InterfaceNode::Const(c) => {
                 constants.push_str(&format!(
-                    r#"static const {} {} = {}({});
-    "#,
+                    r#"
+    static const {} {} = {}({});"#,
                     change_primitive(c.r#type),
                     c.ident,
                     change_const_primitive(c.r#type),
@@ -33,8 +33,8 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
             }
             InterfaceNode::Error(e) => {
                 errors.push_str(&format!(
-                    r#"static const int32_t {} = INT32_C({});
-    "#,
+                    r#"
+    static const int32_t {} = INT32_C({});"#,
                     e.ident, e.value
                 ));
             }
@@ -60,8 +60,8 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
         match node {
             InterfaceNode::Const(c) => {
                 constants.push_str(&format!(
-                    r#"static const {} {} = {}({});
-    "#,
+                    r#"
+    static const {} {} = {}({});"#,
                     change_primitive(c.r#type),
                     c.ident,
                     change_const_primitive(c.r#type),
@@ -70,8 +70,8 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
             }
             InterfaceNode::Error(e) => {
                 errors.push_str(&format!(
-                    r#"static const int32_t {} = INT32_C({});
-    "#,
+                    r#"
+    static const int32_t {} = INT32_C({});"#,
                     e.ident, e.value
                 ));
             }
@@ -89,13 +89,13 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
                     params.remove(0);
                 }
                 func_titles.push_str(&format!(
-                    r#"virtual int32_t {}({}) = 0;
-    "#,
+                    r#"
+    virtual int32_t {}({}) = 0;"#,
                     f.ident, params,
                 ));
                 op_codes.push_str(&format!(
-                    r#"static const ObjectOp OP_{} = {};
-    "#,
+                    r#"
+    static const ObjectOp OP_{} = {};"#,
                     f.ident, f.id,
                 ));
                 implementations.push_str(&functions::implementation::emit(
@@ -116,13 +116,14 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
         r#"
 class {ident};
 class I{ident} {base_iface}{{
-  public:
-    {constants}
-    {errors}
+  public:{constants}
+{errors}
+
     virtual ~I{ident}() {{}}
-    {func_titles}
+{func_titles}
+
   protected:
-    {op_codes}  
+{op_codes}
 }};
 
 class {ident} : public I{ident}, public ProxyBase {{
@@ -131,7 +132,7 @@ class {ident} : public I{ident}, public ProxyBase {{
     {ident}(Object impl) : ProxyBase(impl) {{}}
     virtual ~{ident}() {{}}
 
-    {implementations}
+{implementations}
 }};
 
 "#
@@ -181,11 +182,11 @@ class {ident}ImplBase : protected ImplBase, public I{ident} {{
   public:
     {ident}ImplBase() {{}}
     virtual ~{ident}ImplBase() {{}}
-    {weak_declarations}
+{weak_declarations}
   protected:
     virtual int32_t invoke(ObjectOp op, ObjectArg* a, ObjectCounts k) {{
         switch (ObjectOp_methodID(op)) {{
-            {invokes}
+{invokes}
             default: {{ return Object_ERROR_INVALID; }}
         }}
         return Object_ERROR_INVALID;
