@@ -76,8 +76,10 @@ impl Documentation {
                 Some('*') => {
                     // User needs asterisk to be the first alignment so lets
                     // substitute it with a space
-                    documentation.push(' ');
-                    documentation.push_str(&docstring[1..]);
+                    if !docstring[1..].is_empty() {
+                        documentation.push(' ');
+                        documentation.push_str(&docstring[1..]);
+                    }
                 }
                 Some(_) => {
                     // User probably means to keep this content in there, pad it
@@ -88,7 +90,6 @@ impl Documentation {
                 }
                 None => {}
             }
-
             documentation.push('\n');
         }
         documentation.push_str(style.end());
@@ -132,7 +133,7 @@ starts with nothing
 ///                         b
 ///                         c
 /// starts with nothing
-/// 
+///
 ///</pre>"
         );
     }
@@ -155,7 +156,7 @@ starts with nothing
 *                         b
 *                         c
 * starts with nothing
-* 
+*
 */"
         );
     }
@@ -179,7 +180,7 @@ starts with nothing
 *                         b
 *                         c
 * starts with nothing
-* 
+*
 */"
         );
     }

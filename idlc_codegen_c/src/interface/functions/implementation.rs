@@ -119,7 +119,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let bi_embedded = packer.bi_embedded();
         self.initializations.push(format!(
             r#"{definition} i;
-    {0}{1}"#,
+{0}{1}"#,
             bi_embedded,
             packer.bi_assignments(),
         ));
@@ -187,8 +187,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let name = format!("{}_ptr", ident);
         let ty = change_primitive(ty);
         self.post_call.push(format!(
-            r#"*{ident}_lenout = {ARGS}[{idx}].b.size / sizeof({ty});
-    "#
+            r#"
+    *{ident}_lenout = {ARGS}[{idx}].b.size / sizeof({ty});"#
         ));
         self.args.push(format!(
             r#"
@@ -201,8 +201,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let name = format!("{}_ptr", ident);
         let ty = ty.ident.to_string();
         self.post_call.push(format!(
-            r#"*{ident}_lenout = {ARGS}[{idx}].b.size / sizeof({ty});
-    "#
+            r#"
+    *{ident}_lenout = {ARGS}[{idx}].b.size / sizeof({ty});"#
         ));
         self.args.push(format!(
             r#"
@@ -224,8 +224,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
                     .to_string(),
             );
             self.post_call.push(format!(
-                r#"(*{ident}_ptr)[{i}] = a[{idx}].o;
-    "#,
+                r#"
+    (*{ident}_ptr)[{i}] = a[{idx}].o;"#,
             ));
         }
     }
@@ -257,7 +257,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
 
         self.initializations.push(format!(
             r#"{definition} o = {{{initialization}}};
-    "#
+"#
         ));
         self.post_call.push(packer.post_bo_assignments());
         self.args.push(format!(
@@ -307,8 +307,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
             name = format!("*{name}");
         }
         self.post_call.push(format!(
-            r#"{name} = {ARGS}[{idx}].o;
-    "#
+            r#"
+    {name} = {ARGS}[{idx}].o;"#
         ));
         self.args.push(
             r#"
@@ -342,8 +342,7 @@ pub fn emit(
     if total > 0 {
         object_args = format!(
             r#"ObjectArg a[] = {{{args}
-    }};
-        "#
+    }};"#
         );
     }
 
@@ -359,7 +358,7 @@ pub fn emit(
 {documentation}
 static inline int32_t {current_iface_ident}_{ident}(Object self{params})
 {{
-    return Object_invoke(self, {iface_ident}_{OP}_{ident}, 0, 0);;
+    return Object_invoke(self, {iface_ident}_{OP}_{ident}, 0, 0);
 }}
 "#
         );
@@ -370,28 +369,29 @@ static inline int32_t {current_iface_ident}_{ident}(Object self{params})
 {documentation}
 static inline int32_t {current_iface_ident}_{ident}(Object self{params})
 {{
-    {0}{1}{2}int32_t result = {returns}
-    {3}
+{0}{1}{2}
+    int32_t result = {returns}
+{3}
     return result;
 }}
 "#,
         if !initializations.is_empty() {
-            format!("{initializations}\n    ")
+            format!("    {initializations}\n")
         } else {
             "".to_string()
         },
         if !object_args.is_empty() {
-            format!("{object_args}\n    ")
+            format!("    {object_args}\n")
         } else {
             "".to_string()
         },
         if !pre_call_assignments.is_empty() {
-            format!("{pre_call_assignments}\n    ")
+            format!("    {pre_call_assignments}\n")
         } else {
             "".to_string()
         },
         if !post_call_assignments.is_empty() {
-            format!("{post_call_assignments}    ")
+            post_call_assignments.to_string()
         } else {
             "".to_string()
         }

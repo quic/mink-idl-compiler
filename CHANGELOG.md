@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.3] - 2024-09-11
+
+### Fixes
+- C/CPP Codegen: Removed unnecessary whitespace
+
 ## [0.1.2] - 2024-05-20
 
 ### Fixes

@@ -79,8 +79,6 @@ fn generate_common() -> String {
 #include <stdint.h>
 #include "object.h"
 #include "proxy_base.hpp"
-
-
 "#
     )
     .to_string()

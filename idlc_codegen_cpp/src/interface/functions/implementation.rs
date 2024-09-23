@@ -55,8 +55,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let _idx = self.0.idx();
         let bi_embedded = packer.bi_embedded();
         self.0.initializations.push(format!(
-            r#"{definition} i;
-    {0}{1}"#,
+            r#"{definition} i;{0}{1}"#,
             bi_embedded,
             packer.bi_assignments(),
         ));
@@ -72,8 +71,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let ty_ident = ty.ident.to_string();
         if ty.contains_interfaces() {
             self.0.initializations.push(format!(
-                r#"{ty_ident} {ident}_cpy = {name};
-    "#
+                r#"
+    {ty_ident} {ident}_cpy = {name};"#
             ));
             self.0.args.push(format!(
                 r#"{{.bi = ({OBJECTBUFIN}) {{ &{ident}_cpy, sizeof({ty_ident}) }} }},
@@ -152,9 +151,9 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         }
 
         self.0.post_call.push(format!(
-            r#"for(size_t arg_idx=0;arg_idx<{cnt};arg_idx++)
-        ({ident}_ref)[arg_idx].consume(a[{idx}+arg_idx].o);
-    "#,
+            r#"
+    for(size_t arg_idx=0;arg_idx<{cnt};arg_idx++)
+        ({ident}_ref)[arg_idx].consume(a[{idx}+arg_idx].o);"#,
         ));
 
         for _ in 1..cnt.into() {
@@ -182,8 +181,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let _idx = self.0.idx();
 
         self.0.initializations.push(format!(
-            r#"{definition} o = {{{initialization}}};
-    "#
+            r#"
+    {definition} o = {{{initialization}}};"#
         ));
         self.0.args.push(format!(
             r#"
@@ -210,8 +209,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
                 .collect::<Vec<String>>()
                 .join(".");
             self.0.initializations.push(format!(
-                r#"{name}.{path} = Object_NULL;
-    "#
+                r#"
+    {name}.{path} = Object_NULL;"#
             ));
             self.visit_output_object(
                 &idlc_mir::Ident {
@@ -236,13 +235,13 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         );
         if ident.contains('.') || ident.contains("->") {
             self.0.post_call.push(format!(
-                r#"{ident} = {ARGS}[{idx}].o;
-    "#
+                r#"
+    {ident} = {ARGS}[{idx}].o;"#
             ));
         } else {
             self.0.post_call.push(format!(
-                r#"{ident}.consume({ARGS}[{idx}].o);
-    "#
+                r#"
+    {ident}.consume({ARGS}[{idx}].o);"#
             ));
         }
     }
@@ -276,9 +275,9 @@ pub fn emit(
 
     if total > 0 {
         object_args = format!(
-            r#"ObjectArg a[] = {{{args}
-        }};
-            "#
+            r#"
+        ObjectArg a[] = {{{args}
+        }};"#
         );
     }
 
@@ -298,24 +297,25 @@ pub fn emit(
         r#"
 {documentation}
     virtual int32_t {ident}({params}) {{
-        {0}{1}{2}int32_t result = {returns}
+{0}{1}{2}
+        int32_t result = {returns}
         if (Object_OK != result) {{ return result; }}
-        {post_call_assignments}
+{post_call_assignments}
         return result;
     }}
-    "#,
+"#,
         if !initializations.is_empty() {
-            format!("{initializations}\n        ")
+            format!("        {initializations}\n")
         } else {
             "".to_string()
         },
         if !object_args.is_empty() {
-            format!("{object_args}\n        ")
+            format!("{object_args}\n")
         } else {
             "".to_string()
         },
         if !pre_call_assignments.is_empty() {
-            format!("{pre_call_assignments}\n        ")
+            format!("        {pre_call_assignments}\n")
         } else {
             "".to_string()
         },

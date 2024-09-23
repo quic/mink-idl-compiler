@@ -51,7 +51,7 @@ impl idlc_codegen::SplitInvokeGenerator for Generator {
         let mut result = generate_common();
 
         let input_name = &mir.tag.file_stem().unwrap().to_str().unwrap();
-        result.push_str(&format!("#include \"{}.h\"\n\n", input_name));
+        result.push_str(&format!("#include \"{}.h\"\n", input_name));
 
         for node in &mir.nodes {
             match node.as_ref() {
@@ -76,7 +76,6 @@ fn generate_common() -> String {
 
 #include <stdint.h>
 #include "object.h"
-
 "#
     )
     .to_string()

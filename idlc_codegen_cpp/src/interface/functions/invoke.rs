@@ -79,7 +79,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         ));
         self.0.post.push(format!(
             r#" \
-            p_{ident}.extract();"#
+                p_{ident}.extract();"#
         ));
     }
 
@@ -108,8 +108,8 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
             let idx = self.0.idx();
             objs.push_str("Object_NULL, ");
             obj_assign.push_str(&format!(
-                r#"{ARGS}[{idx}].o=p_{ident}[{i}].extract();
-                "#
+                r#"
+                {ARGS}[{idx}].o=p_{ident}[{i}].extract();"#
             ));
         }
         self.0.pre.push(format!(
@@ -118,7 +118,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         ));
         self.0.post.push(format!(
             r#" \
-            {obj_assign}"#,
+{obj_assign}"#,
         ));
     }
 
@@ -166,7 +166,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         } else {
             self.0.pre.push(format!(
                 r#" \
-                    {ty_ident} *{name} = ({ty_ident}*){ARGS}[{idx}].b.ptr;"#
+                {ty_ident} *{name} = ({ty_ident}*){ARGS}[{idx}].b.ptr;"#
             ));
         }
     }
@@ -184,7 +184,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         ));
         self.0.post.push(format!(
             r#" \
-            {ARGS}[{idx}].o = p_{ident}.extract();"#
+                {ARGS}[{idx}].o = p_{ident}.extract();"#
         ));
     }
 }
@@ -204,7 +204,7 @@ pub fn emit(
 
     args = args.replace(" \\", "");
     pre = pre.replace(" \\", "");
-    post = post.replace(" \\\n", "\n    ");
+    post = post.replace(" \\\n", "\n");
 
     let mut return_idents =
         idlc_codegen_c::interface::functions::signature::iter_to_string(signature.return_idents());
@@ -219,7 +219,8 @@ pub fn emit(
     }
     if function.is_optional() {
         weak_declarations.push_str(&format!(
-            "virtual int32_t {ident}({params}) {{ return Object_ERROR_INVALID; }}\n"
+            r#"
+    virtual int32_t {ident}({params}) {{ return Object_ERROR_INVALID; }}"#
         ));
     }
 
@@ -234,10 +235,10 @@ pub fn emit(
                 if (k != ObjectCounts_pack{counts}{args}) {{
                     break;
                 }}
-                {pre}
+{pre}
                 int32_t r = {ident}({return_idents});
-                {post}
+{post}
                 return r;
-            }} "#
+            }}"#
     )
 }
