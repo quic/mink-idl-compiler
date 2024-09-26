@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use idlc_codegen::Descriptor;
 use idlc_mir::Node;
 
-use idlc_codegen::MINKIDL_HEADER_COMMENT;
+use idlc_codegen::{MINKIDL_HEADER_COMMENT, QUALCOMM_COPYRIGHT};
 
 use crate::{
     globals::{emit_const, emit_struct},
@@ -16,14 +16,19 @@ use crate::{
 pub struct Generator;
 
 impl idlc_codegen::Generator for Generator {
-    fn generate(mir: &idlc_mir::Mir) -> Descriptor {
+    fn generate(mir: &idlc_mir::Mir, add_copyright: bool) -> Descriptor {
         let mut base = std::path::PathBuf::from(mir.tag.file_name().unwrap().to_str().unwrap());
         base.set_extension("java");
         let mut interfaces = HashMap::new();
         let prologue = &format!(
-            r#"// {MINKIDL_HEADER_COMMENT}
+            r#"{0}// {MINKIDL_HEADER_COMMENT}
 package com.qualcomm.qti.mink;
-"#
+"#,
+            if add_copyright {
+                format!("{QUALCOMM_COPYRIGHT}\n")
+            } else {
+                "".to_string()
+            }
         );
         interfaces.insert(base.clone(), prologue.to_owned());
 

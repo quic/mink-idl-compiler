@@ -16,6 +16,7 @@ impl Language {
         self,
         include_paths: &[std::path::PathBuf],
         input_file: &std::path::Path,
+        add_copyright: bool,
     ) -> Result<Descriptor, Box<dyn std::error::Error>> {
         let mut idl_store = IDLStore::with_includes(include_paths, false);
         let ast = idl_store.get_or_insert(input_file);
@@ -35,7 +36,7 @@ impl Language {
         let mir = mir::parse_to_mir(&ast, &mut idl_store);
 
         match self {
-            Self::Rust => Ok(idlc_codegen_rust::Generator::generate(&mir)),
+            Self::Rust => Ok(idlc_codegen_rust::Generator::generate(&mir, add_copyright)),
         }
     }
 }

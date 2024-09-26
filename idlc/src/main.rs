@@ -76,6 +76,10 @@ struct Cli {
     /// Dump various phases of the compiler and exit.
     dump: Option<Dumpable>,
 
+    #[arg(long, default_value_t = false)]
+    /// Adding Qualcomm's copyright
+    add_q_copyright: bool,
+
     #[arg(long = "no-typed-objects", default_value_t = false)]
     /// Forces C codegen to emit 'Object' as a object type instead of its own type.
     /// This option does NOT affect any other codegen backends.
@@ -160,12 +164,15 @@ fn main() {
         .unwrap_or_else(|| std::env::current_dir().unwrap());
     match (args.c, args.cpp, args.java, args.rust) {
         (true, false, false, false) => {
-            let c_gen = idlc_codegen_c::Generator::new(args.no_typed_objects);
+            let c_gen = idlc_codegen_c::Generator::new(args.no_typed_objects, args.add_q_copyright);
             let content = if args.skel {
-                timer::time!(c_gen.generate_invoke(&mir), "C invoke codegen")
+                timer::time!(
+                    c_gen.generate_invoke(&mir, args.add_q_copyright),
+                    "C invoke codegen"
+                )
             } else {
                 timer::time!(
-                    c_gen.generate_implementation(&mir),
+                    c_gen.generate_implementation(&mir, args.add_q_copyright),
                     "C implementation codegen"
                 )
             };
@@ -180,12 +187,12 @@ fn main() {
         (true, true, false, false) => {
             let content = if args.skel {
                 timer::time!(
-                    idlc_codegen_cpp::Generator.generate_invoke(&mir),
+                    idlc_codegen_cpp::Generator.generate_invoke(&mir, args.add_q_copyright),
                     "C++ invoke codegen"
                 )
             } else {
                 timer::time!(
-                    idlc_codegen_cpp::Generator.generate_implementation(&mir),
+                    idlc_codegen_cpp::Generator.generate_implementation(&mir, args.add_q_copyright),
                     "C++ implementation codegen"
                 )
             };
@@ -201,9 +208,10 @@ fn main() {
             idlc_errors::warn!(
                 "Note: JavaGen is untested but guaranteed to generate same output as the previous versions.",
             );
-            for (name, content) in
-                timer::time!(idlc_codegen_java::Generator::generate(&mir), "Java codegen")
-            {
+            for (name, content) in timer::time!(
+                idlc_codegen_java::Generator::generate(&mir, args.add_q_copyright),
+                "Java codegen"
+            ) {
                 let mut file = std::fs::OpenOptions::new()
                     .create(true)
                     .write(true)
@@ -214,9 +222,10 @@ fn main() {
             }
         }
         (true, false, false, true) => {
-            for (name, content) in
-                timer::time!(idlc_codegen_rust::Generator::generate(&mir), "Rust codegen")
-            {
+            for (name, content) in timer::time!(
+                idlc_codegen_rust::Generator::generate(&mir, args.add_q_copyright),
+                "Rust codegen"
+            ) {
                 let mut file = std::fs::OpenOptions::new()
                     .create(true)
                     .write(true)
