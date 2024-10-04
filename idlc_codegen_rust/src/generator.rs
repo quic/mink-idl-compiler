@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use idlc_codegen::Descriptor;
 use idlc_mir::Node;
 
-use idlc_codegen::{MINKIDL_HEADER_COMMENT, QUALCOMM_COPYRIGHT};
+use idlc_codegen::MINKIDL_HEADER_COMMENT;
 
 use crate::{
     globals::{emit_const, emit_struct},
@@ -16,7 +16,7 @@ use crate::{
 pub struct Generator;
 
 impl idlc_codegen::Generator for Generator {
-    fn generate(mir: &idlc_mir::Mir, add_copyright: bool) -> Descriptor {
+    fn generate(mir: &idlc_mir::Mir) -> Descriptor {
         let mut base = std::path::PathBuf::from(
             mir.tag
                 .file_name()
@@ -27,14 +27,7 @@ impl idlc_codegen::Generator for Generator {
         );
         base.set_extension("rs");
         let mut interfaces = HashMap::new();
-        let prologue = &format!(
-            "{0}// {MINKIDL_HEADER_COMMENT}\n",
-            if add_copyright {
-                format!("{QUALCOMM_COPYRIGHT}\n")
-            } else {
-                "".to_string()
-            }
-        );
+        let prologue = &format!("// {MINKIDL_HEADER_COMMENT}\n");
         interfaces.insert(base.clone(), prologue.to_owned());
 
         for node in &mir.nodes {

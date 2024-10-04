@@ -25,21 +25,15 @@ pub const MINKIDL_HEADER_COMMENT: &str = concat!(
     ")"
 );
 
-pub const QUALCOMM_COPYRIGHT: &str = concat!(
-    "// Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.\n",
-    "// All rights reserved.\n",
-    "// Confidential and Proprietary - Qualcomm Technologies, Inc.\n",
-);
-
 /// Codegenerator backends for [`idlc_mir`]
 pub trait Generator {
     /// Generates the backend language based on input IDL
-    fn generate(mir: &idlc_mir::Mir, add_copyright: bool) -> Descriptor;
+    fn generate(mir: &idlc_mir::Mir) -> Descriptor;
 }
 
 pub trait SplitInvokeGenerator {
     /// Generates the backend language of stub side based on input IDL
-    fn generate_implementation(&self, mir: &idlc_mir::Mir, add_copyright: bool) -> String;
+    fn generate_implementation(&self, mir: &idlc_mir::Mir) -> String;
     /// Generates the backend language of skel side based on input IDL
-    fn generate_invoke(&self, mir: &idlc_mir::Mir, add_copyright: bool) -> String;
+    fn generate_invoke(&self, mir: &idlc_mir::Mir) -> String;
 }

@@ -76,9 +76,9 @@ struct Cli {
     /// Dump various phases of the compiler and exit.
     dump: Option<Dumpable>,
 
-    #[arg(long, default_value_t = false)]
-    /// Adding Qualcomm's copyright
-    add_q_copyright: bool,
+    #[arg(long)]
+    /// Adding marking on top of the generated file
+    marking: Option<std::path::PathBuf>,
 
     #[arg(long = "no-typed-objects", default_value_t = false)]
     /// Forces C codegen to emit 'Object' as a object type instead of its own type.
@@ -159,20 +159,22 @@ fn main() {
     trace!("Verifying interfaces");
     interface_verifier::InterfaceVerifier::new(&mir).run_pass();
 
+    let marking = idlc_codegen::documentation::Documentation::add_marking(
+        args.marking,
+        idlc_codegen::documentation::DocumentationStyle::C,
+    );
+
     let output = args
         .output
         .unwrap_or_else(|| std::env::current_dir().unwrap());
     match (args.c, args.cpp, args.java, args.rust) {
         (true, false, false, false) => {
-            let c_gen = idlc_codegen_c::Generator::new(args.no_typed_objects, args.add_q_copyright);
+            let c_gen = idlc_codegen_c::Generator::new(args.no_typed_objects);
             let content = if args.skel {
-                timer::time!(
-                    c_gen.generate_invoke(&mir, args.add_q_copyright),
-                    "C invoke codegen"
-                )
+                timer::time!(c_gen.generate_invoke(&mir), "C invoke codegen")
             } else {
                 timer::time!(
-                    c_gen.generate_implementation(&mir, args.add_q_copyright),
+                    c_gen.generate_implementation(&mir),
                     "C implementation codegen"
                 )
             };
@@ -182,17 +184,18 @@ fn main() {
                 .truncate(true)
                 .open(output)
                 .unwrap();
+            file.write_all(marking.as_bytes()).unwrap();
             file.write_all(content.as_bytes()).unwrap();
         }
         (true, true, false, false) => {
             let content = if args.skel {
                 timer::time!(
-                    idlc_codegen_cpp::Generator.generate_invoke(&mir, args.add_q_copyright),
+                    idlc_codegen_cpp::Generator.generate_invoke(&mir),
                     "C++ invoke codegen"
                 )
             } else {
                 timer::time!(
-                    idlc_codegen_cpp::Generator.generate_implementation(&mir, args.add_q_copyright),
+                    idlc_codegen_cpp::Generator.generate_implementation(&mir),
                     "C++ implementation codegen"
                 )
             };
@@ -202,36 +205,37 @@ fn main() {
                 .truncate(true)
                 .open(output)
                 .unwrap();
+            file.write_all(marking.as_bytes()).unwrap();
             file.write_all(content.as_bytes()).unwrap();
         }
         (true, false, true, false) => {
             idlc_errors::warn!(
                 "Note: JavaGen is untested but guaranteed to generate same output as the previous versions.",
             );
-            for (name, content) in timer::time!(
-                idlc_codegen_java::Generator::generate(&mir, args.add_q_copyright),
-                "Java codegen"
-            ) {
+            for (name, content) in
+                timer::time!(idlc_codegen_java::Generator::generate(&mir), "Java codegen")
+            {
                 let mut file = std::fs::OpenOptions::new()
                     .create(true)
                     .write(true)
                     .truncate(true)
                     .open(output.join(name))
                     .unwrap();
+                file.write_all(marking.as_bytes()).unwrap();
                 file.write_all(content.as_bytes()).unwrap();
             }
         }
         (true, false, false, true) => {
-            for (name, content) in timer::time!(
-                idlc_codegen_rust::Generator::generate(&mir, args.add_q_copyright),
-                "Rust codegen"
-            ) {
+            for (name, content) in
+                timer::time!(idlc_codegen_rust::Generator::generate(&mir),"Rust codegen")
+            {
                 let mut file = std::fs::OpenOptions::new()
                     .create(true)
                     .write(true)
                     .truncate(true)
                     .open(output.join(name))
                     .unwrap();
+                file.write_all(marking.as_bytes()).unwrap();
                 file.write_all(content.as_bytes()).unwrap();
             }
         }

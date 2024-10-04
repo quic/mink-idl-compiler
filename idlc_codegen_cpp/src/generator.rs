@@ -7,15 +7,12 @@ use idlc_mir::Node;
 
 use crate::interface::{emit_interface_impl, emit_interface_invoke};
 
-use idlc_codegen::{MINKIDL_HEADER_COMMENT, QUALCOMM_COPYRIGHT};
+use idlc_codegen::MINKIDL_HEADER_COMMENT;
 pub struct Generator;
 
 impl idlc_codegen::SplitInvokeGenerator for Generator {
-    fn generate_implementation(&self, mir: &idlc_mir::Mir, add_copyright: bool) -> String {
+    fn generate_implementation(&self, mir: &idlc_mir::Mir) -> String {
         let mut result = String::new();
-        if add_copyright {
-            result.push_str(&format!("{QUALCOMM_COPYRIGHT}\n"));
-        }
         result.push_str(&generate_common());
 
         for node in &mir.nodes {
@@ -46,12 +43,8 @@ impl idlc_codegen::SplitInvokeGenerator for Generator {
         result
     }
 
-    fn generate_invoke(&self, mir: &idlc_mir::Mir, add_copyright: bool) -> String {
-        let mut result = String::new();
-        if add_copyright {
-            result.push_str(&format!("{QUALCOMM_COPYRIGHT}\n"));
-        }
-        result.push_str(&generate_common());
+    fn generate_invoke(&self, mir: &idlc_mir::Mir) -> String {
+        let mut result = generate_common();
 
         let input_name = &mir.tag.file_stem().unwrap().to_str().unwrap();
         result.push_str(&format!(
