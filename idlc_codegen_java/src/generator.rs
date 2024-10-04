@@ -21,7 +21,7 @@ impl idlc_codegen::Generator for Generator {
         base.set_extension("java");
         let mut interfaces = HashMap::new();
         let prologue = &format!(
-            r#"{}// {MINKIDL_HEADER_COMMENT}
+            r#"// {MINKIDL_HEADER_COMMENT}
 package com.qualcomm.qti.mink;
 "#
         );

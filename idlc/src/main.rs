@@ -227,7 +227,7 @@ fn main() {
         }
         (true, false, false, true) => {
             for (name, content) in
-                timer::time!(idlc_codegen_rust::Generator::generate(&mir),"Rust codegen")
+                timer::time!(idlc_codegen_rust::Generator::generate(&mir), "Rust codegen")
             {
                 let mut file = std::fs::OpenOptions::new()
                     .create(true)
