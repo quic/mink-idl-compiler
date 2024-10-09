@@ -1,7 +1,5 @@
 // Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-use std::fs::File;
-use std::io::{BufRead, BufReader};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MarkingStyle {
@@ -21,7 +19,7 @@ impl MarkingStyle {
     const fn end(self) -> &'static str {
         match self {
             Self::Rust | Self::C => "",
-            Self::Java => "*/",
+            Self::Java => "*/\n",
         }
     }
 
@@ -55,27 +53,69 @@ impl AsRef<str> for Marking {
 }
 
 impl Marking {
-    pub fn add_marking(marking: Option<std::path::PathBuf>, style: MarkingStyle) -> Self {
-        if let Some(marking) = marking {
-            let mut documentation = style.start().to_string();
-            let file = File::open(marking).expect("File not found");
-            let reader = BufReader::new(file);
-            for line in reader.lines() {
-                match line {
-                    Ok(content) => {
-                        documentation += style.prefix();
-                        documentation.push(' ');
-                        documentation.push_str(&content);
-                    }
-                    Err(e) => eprintln!("Reading file failed:\n{e}\n"),
-                }
-                documentation.push('\n');
-            }
-            documentation.push_str(style.end());
-            documentation.push('\n');
-            Self(documentation)
-        } else {
-            Self("".to_string())
+    pub fn new(marking: &str, style: MarkingStyle) -> Self {
+        if marking.is_empty() {
+            return Self(String::new());
         }
+        let mut documentation = style.start().to_string();
+        for line in marking.lines() {
+            documentation += style.prefix();
+            documentation.push(' ');
+            documentation.push_str(line);
+            documentation.push('\n');
+        }
+        documentation.push_str(style.end());
+        documentation.push('\n');
+        Self(documentation)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    const MARKING: &str = "Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+All rights reserved.
+Confidential and Proprietary - Qualcomm Technologies, Inc.
+";
+
+    #[test]
+    fn rust() {
+        let marking = Marking::new(MARKING, MarkingStyle::Rust);
+        assert_eq!(
+            marking.as_ref(),
+            r"// Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+// All rights reserved.
+// Confidential and Proprietary - Qualcomm Technologies, Inc.
+
+"
+        );
+    }
+
+    #[test]
+    fn c() {
+        let marking = Marking::new(MARKING, MarkingStyle::C);
+        assert_eq!(
+            marking.as_ref(),
+            r"// Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+// All rights reserved.
+// Confidential and Proprietary - Qualcomm Technologies, Inc.
+
+"
+        );
+    }
+
+    #[test]
+    fn java() {
+        let marking = Marking::new(MARKING, MarkingStyle::Java);
+        assert_eq!(
+            marking.as_ref(),
+            r"/*
+* Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+* All rights reserved.
+* Confidential and Proprietary - Qualcomm Technologies, Inc.
+*/
+
+"
+        );
     }
 }

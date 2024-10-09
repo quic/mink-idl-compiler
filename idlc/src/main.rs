@@ -159,6 +159,12 @@ fn main() {
     trace!("Verifying interfaces");
     interface_verifier::InterfaceVerifier::new(&mir).run_pass();
 
+    let marking_cnt = if args.marking.is_some() {
+        std::fs::read_to_string(args.marking.unwrap()).expect("Failed to read marking file")
+    } else {
+        "".to_string()
+    };
+
     let output = args
         .output
         .unwrap_or_else(|| std::env::current_dir().unwrap());
@@ -179,8 +185,8 @@ fn main() {
                 .truncate(true)
                 .open(output)
                 .unwrap();
-            let marking = idlc_codegen::marking::Marking::add_marking(
-                args.marking,
+            let marking = idlc_codegen::marking::Marking::new(
+                &marking_cnt,
                 idlc_codegen::marking::MarkingStyle::C,
             );
             file.write_all(marking.as_bytes()).unwrap();
@@ -204,8 +210,8 @@ fn main() {
                 .truncate(true)
                 .open(output)
                 .unwrap();
-            let marking = idlc_codegen::marking::Marking::add_marking(
-                args.marking,
+            let marking = idlc_codegen::marking::Marking::new(
+                &marking_cnt,
                 idlc_codegen::marking::MarkingStyle::C,
             );
             file.write_all(marking.as_bytes()).unwrap();
@@ -215,8 +221,8 @@ fn main() {
             idlc_errors::warn!(
                 "Note: JavaGen is untested but guaranteed to generate same output as the previous versions.",
             );
-            let marking = idlc_codegen::marking::Marking::add_marking(
-                args.marking,
+            let marking = idlc_codegen::marking::Marking::new(
+                &marking_cnt,
                 idlc_codegen::marking::MarkingStyle::Java,
             );
             for (name, content) in
@@ -233,8 +239,8 @@ fn main() {
             }
         }
         (true, false, false, true) => {
-            let marking = idlc_codegen::marking::Marking::add_marking(
-                args.marking,
+            let marking = idlc_codegen::marking::Marking::new(
+                &marking_cnt,
                 idlc_codegen::marking::MarkingStyle::Rust,
             );
             for (name, content) in

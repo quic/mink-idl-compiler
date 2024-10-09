@@ -10,7 +10,7 @@ description = "AST structure for IDL; contains grammar and AST generators"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-idlc_errors = { version = "0.2.0", path = "../idlc_errors" }
+idlc_errors = {path = "../idlc_errors" }
 pest = "2.7.9"
 pest_derive = "2.7.9"
 thiserror = "1.0.59"
