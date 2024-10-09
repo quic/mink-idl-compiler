@@ -3,8 +3,8 @@
 
 pub mod counts;
 pub mod documentation;
-pub mod marking;
 pub mod functions;
+pub mod marking;
 pub mod serialization;
 
 // TODO: Remove this when we indeed start banning idents matching reserved keywords

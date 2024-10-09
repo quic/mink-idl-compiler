@@ -55,7 +55,6 @@ impl AsRef<str> for Marking {
 }
 
 impl Marking {
-
     pub fn add_marking(marking: Option<std::path::PathBuf>, style: MarkingStyle) -> Self {
         if let Some(marking) = marking {
             let mut documentation = style.start().to_string();
