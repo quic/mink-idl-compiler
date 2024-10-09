@@ -3,6 +3,7 @@
 
 pub mod counts;
 pub mod documentation;
+pub mod marking;
 pub mod functions;
 pub mod serialization;
 

@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.1.4] - 2024-09-26
+## [0.2.0] - 2024-10-09
 
 ### Enhancements
 - Add new flag to generate copyright markings on generated files

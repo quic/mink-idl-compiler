@@ -1,7 +1,5 @@
 // Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-use std::fs::File;
-use std::io::{BufRead, BufReader};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DocumentationStyle {
@@ -97,31 +95,6 @@ impl Documentation {
         documentation.push_str(style.end());
 
         Self(documentation)
-    }
-
-    pub fn add_marking(marking: Option<std::path::PathBuf>, style: DocumentationStyle) -> Self {
-        if let Some(marking) = marking {
-            let mut documentation = style.start().to_string();
-            documentation.push('\n');
-            let file = File::open(marking).expect("File not found\n");
-            let reader = BufReader::new(file);
-            for line in reader.lines() {
-                match line {
-                    Ok(content) => {
-                        documentation += style.prefix();
-                        documentation.push(' ');
-                        documentation.push_str(&content);
-                    }
-                    Err(e) => eprintln!("Reading file failed:\n{e}\n"),
-                }
-                documentation.push('\n');
-            }
-            documentation.push_str(style.end());
-            documentation.push('\n');
-            Self(documentation)
-        } else {
-            Self("".to_string())
-        }
     }
 }
 
