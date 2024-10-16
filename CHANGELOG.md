@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.4] - 2024-10-16
+
+### Fixes
+- C/CPP Codegen: Fixed bundled input/output initialization
+
 ## [0.1.3] - 2024-09-11
 
 ### Fixes
