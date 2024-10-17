@@ -118,7 +118,7 @@ impl<'a> PackedPrimitives<'a> {
         embedded_objs
     }
 
-    fn struct_init(s: &idlc_mir::StructInner, initialization: &mut String) {
+    pub fn struct_init(s: &idlc_mir::StructInner, initialization: &mut String) {
         initialization.push('{');
         for field in &s.fields {
             let (ty, size) = &field.val;

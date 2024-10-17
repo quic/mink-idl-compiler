@@ -91,7 +91,7 @@ impl Drop for Object {
     fn drop(&mut self) {
         if unsafe { self.invoke(OP_RELEASE, core::ptr::null_mut(), 0u32) } != 0 {
             unreachable!(
-            "Object drop didn't succeed. This is the result of undefined
+                "Object drop didn't succeed. This is the result of undefined
             behaviour, if you believe this is a bug please submit
             reproduction/fix steps as an issue"
             );
