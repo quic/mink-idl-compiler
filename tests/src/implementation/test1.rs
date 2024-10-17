@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 use super::{TRUTH, TRUTH2};
-use crate::interfaces::itest::{self, SingleEncapsulated, SUCCESS_FLAG};
+use crate::interfaces::itest::{self, ArrInStruct, SingleEncapsulated, F2, SUCCESS_FLAG};
 use crate::interfaces::itest1::{self, IITest1};
 use crate::interfaces::itest3::{self, IITest3};
 
@@ -131,6 +131,17 @@ macro_rules! generate_itest1_impl {
                 Ok((
                     SingleEncapsulated {
                         inner: SUCCESS_FLAG,
+                    },
+                    SUCCESS_FLAG,
+                ))
+            }
+
+            fn r#primitive_array_in_struct(&mut self) -> Result<(ArrInStruct, u32), itest1::Error> {
+                Ok((
+                    ArrInStruct {
+                        a: [7, 8],
+                        c: [F2 { a: 9, b: 7 }, F2 { a: 8, b: 9 }],
+                        d: 7,
                     },
                     SUCCESS_FLAG,
                 ))

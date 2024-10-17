@@ -87,6 +87,11 @@ public:
     return itest1_primitive_plus_struct_out(
         &this->ctest, (SingleEncapsulated *)&encapsulated_ref, magic_ptr);
   }
+  int32_t primitive_array_in_struct(cpp::ArrInStruct &arr_ref,
+                                    uint32_t *magic_ptr) {
+    return itest1_primitive_array_in_struct(
+        &this->ctest, (ArrInStruct *)&arr_ref, magic_ptr);
+  }
   int32_t bundled_with_unbundled(const cpp::SingleEncapsulated &bundled_ref,
                                  uint32_t magic_val,
                                  const cpp::Collection &unbundled_ref) {

@@ -92,6 +92,10 @@ int32_t itest1_primitive_plus_struct_out(struct CTest1 *ctx,
                                          SingleEncapsulated *encapsulated_ptr,
                                          uint32_t *magic_ptr);
 
+int32_t itest1_primitive_array_in_struct(struct CTest1 *ctx,
+                                         ArrInStruct *arr_ptr,
+                                         uint32_t *magic_ptr);
+
 int32_t itest1_bundled_with_unbundled(struct CTest1 *ctx,
                                       const SingleEncapsulated *bundled_ptr,
                                       uint32_t magic_val,
