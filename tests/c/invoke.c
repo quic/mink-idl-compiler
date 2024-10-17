@@ -157,6 +157,20 @@ int32_t itest1_primitive_plus_struct_out(struct CTest1 *ctx,
   return Object_OK;
 }
 
+int32_t itest1_primitive_array_in_struct(struct CTest1 *ctx,
+                                         ArrInStruct *arr_ptr,
+                                         uint32_t *magic_ptr) {
+  arr_ptr->a[0] = 7;
+  arr_ptr->a[1] = 8;
+  arr_ptr->c[0].a = 9;
+  arr_ptr->c[0].b = 7;
+  arr_ptr->c[1].a = 8;
+  arr_ptr->c[1].b = 9;
+  arr_ptr->d = SUCCESS_FLAG;
+  *magic_ptr = SUCCESS_FLAG;
+  return Object_OK;
+}
+
 int32_t itest1_bundled_with_unbundled(struct CTest1 *ctx,
                                       const SingleEncapsulated *bundled_ptr,
                                       uint32_t magic_val,

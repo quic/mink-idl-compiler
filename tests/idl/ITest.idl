@@ -22,6 +22,17 @@ struct Collection {
   uint64 d;
 };
 
+struct F2 {
+  uint8 a;
+  uint8 b;
+};
+
+struct ArrInStruct {
+  uint8[2] a;
+  F2[2] c;
+  uint16 d;
+};
+
 const uint32 SUCCESS_FLAG = 0xdead;
 
 interface ITest1 {
@@ -41,6 +52,7 @@ interface ITest1 {
   method multiple_primitive(in buffer unused, out buffer unused2, in uint16 input, out uint16 output, in interface unused3, out interface unused4, in uint32 input2, out uint64 output2, out buffer unused5);
   method primitive_plus_struct_in(in SingleEncapsulated encapsulated, in uint32 magic);
   method primitive_plus_struct_out(out SingleEncapsulated encapsulated, out uint32 magic);
+  method primitive_array_in_struct(out ArrInStruct input_a, out uint32 input_b);
   method bundled_with_unbundled(in SingleEncapsulated bundled, in uint32 magic, in Collection unbundled);
   method struct_array_in(in Collection[] s_in);
   method struct_array_out(out Collection[] s_out);

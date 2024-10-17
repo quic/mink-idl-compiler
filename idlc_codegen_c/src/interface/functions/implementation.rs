@@ -256,7 +256,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let _idx = self.idx();
 
         self.initializations.push(format!(
-            r#"{definition} o = {{{initialization}}};
+            r#"
+    {definition} o = {{{initialization}}};
 "#
         ));
         self.post_call.push(packer.post_bo_assignments());
