@@ -111,15 +111,26 @@ impl<'a> PackedPrimitives<'a> {
     fn struct_init(s: &idlc_mir::StructInner, initialization: &mut String) {
         initialization.push('{');
         for field in &s.fields {
-            match &field.val.0 {
+            let (ty, size) = &field.val;
+            let count = size.get();
+            match ty {
                 idlc_mir::Type::Primitive(_) => {
-                    if field.val.1.get() > 1 {
+                    if count > 1 {
                         initialization.push_str("{0},");
                     } else {
                         initialization.push_str("0,");
                     }
                 }
-                idlc_mir::Type::Struct(s) => Self::struct_init(s.as_ref(), initialization),
+                idlc_mir::Type::Struct(s) => {
+                    if count > 1 {
+                        initialization.push('{');
+                    }
+                    Self::struct_init(s.as_ref(), initialization);
+                    if count > 1 {
+                        initialization.pop();
+                        initialization.push_str("},");
+                    }
+                }
                 idlc_mir::Type::Interface(_) => initialization.push_str("Object_NULL,"),
                 _ => unreachable!(),
             }
