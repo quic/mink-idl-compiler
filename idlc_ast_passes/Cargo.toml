@@ -9,7 +9,7 @@ description = "Contains compiler passes over raw AST"
 
 [dependencies]
 "idlc_ast" = { path="../idlc_ast" }
-idlc_errors = { version = "0.1.0", path = "../idlc_errors" }
+idlc_errors = {path = "../idlc_errors" }
 thiserror = "1.0.59"
 
 [dev-dependencies]

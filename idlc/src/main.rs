@@ -76,6 +76,10 @@ struct Cli {
     /// Dump various phases of the compiler and exit.
     dump: Option<Dumpable>,
 
+    #[arg(long)]
+    /// Adding marking on top of the generated file
+    marking: Option<std::path::PathBuf>,
+
     #[arg(long = "no-typed-objects", default_value_t = false)]
     /// Forces C codegen to emit 'Object' as a object type instead of its own type.
     /// This option does NOT affect any other codegen backends.
@@ -155,6 +159,12 @@ fn main() {
     trace!("Verifying interfaces");
     interface_verifier::InterfaceVerifier::new(&mir).run_pass();
 
+    let marking_cnt = if args.marking.is_some() {
+        std::fs::read_to_string(args.marking.unwrap()).expect("Failed to read marking file")
+    } else {
+        "".to_string()
+    };
+
     let output = args
         .output
         .unwrap_or_else(|| std::env::current_dir().unwrap());
@@ -175,6 +185,11 @@ fn main() {
                 .truncate(true)
                 .open(output)
                 .unwrap();
+            let marking = idlc_codegen::marking::Marking::new(
+                &marking_cnt,
+                idlc_codegen::marking::MarkingStyle::C,
+            );
+            file.write_all(marking.as_bytes()).unwrap();
             file.write_all(content.as_bytes()).unwrap();
         }
         (true, true, false, false) => {
@@ -195,11 +210,20 @@ fn main() {
                 .truncate(true)
                 .open(output)
                 .unwrap();
+            let marking = idlc_codegen::marking::Marking::new(
+                &marking_cnt,
+                idlc_codegen::marking::MarkingStyle::C,
+            );
+            file.write_all(marking.as_bytes()).unwrap();
             file.write_all(content.as_bytes()).unwrap();
         }
         (true, false, true, false) => {
             idlc_errors::warn!(
                 "Note: JavaGen is untested but guaranteed to generate same output as the previous versions.",
+            );
+            let marking = idlc_codegen::marking::Marking::new(
+                &marking_cnt,
+                idlc_codegen::marking::MarkingStyle::Java,
             );
             for (name, content) in
                 timer::time!(idlc_codegen_java::Generator::generate(&mir), "Java codegen")
@@ -210,10 +234,15 @@ fn main() {
                     .truncate(true)
                     .open(output.join(name))
                     .unwrap();
+                file.write_all(marking.as_bytes()).unwrap();
                 file.write_all(content.as_bytes()).unwrap();
             }
         }
         (true, false, false, true) => {
+            let marking = idlc_codegen::marking::Marking::new(
+                &marking_cnt,
+                idlc_codegen::marking::MarkingStyle::Rust,
+            );
             for (name, content) in
                 timer::time!(idlc_codegen_rust::Generator::generate(&mir), "Rust codegen")
             {
@@ -223,6 +252,7 @@ fn main() {
                     .truncate(true)
                     .open(output.join(name))
                     .unwrap();
+                file.write_all(marking.as_bytes()).unwrap();
                 file.write_all(content.as_bytes()).unwrap();
             }
         }
