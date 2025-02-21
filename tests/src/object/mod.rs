@@ -233,7 +233,7 @@ impl Object {
     ///
     /// # Do not use in application code, this is a minkidl intrinsic.
     fn get_raw_context(&self, invoke: Invoke) -> Option<Ctx> {
-        if self.invoke != invoke || self.context.is_null() {
+        if !std::ptr::fn_addr_eq(self.invoke, invoke) || self.context.is_null() {
             None
         } else {
             Some(self.context)
