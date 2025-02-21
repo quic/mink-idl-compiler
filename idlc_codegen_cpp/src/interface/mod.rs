@@ -24,7 +24,7 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
             InterfaceNode::Const(c) => {
                 constants.push_str(&format!(
                     r#"
-    static const {} {} = {}({});"#,
+    static constexpr {} {} = {}({});"#,
                     change_primitive(c.r#type),
                     c.ident,
                     change_const_primitive(c.r#type),
@@ -34,7 +34,7 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
             InterfaceNode::Error(e) => {
                 errors.push_str(&format!(
                     r#"
-    static const int32_t {} = INT32_C({});"#,
+    static constexpr int32_t {} = INT32_C({});"#,
                     e.ident, e.value
                 ));
             }
@@ -61,7 +61,7 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
             InterfaceNode::Const(c) => {
                 constants.push_str(&format!(
                     r#"
-    static const {} {} = {}({});"#,
+    static constexpr {} {} = {}({});"#,
                     change_primitive(c.r#type),
                     c.ident,
                     change_const_primitive(c.r#type),
@@ -71,7 +71,7 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
             InterfaceNode::Error(e) => {
                 errors.push_str(&format!(
                     r#"
-    static const int32_t {} = INT32_C({});"#,
+    static constexpr int32_t {} = INT32_C({});"#,
                     e.ident, e.value
                 ));
             }
@@ -95,7 +95,7 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
                 ));
                 op_codes.push_str(&format!(
                     r#"
-    static const ObjectOp OP_{} = {};"#,
+    static constexpr ObjectOp OP_{} = {};"#,
                     f.ident, f.id,
                 ));
                 implementations.push_str(&functions::implementation::emit(
@@ -109,7 +109,14 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
     }
 
     if !base_iface.is_empty() {
-        base_iface = format!(": public {base_iface}");
+        let base_ifaces =  base_iface.split_whitespace();
+        let mut ifaces = String::new();
+        for iface in base_ifaces {
+            ifaces.push_str(&format!("public {iface}, "));
+        }
+        ifaces.pop();
+        ifaces.pop();
+        base_iface = format!(": {ifaces}");
     }
 
     format!(

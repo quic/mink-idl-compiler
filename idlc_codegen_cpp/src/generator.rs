@@ -28,7 +28,7 @@ impl idlc_codegen::SplitInvokeGenerator for Generator {
                     let value = &c.value;
 
                     result.push_str(&format!(
-                        "static const {cnt_ty} {ident} = {ty}({value});\n\n"
+                        "static constexpr {cnt_ty} {ident} = {ty}({value});\n\n"
                     ));
                 }
                 Node::Struct(s) => {
