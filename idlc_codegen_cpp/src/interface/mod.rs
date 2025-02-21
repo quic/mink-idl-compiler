@@ -109,7 +109,7 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
     }
 
     if !base_iface.is_empty() {
-        let base_ifaces =  base_iface.split_whitespace();
+        let base_ifaces = base_iface.split_whitespace();
         let mut ifaces = String::new();
         for iface in base_ifaces {
             ifaces.push_str(&format!("public {iface}, "));
