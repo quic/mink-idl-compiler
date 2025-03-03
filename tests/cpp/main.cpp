@@ -10,6 +10,9 @@
 #include "ITest.hpp"
 #include "ITest_invoke.hpp"
 
+#include "ITest3.hpp"
+#include "ITest3_invoke.hpp"
+
 namespace c {
 #include "../c/header.h"
 }

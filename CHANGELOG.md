@@ -2,11 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.2.1] - 2025-02-21
+## [0.2.1] - 2025-03-03
 
 ### Fixes
 - changing C++ impl from const to constexpr
 - Fix multiple inheritance issues for C++ header
+
+### Enhancements
+- Add new test for multiple interface inheritance issue
 
 ## [0.2.0] - 2024-10-17
 
