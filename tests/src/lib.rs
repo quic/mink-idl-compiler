@@ -23,6 +23,9 @@ pub mod interfaces {
     pub mod itest3 {
         include!(concat!(env!("OUT_DIR"), "/rust/itest3.rs"));
     }
+    pub mod itest4 {
+        include!(concat!(env!("OUT_DIR"), "/rust/itest4.rs"));
+    }
 }
 
 pub mod implementation;
@@ -35,6 +38,9 @@ pub mod c {
 
         #[link_name = "create_c_itest2"]
         pub fn create_itest2() -> Option<crate::interfaces::itest2::ITest2>;
+
+        #[link_name = "create_c_itest3"]
+        pub fn create_itest3() -> Option<crate::interfaces::itest3::ITest3>;
     }
 }
 
@@ -46,5 +52,8 @@ pub mod cpp {
 
         #[link_name = "create_cpp_itest2"]
         pub fn create_itest2() -> Option<crate::interfaces::itest2::ITest2>;
+
+        #[link_name = "create_cpp_itest3"]
+        pub fn create_itest3() -> Option<crate::interfaces::itest3::ITest3>;
     }
 }

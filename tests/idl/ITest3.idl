@@ -1,5 +1,8 @@
 include "ITest.idl"
 
+/**
+ * ITest3/ITest4 is for checking the single/multiple inheritance of interfaces.
+ */
 interface ITest3 : ITest1 {
     method extra_test3(out uint32 flag);
 };

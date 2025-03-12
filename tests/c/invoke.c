@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "ITest_invoke.h"
+#include "ITest3_invoke.h"
 #include "object.h"
 
 Object create_c_itest1(uint32_t value);
@@ -322,3 +323,126 @@ int32_t itest2_entrypoint(void *ctx, Object itest1) {
 ITest2_DEFINE_INVOKE(itest2_invoke, itest2_, void *);
 
 Object create_c_itest2() { return (Object){itest2_invoke, NULL}; }
+
+
+int32_t itest3_release(void *ctx) { return Object_OK; }
+
+int32_t itest3_retain(void *ctx) { return Object_OK; }
+
+int32_t itest3_extra_test3(struct CTest1 *ctx, uint32_t *output_ptr) {
+  *output_ptr = 0xdead;
+  return Object_OK;
+}
+
+int32_t itest3_test_f1(struct CTest1 *ctx, uint32_t a_val, uint32_t *b_ptr) {
+  return itest1_test_f1(ctx, a_val, b_ptr);
+}
+
+int32_t itest3_single_in(struct CTest1 *ctx, uint32_t input_val) {
+  return itest1_single_in(ctx, input_val);
+}
+
+int32_t itest3_single_out(struct CTest1 *ctx, uint32_t *output_ptr) {
+  return itest1_single_out(ctx, output_ptr);
+}
+
+int32_t itest3_single_primitive_in(struct CTest1 *ctx, const void *unused_ptr,
+                                   size_t unused_len, void *unused2_ptr,
+                                   size_t unused2_len, size_t *unused2_lenout,
+                                   uint32_t input_val) {
+  return itest1_single_in(ctx, input_val);
+}
+int32_t itest3_single_primitive_out(struct CTest1 *ctx, const void *unused_ptr,
+                                    size_t unused_len, void *unused2_ptr,
+                                    size_t unused2_len, size_t *unused2_lenout,
+                                    uint32_t *output_ptr) {
+  return itest1_single_out(ctx, output_ptr);
+}
+
+int32_t itest3_out_struct(struct CTest1 *ctx, Collection *output) {
+  return itest1_out_struct(ctx, output);
+}
+
+int32_t itest3_in_struct(struct CTest1 *ctx, const Collection *input) {
+  return itest1_in_struct(ctx, input);
+}
+
+int32_t itest3_out_small_struct(struct CTest1 *ctx, SingleEncapsulated *output) {
+  return itest1_out_small_struct(ctx, output);
+}
+
+int32_t itest3_in_small_struct(struct CTest1 *ctx, const SingleEncapsulated *input) {
+  return itest1_in_small_struct(ctx, input);
+}
+
+int32_t itest3_multiple_primitive(struct CTest1 *ctx, const void *unused_ptr,
+                                  size_t unused_len, void *unused2_ptr,
+                                  size_t unused2_len, size_t *unused2_lenout,
+                                  uint16_t input_val, uint16_t *output_ptr,
+                                  Object unused3_val, Object *unused4_ptr,
+                                  uint32_t input2_val, uint64_t *output2_ptr,
+                                  void *unused5_ptr, size_t unused5_len,
+                                  size_t *unused5_lenout) {
+  return itest1_multiple_primitive(ctx, unused_ptr, unused_len, unused2_ptr,
+                            unused2_len,unused2_lenout,input_val, output_ptr,
+                            unused3_val, unused4_ptr, input2_val, output2_ptr,
+                            unused5_ptr, unused5_len, unused5_lenout);
+}
+
+int32_t
+itest3_primitive_plus_struct_in(struct CTest1 *ctx,
+                                const SingleEncapsulated *encapsulated_ptr,
+                                uint32_t magic_val) {
+  return itest1_primitive_plus_struct_in(ctx, encapsulated_ptr, magic_val);
+}
+
+int32_t itest3_primitive_plus_struct_out(struct CTest1 *ctx,
+                                         SingleEncapsulated *encapsulated_ptr,
+                                         uint32_t *magic_ptr) {
+  return itest1_primitive_plus_struct_out(ctx, encapsulated_ptr, magic_ptr);
+}
+
+int32_t itest3_primitive_array_in_struct(struct CTest1 *ctx,
+                                         ArrInStruct *arr_ptr,
+                                         uint32_t *magic_ptr) {
+  return itest1_primitive_array_in_struct(ctx, arr_ptr, magic_ptr);
+}
+
+int32_t itest3_bundled_with_unbundled(struct CTest1 *ctx,
+                                      const SingleEncapsulated *bundled_ptr,
+                                      uint32_t magic_val,
+                                      const Collection *unbundled_ptr) {
+  return itest1_bundled_with_unbundled(ctx, bundled_ptr, magic_val, unbundled_ptr);
+}
+
+int32_t itest3_struct_array_in(struct CTest1 *ctx, const Collection *s_in_ptr, size_t s_in_len) {
+  return itest1_struct_array_in(ctx, s_in_ptr, s_in_len);
+}
+
+int32_t itest3_struct_array_out(struct CTest1 *ctx, Collection *s_out_ptr, size_t s_out_len, size_t *s_out_lenout) {
+  return itest1_struct_array_out(ctx, s_out_ptr, s_out_len, s_out_lenout);
+}
+
+int32_t itest3_well_documented_method(struct CTest1 *ctx, uint32_t foo_val,
+                                           uint32_t *bar_ptr) {
+  return itest1_well_documented_method_real(ctx, foo_val, bar_ptr);
+}
+
+int32_t itest3_test_obj_array_in(struct CTest1 *ctx,
+                                 const Object (*o_in_ptr)[3], uint32_t *a_ptr) {
+  return Object_OK;
+}
+
+int32_t itest3_test_obj_array_out(struct CTest1 *ctx, Object (*o_ptr)[3],
+                                  uint32_t *a_ptr) {
+  return Object_OK;
+}
+
+int32_t itest3_objects_in_struct(struct CTest1 *ctx, const ObjInStruct *input,
+                                 ObjInStruct *output) {
+  return itest1_objects_in_struct(ctx, input, output);
+}
+
+ITest3_DEFINE_INVOKE(itest3_invoke, itest3_, void *);
+
+Object create_c_itest3() { return (Object){itest3_invoke, NULL}; }
