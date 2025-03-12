@@ -4,7 +4,7 @@
 #![cfg(not(miri))]
 
 use idlc_test::{
-    cpp::{create_itest1, create_itest2},
+    cpp::{create_itest1, create_itest2, create_itest3},
     implementation,
     interfaces::itest2::ITest2,
 };
@@ -14,6 +14,8 @@ fn implementation() {
     let cpp_wrapper = unsafe { create_itest2().unwrap() };
     let input = implementation::ITest1::default().into();
     assert_eq!(cpp_wrapper.entrypoint(Some(&input)), Ok(()));
+    let cpp_wrapper_itest3 = unsafe { create_itest3().unwrap() };
+    assert_eq!(cpp_wrapper_itest3.single_in(0xdead), Ok(()));
 }
 
 #[test]

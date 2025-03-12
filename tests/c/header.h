@@ -41,6 +41,11 @@ struct CTest1 {
   uint32_t value;
 };
 
+struct CTest3 {
+  uint32_t refs;
+  uint32_t value;
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -116,6 +121,8 @@ int32_t itest1_test_obj_array_out(struct CTest1 *ctx, Object (*o_ptr)[3],
 
 int32_t itest1_objects_in_struct(struct CTest1 *ctx, const ObjInStruct *input,
                                  ObjInStruct *output);
+
+int32_t itest3_extra_test3(struct CTest1 *ctx, uint32_t *output_ptr);
 
 #ifdef __cplusplus
 }

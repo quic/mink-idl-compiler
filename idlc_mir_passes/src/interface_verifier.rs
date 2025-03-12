@@ -18,7 +18,7 @@ impl<'mir> InterfaceVerifier<'mir> {
     }
 }
 
-impl<'mir> MirCompilerPass<'_> for InterfaceVerifier<'mir> {
+impl MirCompilerPass<'_> for InterfaceVerifier<'_> {
     type Output = ();
 
     fn run_pass(&'_ mut self) -> Self::Output {

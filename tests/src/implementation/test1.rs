@@ -5,21 +5,10 @@ use super::{TRUTH, TRUTH2};
 use crate::interfaces::itest::{self, ArrInStruct, SingleEncapsulated, F2, SUCCESS_FLAG};
 use crate::interfaces::itest1::{self, IITest1};
 use crate::interfaces::itest3::{self, IITest3};
+use crate::interfaces::itest4::{self, IITest4};
 
-macro_rules! generate_itest1_impl {
+macro_rules! itest1_impl {
     ($impl: ident) => {
-        #[derive(Debug, Clone, Copy, Default)]
-        pub struct $impl {
-            pub value: u32,
-        }
-
-        impl $impl {
-            #[inline]
-            pub const fn new(value: u32) -> Self {
-                Self { value }
-            }
-        }
-
         impl IITest1 for $impl {
             fn test_f1(&mut self, a: u32) -> Result<u32, itest1::Error> {
                 Ok(self.value + a + 1000)
@@ -246,6 +235,40 @@ macro_rules! generate_itest1_impl {
                 })
             }
         }
+    }
+}
+
+macro_rules! generate_itest1_impl {
+    ($impl: ident) => {
+        #[derive(Debug, Clone, Copy, Default)]
+        pub struct $impl {
+            pub value: u32,
+        }
+
+        impl $impl {
+            #[inline]
+            pub const fn new(value: u32) -> Self {
+                Self { value }
+            }
+        }
+
+        itest1_impl!($impl);
+    };
+}
+
+macro_rules! generate_itest3_impl {
+    ($impl: ident) => {
+        #[derive(Debug, Clone, Copy, Default)]
+        pub struct $impl {
+            pub value: u32,
+        }
+
+        itest1_impl!($impl);
+        impl IITest3 for $impl {
+            fn extra_test3(&mut self) -> Result<u32, itest3::Error> {
+                Ok(SUCCESS_FLAG)
+            }
+        }
     };
 }
 
@@ -254,6 +277,13 @@ generate_itest1_impl!(ITest1);
 generate_itest1_impl!(ITest3);
 impl IITest3 for ITest3 {
     fn r#extra_test3(&mut self) -> Result<u32, itest3::Error> {
+        Ok(SUCCESS_FLAG)
+    }
+}
+
+generate_itest3_impl!(ITest4);
+impl IITest4 for ITest4 {
+    fn r#extra_test4(&mut self) -> Result<u32, itest4::Error> {
         Ok(SUCCESS_FLAG)
     }
 }
