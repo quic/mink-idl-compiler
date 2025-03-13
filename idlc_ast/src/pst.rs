@@ -1,10 +1,21 @@
 // Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 
+use std::collections::HashMap;
 use std::{path::PathBuf, rc::Rc};
 
 use pest::{iterators::Pair, Parser};
 use pest_derive::Parser;
+
+use lazy_static::lazy_static;
+use std::sync::Mutex;
+
+lazy_static! {
+    static ref HASHMAP: Mutex<HashMap<String, String>> = {
+        let m = HashMap::new();
+        Mutex::new(m)
+    };
+}
 
 // Import all AST types
 use super::ast::{
@@ -179,6 +190,7 @@ impl From<Pair<'_, Rule>> for ParamTypeIn {
     fn from(rule: Pair<Rule>) -> Self {
         debug_assert_eq!(rule.as_rule(), Rule::param_type);
         let mut inner = rule.into_inner();
+        let map = HASHMAP.lock().unwrap();
         let r#type = Type::from(ast_unwrap!(inner.next()));
         if let Type::Custom(r#type) = &r#type {
             if r#type == "buffer" {
@@ -190,7 +202,18 @@ impl From<Pair<'_, Rule>> for ParamTypeIn {
             match pair.as_rule() {
                 Rule::unbounded_array => Self::Array(r#type, None),
                 Rule::bounded_array => {
-                    let array_len: Count = ast_unwrap!(pair.into_inner().as_str().parse());
+                    let array_val: String = ast_unwrap!(pair.into_inner().as_str().parse());
+                    let is_decimal = array_val.parse::<u16>();
+                    let array_len = match is_decimal {
+                        Ok(val) => Count::new(val).unwrap(),
+                        Err(_) => {
+                            if let Some(value) = map.get(&array_val) {
+                                Count::new(value.parse::<u16>().unwrap()).unwrap()
+                            } else {
+                                idlc_errors::unrecoverable!("Unknown variable {array_val}")
+                            }
+                        }
+                    };
                     Self::Array(r#type, Some(array_len))
                 }
                 _ => unreachable!(),
@@ -204,6 +227,7 @@ impl From<Pair<'_, Rule>> for ParamTypeOut {
     fn from(rule: Pair<Rule>) -> Self {
         debug_assert_eq!(rule.as_rule(), Rule::param_type);
         let mut inner = rule.into_inner();
+        let map = HASHMAP.lock().unwrap();
         let r#type = Type::from(ast_unwrap!(inner.next()));
         if let Type::Custom(r#type) = &r#type {
             if r#type == "buffer" {
@@ -215,7 +239,18 @@ impl From<Pair<'_, Rule>> for ParamTypeOut {
             match pair.as_rule() {
                 Rule::unbounded_array => Self::Array(r#type, None),
                 Rule::bounded_array => {
-                    let array_len: Count = ast_unwrap!(pair.into_inner().as_str().parse());
+                    let array_val: String = ast_unwrap!(pair.into_inner().as_str().parse());
+                    let is_decimal = array_val.parse::<u16>();
+                    let array_len = match is_decimal {
+                        Ok(val) => Count::new(val).unwrap(),
+                        Err(_) => {
+                            if let Some(value) = map.get(&array_val) {
+                                Count::new(value.parse::<u16>().unwrap()).unwrap()
+                            } else {
+                                idlc_errors::unrecoverable!("Unknown variable {array_val}")
+                            }
+                        }
+                    };
                     Self::Array(r#type, Some(array_len))
                 }
                 _ => unreachable!(),
@@ -256,6 +291,7 @@ fn parse_struct(pair: Pair<Rule>) -> Rc<Node> {
     let mut struct_pst = pair.into_inner().skip(1);
     let ident: Ident = ast_unwrap!(struct_pst.next()).into();
     let mut fields = Vec::<StructField>::new();
+    let map = HASHMAP.lock().unwrap();
     for rule in struct_pst {
         match rule.as_rule() {
             Rule::struct_field => {
@@ -264,8 +300,19 @@ fn parse_struct(pair: Pair<Rule>) -> Rc<Node> {
                 let next = ast_unwrap!(iter.next());
                 let (elem, ident) = match next.as_rule() {
                     Rule::bounded_array => {
-                        let array_len: Count =
+                        let array_val: String =
                             ast_unwrap!(next.clone().into_inner().as_str().parse());
+                        let is_decimal = array_val.parse::<u16>();
+                        let array_len = match is_decimal {
+                            Ok(val) => Count::new(val).unwrap(),
+                            Err(_) => {
+                                if let Some(value) = map.get(&array_val) {
+                                    Count::new(value.parse::<u16>().unwrap()).unwrap()
+                                } else {
+                                    idlc_errors::unrecoverable!("Unknown variable {array_val}")
+                                }
+                            }
+                        };
                         let ident = ast_unwrap!(iter.next()).as_str().to_string();
                         (array_len, ident)
                     }
@@ -297,7 +344,7 @@ fn parse_const(pair: Pair<Rule>, allow_undefined_behavior: bool) -> Const {
     let mut inner = pair.into_inner().skip(1);
 
     let ty = ast_unwrap!(inner.next()).as_str();
-    let ident = ast_unwrap!(inner.next()).into();
+    let ident: Ident = ast_unwrap!(inner.next()).into();
     let value = ast_unwrap!(inner.next()).as_str();
     let primitive = if allow_undefined_behavior {
         Primitive::try_from(ty).unwrap()
@@ -306,6 +353,8 @@ fn parse_const(pair: Pair<Rule>, allow_undefined_behavior: bool) -> Const {
             idlc_errors::unrecoverable!("'{value}' isn't in range for type '{ty}' [{e}]")
         })
     };
+    let mut map = HASHMAP.lock().unwrap();
+    map.insert(ident.to_string(), value.to_string());
 
     Const {
         ident,

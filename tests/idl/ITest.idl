@@ -27,8 +27,11 @@ struct F2 {
   uint8 b;
 };
 
+const uint32 CONST_VAL = 2;
+const uint32 CONST_VAL_INF = 3;
+
 struct ArrInStruct {
-  uint8[2] a;
+  uint8[CONST_VAL] a;
   F2[2] c;
   uint16 d;
 };
@@ -62,7 +65,7 @@ interface ITest1 {
   */
   method well_documented_method(in uint32 foo, out uint32 bar);
   method test_obj_array_in(in ITest1[3] o_in, out uint32 a);
-  method test_obj_array_out(out ITest1[3] out, out uint32 a);
+  method test_obj_array_out(out ITest1[CONST_VAL_INF] out, out uint32 a);
   method objects_in_struct(in ObjInStruct input, out ObjInStruct output);
   #[optional]
   method unimplemented(in uint32 foo); // this method should NOT have an implementation and that is OK
