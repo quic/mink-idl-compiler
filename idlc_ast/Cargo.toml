@@ -14,3 +14,4 @@ idlc_errors = {path = "../idlc_errors" }
 pest = "2.7.9"
 pest_derive = "2.7.9"
 thiserror = "1.0.59"
+lazy_static = "1.5.0"

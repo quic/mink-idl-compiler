@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2025-03-13
+
+### Enhancements
+- Allow using constants defined in the IDL as integers.
+
 ## [0.2.1] - 2025-03-12
 
 ### Fixes
