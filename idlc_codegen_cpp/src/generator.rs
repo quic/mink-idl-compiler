@@ -76,7 +76,6 @@ fn generate_common() -> String {
 #pragma once
 
 #include <cstdint>
-#include <stdint.h>
 #include "object.h"
 #include "proxy_base.hpp"
 "#

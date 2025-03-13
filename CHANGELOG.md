@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0](https://github.com/qualcomm/mink-idl-compiler/compare/v1.0.1...v1.1.0) (2026-06-11)
+
+### Enhancements
+- Allow using constants defined in the IDL as array size values.
+
 ## [1.0.1](https://github.com/qualcomm/mink-idl-compiler/compare/v1.0.0...v1.0.1) (2026-06-10)
 
 
