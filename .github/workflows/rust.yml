@@ -21,6 +21,7 @@ env:
 # jgehrcke/github-repo-stats@release, newrelic/repolinter-action@v1,
 # thollander/actions-comment-pull-request@v3, todogroup/repolinter-action@v1
 jobs:
+
   format:
     name: Ensure 'cargo fmt' has been run
     runs-on: ubuntu-latest
@@ -39,6 +40,18 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
     - uses: actions/checkout@v4
+
+    - name: Show version information (Rust, cargo, GCC)
+      shell: bash
+      run: |
+        ${CC} --version || true
+        ${CXX} --version || true
+        rustup -V
+        rustup toolchain list
+        rustup default
+        cargo -V
+        rustc -V
+
     - name: Build statically linked compiler
       run: |
         rustup target add x86_64-unknown-linux-musl
