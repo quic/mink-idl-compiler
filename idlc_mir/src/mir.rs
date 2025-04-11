@@ -887,7 +887,7 @@ mod tests {
 
     #[test]
     fn search_interfaces() {
-        const ONE: NonZeroU16 = unsafe { NonZeroU16::new_unchecked(1) };
+        const ONE: NonZeroU16 = NonZeroU16::new(1).unwrap();
         let leaf = Struct::Big(StructInner {
             ident: Ident::new_without_span("leaf".to_owned()),
             fields: vec![StructField {
