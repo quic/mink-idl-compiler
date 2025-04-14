@@ -69,18 +69,14 @@ jobs:
     - name: Build
       run: cargo build --target ${{ matrix.job.target }} --profile opt
 
-  tests:
-    needs: build
-    runs-on: "ubuntu-latest"
-    steps:
-    - uses: actions/checkout@v4
-    - name: Run unit tests
-      run: cargo test
+    - name: Run tests
+      run: cargo test --target=${{ matrix.job.target }}
+
     - name: Run Rust+C integration test
       env:
-        IDLC: "../target/debug/idlc"
+        IDLC: "../target/${{ matrix.job.target }}/opt/idlc"
       run: |
-        cargo build
+        cargo build --target=${{ matrix.job.target }} --profile opt
         cd tests
         cargo test
         cargo test --release
