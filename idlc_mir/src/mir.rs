@@ -696,7 +696,7 @@ impl<'a> Iterator for InterfaceIterator<'a> {
 impl Interface {
     #[inline]
     #[must_use]
-    pub const fn iter(&self) -> InterfaceIterator {
+    pub const fn iter(&self) -> InterfaceIterator<'_> {
         InterfaceIterator {
             interface: Some(self),
         }

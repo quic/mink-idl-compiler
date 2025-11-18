@@ -27,6 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    - run: rustc -V
     - run: cargo fmt -- --check
 
   lint_check:
@@ -35,6 +36,7 @@ jobs:
     needs: format
     steps:
     - uses: actions/checkout@v4
+    - run: rustc -V
     - run: cargo clippy --all-targets -- -D clippy::all -D unused -D warnings
 
   build:
