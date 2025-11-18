@@ -70,6 +70,12 @@ impl CompilerPass<'_> for IDLStore {
     }
 }
 
+impl Default for IDLStore {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl IDLStore {
     /// takes the vector of include paths as an argument which will be saved in `include_paths` field
     #[must_use]
