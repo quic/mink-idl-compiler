@@ -99,15 +99,11 @@ impl Counter {
         let mut me = Self::default();
         super::functions::visit_params(function, &mut me);
 
-        me.input_buffers += if me.has_bundled_input {
-            1
-        } else {
-            Default::default()
+        if me.has_bundled_input {
+            me.input_buffers += 1
         };
-        me.output_buffers += if me.has_bundled_output {
-            1
-        } else {
-            Default::default()
+        if me.has_bundled_output {
+            me.output_buffers += 1
         };
 
         me
