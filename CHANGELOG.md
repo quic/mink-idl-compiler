@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.2] - 2025-11-18
+
+### Fixes
+- Fix Cargo.lock for Yocto compilation support
+
 ## [0.2.1] - 2025-03-12
 
 ### Fixes
