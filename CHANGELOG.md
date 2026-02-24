@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.4] - 2026-03-02
+
+### Fixes
+- Bundled struct fields sorted by alignment to match legacy behavior
+
 ## [0.2.3] - 2025-11-27
 
 ### Fixes
