@@ -13,6 +13,12 @@ impl Type {
             Self::SmallStruct(s) => s.size(),
         }
     }
+    pub fn align(&self) -> usize {
+        match self {
+            Self::Primitive(p) => p.align(),
+            Self::SmallStruct(s) => s.align(),
+        }
+    }
 }
 impl PartialOrd<Self> for Type {
     #[inline]
@@ -22,7 +28,7 @@ impl PartialOrd<Self> for Type {
 }
 impl std::cmp::Ord for Type {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.size().cmp(&other.size())
+        self.align().cmp(&other.align())
     }
 }
 
@@ -100,6 +106,8 @@ impl PackedPrimitives {
         let mut me = Self::default();
         super::functions::visit_params(function, &mut me);
 
+        // Order bundle members so that those with larger alignment come before
+        // those with smaller alignment
         me.inputs.sort_by(|a, b| b.cmp(a));
         me.outputs.sort_by(|a, b| b.cmp(a));
 
