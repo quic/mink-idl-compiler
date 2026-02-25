@@ -21,7 +21,7 @@ pub type Ctx = *mut core::ffi::c_void;
 pub type Invoke = unsafe extern "C" fn(h: Ctx, op: Op, args: *mut Arg, counts: Counts) -> i32;
 
 #[repr(C)]
-#[derive(Debug, PartialEq, Hash)]
+#[derive(Debug, Hash)]
 /// Mink [`Object`] is an opaque type that allows you to IPC between services.
 pub struct Object {
     /// Function pointer containing the [`Object`]'s invoke function.
@@ -120,6 +120,13 @@ impl Clone for Object {
             unreachable!();
         }
         unsafe { core::ptr::read(self) }
+    }
+}
+
+impl PartialEq for Object {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::fn_addr_eq(self.invoke, other.invoke)
     }
 }
 
