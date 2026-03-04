@@ -126,7 +126,7 @@ impl Clone for Object {
 impl PartialEq for Object {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        std::ptr::fn_addr_eq(self.invoke, other.invoke)
+        std::ptr::fn_addr_eq(self.invoke, other.invoke) && self.context == other.context
     }
 }
 
