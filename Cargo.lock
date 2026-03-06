@@ -284,7 +284,7 @@ checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
 name = "idlc"
-version = "0.2.3"
+version = "0.3.0"
 dependencies = [
  "clap",
  "idlc_ast",
@@ -301,7 +301,7 @@ dependencies = [
 
 [[package]]
 name = "idlc_ast"
-version = "0.2.3"
+version = "0.3.0"
 dependencies = [
  "idlc_errors",
  "pest",
@@ -321,14 +321,14 @@ dependencies = [
 
 [[package]]
 name = "idlc_codegen"
-version = "0.2.3"
+version = "0.3.0"
 dependencies = [
  "idlc_mir",
 ]
 
 [[package]]
 name = "idlc_codegen_c"
-version = "0.2.3"
+version = "0.3.0"
 dependencies = [
  "idlc_codegen",
  "idlc_mir",
@@ -336,7 +336,7 @@ dependencies = [
 
 [[package]]
 name = "idlc_codegen_cpp"
-version = "0.2.3"
+version = "0.3.0"
 dependencies = [
  "idlc_codegen",
  "idlc_codegen_c",
@@ -345,7 +345,7 @@ dependencies = [
 
 [[package]]
 name = "idlc_codegen_java"
-version = "0.2.3"
+version = "0.3.0"
 dependencies = [
  "convert_case",
  "idlc_codegen",
@@ -354,7 +354,7 @@ dependencies = [
 
 [[package]]
 name = "idlc_codegen_rust"
-version = "0.2.3"
+version = "0.3.0"
 dependencies = [
  "convert_case",
  "idlc_codegen",
@@ -366,7 +366,7 @@ dependencies = [
 
 [[package]]
 name = "idlc_errors"
-version = "0.2.3"
+version = "0.3.0"
 dependencies = [
  "env_logger",
  "log",
@@ -374,7 +374,7 @@ dependencies = [
 
 [[package]]
 name = "idlc_mir"
-version = "0.2.3"
+version = "0.3.0"
 dependencies = [
  "idlc_ast",
  "idlc_ast_passes",
@@ -382,7 +382,7 @@ dependencies = [
 
 [[package]]
 name = "idlc_mir_passes"
-version = "0.2.3"
+version = "0.3.0"
 dependencies = [
  "idlc_ast",
  "idlc_ast_passes",

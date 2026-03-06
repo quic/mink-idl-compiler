@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-03-10
+
+### Enhancements
+- Add support for `#[version = X.Y]` function attributes
+- Add `version` method for all Objects
+- Generate files to match an interface version
+
 ## [0.2.3] - 2025-11-27
 
 ### Fixes
