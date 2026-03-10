@@ -133,7 +133,6 @@ impl<'a> From<Pair<'a, Rule>> for FunctionAttribute {
         let attribute = ast_unwrap!(value.into_inner().next());
         debug_assert_eq!(attribute.as_rule(), Rule::supported_attributes);
         match attribute.as_str() {
-            "optional" => Self::Optional,
             attr if attr.starts_with("version") => {
                 let method_ver = ast_unwrap!(attribute.into_inner().next());
                 debug_assert_eq!(method_ver.as_rule(), Rule::method_version);

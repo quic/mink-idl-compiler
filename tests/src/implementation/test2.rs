@@ -55,7 +55,7 @@ impl IITest2 for ITest2 {
         super::test_singlular_object(output.second_obj.as_ref()).unwrap();
 
         assert_eq!(
-            o.unimplemented(3),
+            o.un_implemented(3),
             Err(crate::object::error::generic::INVALID.into())
         );
 

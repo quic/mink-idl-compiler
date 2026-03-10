@@ -459,14 +459,9 @@ pub struct Function {
 }
 
 impl Function {
-    pub fn is_optional(&self) -> bool {
-        self.attributes
-            .contains(&idlc_ast::FunctionAttribute::Optional)
-    }
     pub fn get_version(&self) -> Option<&APIVersion> {
         self.attributes.iter().find_map(|e| match e {
             idlc_ast::FunctionAttribute::Version(a) => Some(a),
-            _ => None,
         })
     }
 }

@@ -49,7 +49,6 @@ impl<'ast> CompilerPass<'ast> for Functions {
                         .iter()
                         .filter_map(|attr| match attr {
                             idlc_ast::FunctionAttribute::Version(a) => Some(a),
-                            _ => None,
                         })
                         .collect();
                     // - Ensure that no more than 1 version is listed
