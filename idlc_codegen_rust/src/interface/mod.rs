@@ -3,7 +3,8 @@
 
 use crate::globals::emit_const;
 
-use idlc_mir::{Interface, InterfaceNode};
+use idlc_codegen::keywords::invoke::VERSION_FUNC_NAME;
+use idlc_mir::{APIVersion, Interface, InterfaceNode};
 
 mod error;
 mod functions;
@@ -13,7 +14,7 @@ mod variable_names;
 pub fn emit(interface: &Interface) -> String {
     use mink_primitives::{
         ARG, CONTEXT, COUNTS, GENERIC_ERROR, INVOKE_FN, OBJECT, OP_ID, OP_RELEASE, OP_RETAIN,
-        TYPED_OBJECT_TRAIT, WRAPPER,
+        OP_VERSION, TYPED_OBJECT_TRAIT, WRAPPER,
     };
     let ident = &interface.ident;
     let mut trait_functions = Vec::new();
@@ -84,6 +85,9 @@ pub fn emit(interface: &Interface) -> String {
 
     let wrapper = format!("{WRAPPER}::Wrapper::<dyn I{ident}>");
 
+    let interface_version = interface.get_version();
+    let APIVersion { major, minor } = interface_version;
+
     let output = format!(
         r#"
     {errors}
@@ -99,7 +103,28 @@ pub fn emit(interface: &Interface) -> String {
         {trait_functions}
     }}
 
+    /// '{ident}' interface at version '{interface_version}'
     impl {ident} {{
+        pub fn r#{VERSION_FUNC_NAME}(&self) -> Result<(u32), Error> {{
+            let mut r#a = std::mem::MaybeUninit::<u32>::uninit();
+            let mut args = [
+                crate::object::Arg {{
+                    bi: crate::object::BufIn {{
+                        ptr: std::ptr::addr_of_mut!(r#a).cast(),
+                        size: std::mem::size_of::<u32>(),
+                    }},
+                }},
+            ];
+            match unsafe {{
+                self.0.invoke({OP_VERSION}, args.as_mut_ptr(), crate::object::pack_counts(0, 1, 0, 0))
+            }} {{
+                0 => {{
+                    let r#a = unsafe {{ r#a.assume_init() }};
+                    Ok((r#a))
+                }}
+                err => Err(unsafe {{ std::mem::transmute(err) }}),
+            }}
+        }}
         {implementations}
     }}
 
@@ -144,8 +169,113 @@ pub fn emit(interface: &Interface) -> String {
             {OP_RETAIN} => {{
                 {WRAPPER}::retain(cx)
             }},
+            {OP_VERSION} => {{
+                if counts != crate::object::pack_counts(0, 1, 0, 0) {{
+                    return std::mem::transmute(crate::object::error::generic::GENERIC);
+                }}
+                let args = std::slice::from_raw_parts_mut(args, 1);
+                let r#a_orig = args[0].b.size;
+                if r#a_orig < std::mem::size_of::<u32>() {{
+                    return {GENERIC_ERROR}::SIZE_OUT.into();
+                }}
+                let r#a_lenout = &mut *std::ptr::addr_of_mut!(args[0].b.size);
+                let r#a = std::slice::from_raw_parts_mut(
+                    args[0].b.ptr.cast::<u8>(),
+                    r#a_orig / std::mem::size_of::<u8>(),
+                );
+                let value: u32 = IDLVersion::new({major}, {minor}, 0).into();
+                r#a.copy_from_slice(&value.to_le_bytes());
+                *r#a_lenout = std::mem::size_of::<u32>();
+                0
+            }},
             _ => {GENERIC_ERROR}::INVALID.into(),
         }}
+    }}
+
+    #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Default)]
+    #[repr(transparent)]
+    pub struct IDLVersion(u32);
+
+    impl IDLVersion {{
+        // Field widths
+        pub const MAJOR_BITS: u32 = 10;
+        pub const MINOR_BITS: u32 = 10;
+        pub const PATCH_BITS: u32 = 12;
+
+        // Bit positions (LSB = bit 0)
+        pub const PATCH_SHIFT: u32 = 0;
+        pub const MINOR_SHIFT: u32 = Self::PATCH_SHIFT + Self::PATCH_BITS; // 12
+        pub const MAJOR_SHIFT: u32 = Self::MINOR_SHIFT + Self::MINOR_BITS; // 22
+
+        // Masks (unshifted)
+        pub const MAJOR_MASK: u32 = (1u32 << Self::MAJOR_BITS) - 1; // 0x3FF
+        pub const MINOR_MASK: u32 = (1u32 << Self::MINOR_BITS) - 1; // 0x3FF
+        pub const PATCH_MASK: u32 = (1u32 << Self::PATCH_BITS) - 1; // 0xFFF
+
+        /// Pack (major, minor, patch) into a single u32.
+        /// Values are truncated to their field widths.
+        pub const fn new(major: u16, minor: u16, patch: u16) -> Self {{
+            let major = (major as u32) & Self::MAJOR_MASK;
+            let minor = (minor as u32) & Self::MINOR_MASK;
+            let patch = (patch as u32) & Self::PATCH_MASK;
+
+            Self((major << Self::MAJOR_SHIFT) |
+                 (minor << Self::MINOR_SHIFT) |
+                 (patch << Self::PATCH_SHIFT))
+        }}
+
+        /// Like `new`, but returns None if any component is out of range.
+        pub const fn try_new(major: u16, minor: u16, patch: u16) -> Option<Self> {{
+            if (major as u32) > Self::MAJOR_MASK {{ return None; }}
+            if (minor as u32) > Self::MINOR_MASK {{ return None; }}
+            if (patch as u32) > Self::PATCH_MASK {{ return None; }}
+            Some(Self::new(major, minor, patch))
+        }}
+
+        #[inline(always)]
+        pub const fn major(self) -> u16 {{
+            (((self.0 >> Self::MAJOR_SHIFT) & Self::MAJOR_MASK) as u16)
+        }}
+
+        #[inline(always)]
+        pub const fn minor(self) -> u16 {{
+            (((self.0 >> Self::MINOR_SHIFT) & Self::MINOR_MASK) as u16)
+        }}
+
+        #[inline(always)]
+        pub const fn patch(self) -> u16 {{
+            (((self.0 >> Self::PATCH_SHIFT) & Self::PATCH_MASK) as u16)
+        }}
+
+        /// Access the raw packed value (host endianness).
+        #[inline(always)]
+        pub const fn as_u32(self) -> u32 {{
+            self.0
+        }}
+
+        /// Construct from a raw packed value (host endianness).
+        #[inline(always)]
+        pub const fn from_u32(raw: u32) -> Self {{
+            Self(raw)
+        }}
+
+        #[inline(always)]
+        pub const fn to_le_bytes(self) -> [u8; 4] {{
+            self.0.to_le_bytes()
+        }}
+
+        #[inline(always)]
+        pub const fn from_le_bytes(bytes: [u8; 4]) -> Self {{
+            Self(u32::from_le_bytes(bytes))
+        }}
+    }}
+
+    // Optional ergonomic conversions:
+    impl From<u32> for IDLVersion {{
+        fn from(v: u32) -> Self {{ Self(v) }}
+    }}
+    impl From<IDLVersion> for u32 {{
+        fn from(v: IDLVersion) -> u32 {{ v.0 }}
     }}
 
     /// Downcasts to the value of type `T` that was used to create this object.
