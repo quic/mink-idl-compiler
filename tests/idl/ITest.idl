@@ -66,6 +66,21 @@ interface ITest1 {
   method objects_in_struct(in ObjInStruct input, out ObjInStruct output);
   #[optional]
   method unimplemented(in uint32 foo); // this method should NOT have an implementation and that is OK
+  #[optional]
+  #[version = 1.0]
+  method derive_v0(in uint32 a); // the default version attribute should have no effect. Cannot have major version less than 1.
+  #[optional]
+  #[version = 1.1]
+  method derive_v1(in uint32 a); // versions MUST increase as the file moves on
+  #[version = 1.2]
+  #[optional]
+  method derive_v2(in uint32 a); // only 1 version attribute should be allowed. Order of attributes does not matter.
+  #[optional]
+  #[version = 1.255]
+  method derive_v255(out uint32 a); // Major and Minor version must each fit into a byte (0-255)
+  #[optional]
+  #[version = 2.0]
+  method derive_v2p2(in uint32 a); // Major version takes highest priority
 };
 
 interface ITest2 {

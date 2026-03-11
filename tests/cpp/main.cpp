@@ -225,6 +225,11 @@ public:
 
     ASSERT(me.unimplemented(3) == Object_ERROR_INVALID);
 
+    uint32_t version = 0;
+    uint32_t expect  = (2 << 24 | 0 << 16 | 0);
+    CHECK_OK(me.version(&version));
+    ASSERT(version == expect);
+
     return Object_OK;
   }
 };

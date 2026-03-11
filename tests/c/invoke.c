@@ -59,6 +59,19 @@ int32_t test_singular_object(Object itest1) {
     CHECK_OK(ITest1_well_documented_method(itest1, SUCCESS_FLAG, &out));
     ASSERT(out == SUCCESS_FLAG);
   }
+  {
+    // Check for version against typed and generic Objects
+    uint32_t version = 0;
+    uint32_t expect  = (2 << 24 | 0 << 16 | 0);
+    CHECK_OK(ITest1_version(itest1, &version));
+    ASSERT(version == expect);
+    // WARNING! The following compiles and passes the test even though it is 8
+    // bytes instead of 4. Using the ITest1_version method will give better type
+    // checking at compile time.
+    uint64_t long_version = 0;
+    CHECK_OK(Object_version(itest1, &long_version));
+    ASSERT(version == expect);
+  }
 
   return Object_OK;
 }

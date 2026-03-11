@@ -81,5 +81,7 @@ fn test_singlular_object(
 
     assert_eq!(o.well_documented_method(SUCCESS_FLAG), Ok(SUCCESS_FLAG));
 
+    assert_eq!(o.version(), Ok((2u32 << 24 | 0u32 << 16 | 0u32).into()));
+
     Ok(())
 }
