@@ -63,6 +63,7 @@ pub union Arg {
 
 pub const OP_RELEASE: Op = 0xffffu32;
 pub const OP_RETAIN: Op = 0xfffeu32;
+pub const OP_VERSION: Op = 0x7FFFu32;
 
 #[inline]
 /// Pack argument counts into single [`Counts`] field for [`Invoke`].
