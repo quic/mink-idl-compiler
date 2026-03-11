@@ -223,6 +223,7 @@ static inline int32_t Object_invoke(Object o, ObjectOp op, ObjectArg *args, Obje
 
 #define Object_OP_release       (ObjectOp_METHOD_MASK - 0U)
 #define Object_OP_retain        (ObjectOp_METHOD_MASK - 1U)
+#define Object_OP_version       (ObjectOp_LOCAL - 1)
 
 #define Object_release(o)       Object_invoke((o), Object_OP_release, 0, 0)
 #define Object_retain(o)        Object_invoke((o), Object_OP_retain, 0, 0)
