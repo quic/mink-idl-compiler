@@ -21,7 +21,7 @@ use errors::check;
 use idlc_ast::Ast;
 use idlc_ast_passes::{cycles, idl_store::IDLStore, struct_verifier, CompilerPass};
 use idlc_codegen::{Generator, SplitInvokeGenerator};
-use idlc_mir::Mir;
+use idlc_mir::{Mir, NamedVersion};
 use idlc_mir_passes::{interface_verifier, MirCompilerPass};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -109,8 +109,20 @@ impl Compiler {
         mir
     }
 
-    pub fn generate(&self, legal_marking: String, skeleton: bool, no_typed_objects: bool) {
-        let mir = self.parse_to_mir();
+    pub fn generate(
+        &self,
+        legal_marking: String,
+        skeleton: bool,
+        no_typed_objects: bool,
+        specs: Vec<NamedVersion>,
+    ) {
+        let mut mir = self.parse_to_mir();
+
+        // Prune the MIR to specs passed through the CLI, if any. Because the same
+        // mir tree is parsed in multiple places after this, it is easier to modify
+        // the tree itself rather than instruct all code generators to ignore the
+        // same methods.
+        mir.prune(specs);
 
         match self.lang {
             Language::C => {

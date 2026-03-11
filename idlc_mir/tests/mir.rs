@@ -53,7 +53,7 @@ fn op_code_test() {
             };
         ",
     );
-    let node = &**mir.nodes.last().unwrap();
+    let node = mir.nodes.last().unwrap();
     let mut out: Vec<(&str, u32)> = vec![];
     if let idlc_mir::Node::Interface(interface) = node {
         let fn_iterator = interface.iter().flat_map(|iface| {
@@ -111,7 +111,7 @@ fn err_code_test() {
             };
         ",
     );
-    let node = &**mir.nodes.last().unwrap();
+    let node = mir.nodes.last().unwrap();
     let mut out: Vec<(&str, i32)> = vec![];
     if let idlc_mir::Node::Interface(interface) = node {
         let fn_iterator = interface.iter().flat_map(|iface| {

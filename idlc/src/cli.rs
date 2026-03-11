@@ -1,6 +1,8 @@
 // Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 
+use idlc_mir::NamedVersion;
+
 fn long_version() -> &'static str {
     let git_hash = env!("GIT_HASH");
 
@@ -81,6 +83,17 @@ pub struct Cli {
     /// This is for compatibility with headers that were generated with a buggy
     /// compiler.
     pub bundle_params_by_size: bool,
+
+    #[arg(long, value_name = "NAME{@|:|=}X.Y", value_parser = clap::value_parser!(NamedVersion))]
+    /// Repeatable: NAME@X.Y | NAME:X.Y | NAME=X.Y
+    ///
+    /// Restrict the list of methods to those found up to - and including - the
+    /// specified interface version. Specifying a version which exceeds the
+    /// interface definition is effectively ignored.
+    ///
+    /// If a spec does not match any interface in the input file, an error is
+    /// thrown. Interface names are case-sensitive.
+    pub spec: Vec<NamedVersion>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, clap::ValueEnum)]
