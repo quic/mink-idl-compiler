@@ -174,6 +174,17 @@ fn function() {
             "#[optional] method foo(in buffer req, out buffer rsp);",
             r"#[optional]
               method foo(in buffer req, out buffer rsp);",
+            "#[version = 1.1] method foo(in buffer req, out buffer rsp);",
+            "#[version=1.1] method foo(in buffer req, out buffer rsp);",
+            r"#[version = 1.1]
+              method foo(in buffer req, out buffer rsp);",
+            r"#[version = 1.0]
+              #[version = 1.0]
+              method foo(in buffer req, out buffer rsp);",
+            r"#[version = 1.1000]
+              method foo(in buffer req, out buffer rsp);",
+            r"#[version = 0.0]
+              method foo(in buffer req, out buffer rsp);",
         ]
     );
 
@@ -195,6 +206,11 @@ fn function() {
             "methodfoo();",
             "#[unsupported_attribute] method foo(in buffer req, out buffer rsp);",
             "#[optional]method foo(in buffer req, out buffer rsp);",
+            "#[version = 1.1]method foo(in buffer req, out buffer rsp);",
+            r"#[version = 1]
+              method foo(in buffer req, out buffer rsp);",
+            r"#[version = a.i]
+              method foo(in buffer req, out buffer rsp);",
         ]
     );
 }

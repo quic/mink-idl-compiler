@@ -1,12 +1,14 @@
 // Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 
-use std::{num::NonZeroU16, path::PathBuf, rc::Rc};
+use std::{num::NonZeroU16, path::PathBuf, rc::Rc, str::FromStr};
 
 use crate::Error;
 
 /// Maximum allowed size for a struct array [`u16::MAX`]
 pub type Count = NonZeroU16;
+/// Any method which is not explicitly versioned will have an assumed value of 1.0
+pub const DEFAULT_VERSION: APIVersion = APIVersion { major: 1, minor: 0 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 /// AST structure for an IDL.
@@ -103,9 +105,80 @@ pub enum InterfaceNode {
     Error(Ident),
 }
 
+// The #[derive(Ord)] produces a lexicographic ordering based on the
+// top-to-bottom declaration order of the struct’s members.
+// 1. Compare major
+// 2. If major is equal, compare minor
+// 3. If both are equal, the values are equal
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct APIVersion {
+    pub major: u16,
+    pub minor: u16,
+    // patch is not supported at this time
+}
+impl APIVersion {
+    // Field widths
+    pub const MAJOR_BITS: u32 = 10;
+    pub const MINOR_BITS: u32 = 10;
+    pub const PATCH_BITS: u32 = 12;
+
+    // Masks (unshifted)
+    pub const MAJOR_MASK: u32 = (1u32 << Self::MAJOR_BITS) - 1; // 0x3FF
+    pub const MINOR_MASK: u32 = (1u32 << Self::MINOR_BITS) - 1; // 0x3FF
+    pub const PATCH_MASK: u32 = (1u32 << Self::PATCH_BITS) - 1; // 0xFFF
+}
+
+impl std::fmt::Display for APIVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}.{}", self.major, self.minor)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum VersionParseError {
+    BadFormat,
+    BadMajor,
+    BadMinor,
+}
+
+impl std::fmt::Display for VersionParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            VersionParseError::BadFormat => write!(f, "expected format X.Y (e.g. 1.2)"),
+            VersionParseError::BadMajor => {
+                write!(f, "major version must be an integer in 0..=1023")
+            }
+            VersionParseError::BadMinor => {
+                write!(f, "minor version must be an integer in 0..=1023")
+            }
+        }
+    }
+}
+
+impl std::error::Error for VersionParseError {}
+
+impl FromStr for APIVersion {
+    type Err = VersionParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (maj, min) = s.split_once('.').ok_or(VersionParseError::BadFormat)?;
+        let major: u16 = maj.parse().map_err(|_| VersionParseError::BadMajor)?;
+        let minor: u16 = min.parse().map_err(|_| VersionParseError::BadMinor)?;
+        if (major as u32) > Self::MAJOR_MASK {
+            return Err(VersionParseError::BadMajor);
+        };
+        if (minor as u32) > Self::MINOR_MASK {
+            return Err(VersionParseError::BadMinor);
+        };
+        // patch is not supported at this time
+        Ok(APIVersion { major, minor })
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FunctionAttribute {
     Optional,
+    Version(APIVersion),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

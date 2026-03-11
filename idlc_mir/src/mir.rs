@@ -25,7 +25,7 @@
 //! codegens from AST changes; AST changes tomorrow which don't require MIR
 //! changes should not require codegen changes
 use idlc_ast::Ast;
-pub use idlc_ast::Ident;
+pub use idlc_ast::{APIVersion, Ident, DEFAULT_VERSION};
 use idlc_ast_passes::idl_store::IDLStore;
 
 use std::collections::{HashMap, VecDeque};
@@ -249,6 +249,21 @@ pub struct Interface {
     pub nodes: Vec<InterfaceNode>,
 }
 
+impl Interface {
+    // Determine the overall version of the IDL by finding the max version
+    // attribute among all functions.
+    pub fn get_version(&self) -> &APIVersion {
+        self.nodes
+            .iter()
+            .filter_map(|n| match n {
+                InterfaceNode::Function(func) => func.get_version(),
+                _ => None,
+            })
+            .max()
+            .unwrap_or(&DEFAULT_VERSION)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum InterfaceNode {
     Const(Const),
@@ -446,6 +461,12 @@ impl Function {
     pub fn is_optional(&self) -> bool {
         self.attributes
             .contains(&idlc_ast::FunctionAttribute::Optional)
+    }
+    pub fn get_version(&self) -> Option<&APIVersion> {
+        self.attributes.iter().find_map(|e| match e {
+            idlc_ast::FunctionAttribute::Version(a) => Some(a),
+            _ => None,
+        })
     }
 }
 
