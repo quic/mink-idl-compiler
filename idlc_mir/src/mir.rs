@@ -25,7 +25,7 @@
 //! codegens from AST changes; AST changes tomorrow which don't require MIR
 //! changes should not require codegen changes
 use idlc_ast::Ast;
-pub use idlc_ast::Ident;
+pub use idlc_ast::{Ident, SemanticVersion};
 use idlc_ast_passes::idl_store::IDLStore;
 
 use std::collections::{HashMap, VecDeque};
@@ -36,6 +36,8 @@ use std::rc::Rc;
 const ERROR_CODE_START: i32 = 10;
 /// User defined method op-codes can range from 0 - 0x3FFF (inclusive) as defined by the Mink specification.
 const MAX_OP_CODE: u32 = 0x3fff;
+/// Any method which is not explicitly versioned will have an assumed value of 1.0
+const DEFAULT_VERSION: SemanticVersion = SemanticVersion { major: 1, minor: 0 };
 
 #[derive(Debug, Clone, PartialEq)]
 /// Represents the Mink specifications over the source AST.
@@ -229,6 +231,21 @@ pub struct Interface {
     pub ident: Ident,
     pub base: Option<Rc<Interface>>,
     pub nodes: Vec<InterfaceNode>,
+}
+
+impl Interface {
+    // Determine the overall version of the IDL by finding the max version
+    // attribute of any function.
+    pub fn get_version(&self) -> &SemanticVersion {
+        self.nodes
+            .iter()
+            .filter_map(|n| match n {
+                InterfaceNode::Function(func) => func.get_version(),
+                _ => None,
+            })
+            .max()
+            .unwrap_or(&DEFAULT_VERSION)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -428,6 +445,12 @@ impl Function {
     pub fn is_optional(&self) -> bool {
         self.attributes
             .contains(&idlc_ast::FunctionAttribute::Optional)
+    }
+    pub fn get_version(&self) -> Option<&SemanticVersion> {
+        self.attributes.iter().find_map(|e| match e {
+            idlc_ast::FunctionAttribute::Version(a) => Some(a),
+            _ => None,
+        })
     }
 }
 
