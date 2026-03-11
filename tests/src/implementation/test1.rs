@@ -234,6 +234,27 @@ macro_rules! itest1_impl {
                     second_obj: Some(super::ITest1::new(2).into()),
                 })
             }
+
+            #[allow(unused_variables)]
+            fn r#derive_v0(&mut self, r#input: u32) -> Result<(), itest1::Error> {
+                Ok(())
+            }
+            #[allow(unused_variables)]
+            fn r#derive_v1(&mut self, r#input: u32) -> Result<(), itest1::Error> {
+                Ok(())
+            }
+            #[allow(unused_variables)]
+            fn r#derive_v2(&mut self, r#input: u32) -> Result<(), itest1::Error> {
+                Ok(())
+            }
+            #[allow(unused_variables)]
+            fn r#derive_v255(&mut self) -> Result<u32, itest1::Error> {
+                Ok(0xdead)
+            }
+            #[allow(unused_variables)]
+            fn r#derive_v2p2(&mut self, r#input: u32) -> Result<(), itest1::Error> {
+                Ok(())
+            }
         }
     }
 }

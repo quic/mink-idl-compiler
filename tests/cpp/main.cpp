@@ -153,6 +153,23 @@ public:
     return Object_OK;
   }
 
+  int32_t derive_v0(uint32_t a_val) {
+    return Object_OK;
+  }
+  int32_t derive_v1(uint32_t a_val) {
+    return Object_OK;
+  }
+  int32_t derive_v2(uint32_t a_val) {
+    return Object_OK;
+  }
+  int32_t derive_v255(uint32_t *output_ptr) {
+    *output_ptr = 0xdead;
+    return Object_OK;
+  }
+  int32_t derive_v2p2(uint32_t a_val) {
+    return Object_OK;
+  }
+
 private:
   struct c::CTest1 ctest;
 };
@@ -224,6 +241,15 @@ public:
     Object_ASSIGN_NULL(output_struct.should_be_empty);
 
     ASSERT(me.unimplemented(3) == Object_ERROR_INVALID);
+
+    uint32_t version = 0;
+    CHECK_OK(me.api_version(&version));
+    uint32_t major = (version >> ITest1::MAJOR_SHIFT) & ITest1::MAJOR_MASK;
+    uint32_t minor = (version >> ITest1::MINOR_SHIFT) & ITest1::MINOR_MASK;
+    uint32_t patch =  version                         & ITest1::PATCH_MASK;
+    ASSERT(major == 2);
+    ASSERT(minor == 0);
+    ASSERT(patch == 0);
 
     return Object_OK;
   }
@@ -369,6 +395,22 @@ public:
     output_ref.first_obj = create_cpp_itest1(1);
     output_ref.second_obj = create_cpp_itest1(2);
     output_ref.should_be_empty = Object_NULL;
+    return Object_OK;
+  }
+  int32_t derive_v0(uint32_t a_val) {
+    return Object_OK;
+  }
+  int32_t derive_v1(uint32_t a_val) {
+    return Object_OK;
+  }
+  int32_t derive_v2(uint32_t a_val) {
+    return Object_OK;
+  }
+  int32_t derive_v255(uint32_t *output_ptr) {
+    *output_ptr = 0xdead;
+    return Object_OK;
+  }
+  int32_t derive_v2p2(uint32_t a_val) {
     return Object_OK;
   }
 private:
