@@ -1,7 +1,7 @@
 // Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 
-use idlc_mir::{Interface, InterfaceNode};
+use idlc_mir::{Interface, InterfaceNode, SemanticVersion};
 
 mod functions;
 
@@ -132,7 +132,12 @@ class {ident} : public I{ident}, public ProxyBase {{
     {ident}() {{}}
     {ident}(Object impl) : ProxyBase(impl) {{}}
     virtual ~{ident}() {{}}
-
+    virtual int32_t version(uint32_t *a_ptr) {{
+        ObjectArg a[] = {{
+            {{.b = (ObjectBuf) {{ a_ptr, sizeof(uint32_t) }} }},
+        }};
+        return invoke(Object_OP_version, a, ObjectCounts_pack(0, 1, 0, 0));
+    }}
 {implementations}
 }};
 
@@ -177,13 +182,24 @@ pub fn emit_interface_invoke(interface: &Interface) -> String {
         }
     }
 
+    let SemanticVersion { major, minor } = interface.get_version();
+
     format!(
         r#"
 class {ident}ImplBase : protected ImplBase, public I{ident} {{
   public:
     {ident}ImplBase() {{}}
     virtual ~{ident}ImplBase() {{}}
+    static constexpr uint8_t VERSION_MAJOR = UINT8_C({major});
+    static constexpr uint8_t VERSION_MINOR = UINT8_C({minor});
+    static constexpr int16_t VERSION_PATCH = 0;
 {weak_declarations}
+    virtual int32_t version(uint32_t *a_ptr) {{
+        *a_ptr = VERSION_MAJOR << 24 |
+                 VERSION_MINOR << 16 |
+                 VERSION_PATCH;
+        return Object_OK;
+    }}
   protected:
     virtual int32_t invoke(ObjectOp op, ObjectArg* a, ObjectCounts k) {{
         switch (ObjectOp_methodID(op)) {{
