@@ -378,6 +378,8 @@ version = "0.3.0"
 dependencies = [
  "idlc_ast",
  "idlc_ast_passes",
+ "idlc_errors",
+ "thiserror",
 ]
 
 [[package]]

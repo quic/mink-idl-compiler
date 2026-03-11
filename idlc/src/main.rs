@@ -19,7 +19,7 @@ use idlc_errors::trace;
 
 use idlc_ast_passes::{cycles, idl_store::IDLStore, struct_verifier, CompilerPass};
 
-use idlc_mir::mir;
+use idlc_mir::{mir, NamedVersion};
 use idlc_mir_passes::{interface_verifier, MirCompilerPass};
 
 use idlc_codegen::{Generator, SplitInvokeGenerator};
@@ -91,6 +91,17 @@ struct Cli {
     /// To allow undefined behavior to go through codegen enable this flag, outputs aren't
     /// guaranteed!
     allow_undefined_behavior: bool,
+
+    #[arg(long, value_name = "NAME{@|:|=}X.Y", value_parser = clap::value_parser!(NamedVersion))]
+    /// Repeatable: NAME@X.Y | NAME:X.Y | NAME=X.Y
+    ///
+    /// Restrict the list of methods to those found up to - and including - the
+    /// specified interface version. Specifying a version which exceeds the
+    /// interface definition is effectively ignored.
+    ///
+    /// If a spec does not match any interface in the input file, an error is
+    /// thrown. Interface names are case-sensitive.
+    spec: Vec<NamedVersion>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, clap::ValueEnum)]
@@ -150,7 +161,7 @@ fn main() {
         "`StructVerifier` pass"
     );
 
-    let mir = timer::time!(mir::parse_to_mir(&ast, &mut idl_store), "Mir");
+    let mut mir = timer::time!(mir::parse_to_mir(&ast, &mut idl_store), "Mir");
     if dump == Some(Dumpable::Mir) {
         idlc_mir::dump(mir);
         std::process::exit(0);
@@ -158,6 +169,12 @@ fn main() {
 
     trace!("Verifying interfaces");
     interface_verifier::InterfaceVerifier::new(&mir).run_pass();
+
+    // Prune the MIR to specs passed through the CLI, if any. Because the same
+    // mir tree is parsed in multiple places after this, it is easier to modify
+    // the tree itself rather than instruct all code generators to ignore the
+    // same methods.
+    mir.prune(args.spec);
 
     let marking_cnt = match args.marking {
         Some(m_file) => std::fs::read_to_string(m_file).expect("Failed to read marking file"),

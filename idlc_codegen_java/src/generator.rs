@@ -30,7 +30,7 @@ package com.qualcomm.qti.mink;
         let input_name = &mir.tag.file_stem().unwrap().to_str().unwrap();
         let mut includes = String::new();
         for node in &mir.nodes {
-            if let Node::Include(i) = node.as_ref() {
+            if let Node::Include(i) = node {
                 let inc_name = i.display().to_string().replace(".idl", "");
                 includes.push_str(&format!("{inc_name},"));
             }
@@ -45,7 +45,7 @@ package com.qualcomm.qti.mink;
         ));
 
         for node in &mir.nodes {
-            match node.as_ref() {
+            match node {
                 Node::Const(c) => {
                     interfaces.get_mut(&base).unwrap().push_str(&emit_const(c));
                 }
