@@ -7,6 +7,8 @@ use crate::Error;
 
 /// Maximum allowed size for a struct array [`u16::MAX`]
 pub type Count = NonZeroU16;
+/// Any method which is not explicitly versioned will have an assumed value of 1.0
+pub const DEFAULT_VERSION: SemanticVersion = SemanticVersion { major: 1, minor: 0 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 /// AST structure for an IDL.

@@ -3,7 +3,7 @@
 
 use std::collections::HashSet;
 
-use idlc_ast::{InterfaceNode, Node, SemanticVersion};
+use idlc_ast::{InterfaceNode, Node, SemanticVersion, DEFAULT_VERSION};
 
 use crate::CompilerPass;
 
@@ -27,7 +27,7 @@ impl<'ast> CompilerPass<'ast> for Functions {
             _ => None,
         }) {
             // The default version for all functions is 1.0
-            let mut current_version = SemanticVersion { major: 1, minor: 0 };
+            let mut current_version = DEFAULT_VERSION;
             for node in &interface.nodes {
                 if let InterfaceNode::Function(function) = node {
                     let mut params = HashSet::new();

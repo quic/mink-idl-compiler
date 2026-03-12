@@ -26,7 +26,7 @@
 //! changes should not require codegen changes
 use crate::named_version::NamedVersion;
 use idlc_ast::Ast;
-pub use idlc_ast::{Ident, SemanticVersion};
+pub use idlc_ast::{Ident, SemanticVersion, DEFAULT_VERSION};
 use idlc_ast_passes::idl_store::IDLStore;
 
 use std::collections::{HashMap, VecDeque};
@@ -37,8 +37,6 @@ use std::rc::Rc;
 const ERROR_CODE_START: i32 = 10;
 /// User defined method op-codes can range from 0 - 0x3FFF (inclusive) as defined by the Mink specification.
 const MAX_OP_CODE: u32 = 0x3fff;
-/// Any method which is not explicitly versioned will have an assumed value of 1.0
-const DEFAULT_VERSION: SemanticVersion = SemanticVersion { major: 1, minor: 0 };
 
 #[derive(Debug, Clone, PartialEq)]
 /// Represents the Mink specifications over the source AST.
