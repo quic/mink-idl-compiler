@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.rp.outputs.release_created }}
+      tag_name:        ${{ steps.rp.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: rp
+        with:
+          release-type: simple
+
+  build-and-upload-assets:
+    name: ${{ matrix.job.target }}
+    runs-on: ${{ matrix.job.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        job:
+          - { target: x86_64-unknown-linux-musl , os: ubuntu-latest }
+          - { target: aarch64-unknown-linux-musl, os: ubuntu-24.04-arm }
+
+    needs: release-please
+    if: needs.release-please.outputs.release_created
+    permissions:
+      contents: write  # needed to upload release assets
+
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      run: rustup target add ${{ matrix.job.target }}
+
+    - name: Show version information (Rust, cargo, GCC)
+      shell: bash
+      run: |
+        ${CC} --version || true
+        ${CXX} --version || true
+        rustup -V
+        rustup toolchain list
+        rustup default
+        cargo -V
+        rustc -V
+
+    - name: Build
+      run: cargo build --target ${{ matrix.job.target }} --profile opt
+
+    # --- attach to the GitHub Release created by release-please ---
+    - name: Upload assets to GitHub Release
+      with:
+        name: minkidl-${{ matrix.job.target }}
+        path: target/${{ matrix.job.target }}/opt/idlc
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        TAG: ${{ needs.release-please.outputs.tag_name }}
+        NAME: minkidl-${{ matrix.job.target }}
+      run: |
+        cp target/${{ matrix.job.target }}/opt/idlc "$NAME"
+        gh release upload "$TAG" "$NAME" --clobber
