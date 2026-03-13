@@ -39,7 +39,7 @@ jobs:
 
     steps:
     - name: Checkout source code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Install Rust toolchain
       run: rustup target add ${{ matrix.job.target }}
@@ -60,9 +60,6 @@ jobs:
 
     # --- attach to the GitHub Release created by release-please ---
     - name: Upload assets to GitHub Release
-      with:
-        name: minkidl-${{ matrix.job.target }}
-        path: target/${{ matrix.job.target }}/opt/idlc
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         TAG: ${{ needs.release-please.outputs.tag_name }}
