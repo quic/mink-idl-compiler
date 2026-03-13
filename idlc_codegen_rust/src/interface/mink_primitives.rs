@@ -20,6 +20,7 @@ pub(super) const COUNTS: &str = namespace!("Counts");
 
 pub(super) const OP_RELEASE: &str = namespace!("OP_RELEASE");
 pub(super) const OP_RETAIN: &str = namespace!("OP_RETAIN");
+pub(super) const OP_VERSION: &str = namespace!("OP_VERSION");
 
 pub(super) const WRAPPER: &str = namespace!("wrapper");
 

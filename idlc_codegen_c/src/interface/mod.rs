@@ -1,7 +1,7 @@
 // Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 
-use idlc_mir::{Interface, InterfaceNode};
+use idlc_mir::{Interface, InterfaceNode, SemanticVersion};
 
 pub mod functions;
 pub mod variable_names;
@@ -116,6 +116,15 @@ static inline int32_t
 {{
     return Object_invoke(self, Object_OP_retain, 0, 0);
 }}
+
+static inline int32_t
+{ident}_version(Object self, uint32_t *a_ptr)
+{{
+    ObjectArg a[] = {{
+        {{.b = (ObjectBuf) {{ a_ptr, sizeof(uint32_t) }} }},
+    }};
+    return Object_invoke(self, Object_OP_version, a, ObjectCounts_pack(0, 1, 0, 0));
+}}
 {implementations}
 "#
     )
@@ -165,6 +174,8 @@ pub fn emit_interface_invoke(interface: &Interface, is_no_typed_objects: bool) -
         .then_some(format!(r#"typedef Object {ident};"#))
         .unwrap_or_default();
 
+    let SemanticVersion { major, minor } = interface.get_version();
+
     // weak_delcarations goes inside `func` to preserve the expected when the macro is instantiated
     // with `static IFoo_DEFINE_INVOKE`. It is OK to declare functions within functions for C.
     format!(
@@ -178,6 +189,10 @@ pub fn emit_interface_invoke(interface: &Interface, is_no_typed_objects: bool) -
 #define __compiler_pragma_pre
 #define __compiler_pragma_post
 #endif
+
+#define {ident}_VERSION_MAJOR {major}
+#define {ident}_VERSION_MINOR {minor}
+#define {ident}_VERSION_PATCH 0
 
 #define {ident}_DEFINE_INVOKE(func, prefix, type) \
     int32_t func(ObjectCxt h, ObjectOp op, ObjectArg *a, ObjectCounts k) \
@@ -198,6 +213,17 @@ pub fn emit_interface_invoke(interface: &Interface, is_no_typed_objects: bool) -
                     break; \
                 }} \
                 return prefix##retain(me); \
+            }} \
+            case Object_OP_version: {{ \
+                if (k != ObjectCounts_pack(0, 1, 0, 0) || a[0].b.size != 4) {{ \
+                  break; \
+                }} \
+                uint32_t *a_ptr = (void*)a[0].b.ptr; \
+                *a_ptr = {ident}_VERSION_MAJOR << 24 | \
+                         {ident}_VERSION_MINOR << 16 | \
+                         {ident}_VERSION_PATCH; \
+                a[0].b.size = sizeof(uint32_t); \
+                return Object_OK; \
             }} \
             {invokes} \
         }} \

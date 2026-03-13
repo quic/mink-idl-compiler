@@ -3,7 +3,7 @@
 
 use crate::globals::emit_const;
 
-use idlc_mir::{Interface, InterfaceNode};
+use idlc_mir::{Interface, InterfaceNode, SemanticVersion};
 
 mod error;
 mod functions;
@@ -13,7 +13,7 @@ mod variable_names;
 pub fn emit(interface: &Interface) -> String {
     use mink_primitives::{
         ARG, CONTEXT, COUNTS, GENERIC_ERROR, INVOKE_FN, OBJECT, OP_ID, OP_RELEASE, OP_RETAIN,
-        TYPED_OBJECT_TRAIT, WRAPPER,
+        OP_VERSION, TYPED_OBJECT_TRAIT, WRAPPER,
     };
     let ident = &interface.ident;
     let mut trait_functions = Vec::new();
@@ -84,6 +84,8 @@ pub fn emit(interface: &Interface) -> String {
 
     let wrapper = format!("{WRAPPER}::Wrapper::<dyn I{ident}>");
 
+    let SemanticVersion { major, minor } = interface.get_version();
+
     let output = format!(
         r#"
     {errors}
@@ -100,6 +102,26 @@ pub fn emit(interface: &Interface) -> String {
     }}
 
     impl {ident} {{
+        pub fn r#version(&self) -> Result<(u32), Error> {{
+            let mut r#a = std::mem::MaybeUninit::<u32>::uninit();
+            let mut args = [
+                crate::object::Arg {{
+                    bi: crate::object::BufIn {{
+                        ptr: std::ptr::addr_of_mut!(r#a).cast(),
+                        size: std::mem::size_of::<u32>(),
+                    }},
+                }},
+            ];
+            match unsafe {{
+                self.0.invoke({OP_VERSION}, args.as_mut_ptr(), crate::object::pack_counts(0, 1, 0, 0))
+            }} {{
+                0 => {{
+                    let r#a = unsafe {{ r#a.assume_init() }};
+                    Ok((r#a))
+                }}
+                err => Err(unsafe {{ std::mem::transmute(err) }}),
+            }}
+        }}
         {implementations}
     }}
 
@@ -143,6 +165,31 @@ pub fn emit(interface: &Interface) -> String {
             }},
             {OP_RETAIN} => {{
                 {WRAPPER}::retain(cx)
+            }},
+            {OP_VERSION} => {{
+                if counts != crate::object::pack_counts(0, 1, 0, 0) {{
+                    return std::mem::transmute(crate::object::error::generic::GENERIC);
+                }}
+                let args = std::slice::from_raw_parts_mut(args, 1);
+                let r#a_orig = args[0].b.size;
+                if r#a_orig < std::mem::size_of::<u32>() {{
+                    return {GENERIC_ERROR}::SIZE_OUT.into();
+                }}
+                let r#a_lenout = &mut *std::ptr::addr_of_mut!(args[0].b.size);
+                let r#a = if r#a_orig == 0 {{
+                    &mut []
+                }} else {{
+                    std::slice::from_raw_parts_mut(
+                        args[0].b.ptr.cast::<u8>(),
+                        r#a_orig / std::mem::size_of::<u8>(),
+                    )
+                }};
+                let value: u32 = ({major}u32 << 24 |
+                       {minor}u32 << 16 |
+                       0u32).into();
+                r#a.copy_from_slice(&value.to_le_bytes());
+                *r#a_lenout = std::mem::size_of::<u32>();
+                0
             }},
             _ => {GENERIC_ERROR}::INVALID.into(),
         }}

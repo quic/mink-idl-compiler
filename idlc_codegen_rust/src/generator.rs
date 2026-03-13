@@ -31,7 +31,7 @@ impl idlc_codegen::Generator for Generator {
         interfaces.insert(base.clone(), prologue.to_owned());
 
         for node in &mir.nodes {
-            match node.as_ref() {
+            match node {
                 Node::Const(c) => {
                     interfaces.get_mut(&base).unwrap().push_str(&emit_const(c));
                 }

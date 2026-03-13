@@ -25,7 +25,9 @@ struct         =  { struct_keyword ~ (!"interface" ~ ident) ~ "{" ~ (struct_fiel
 const_keyword = @{ "const" ~ WHITESPACE }
 const         =  { const_keyword ~ primitive_type ~ ident ~ "=" ~ value ~ ";" }
 
-supported_attributes = @{ "optional" }
+semantic_ver         =  { ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+ }
+method_version       =  { "version = " ~ semantic_ver }
+supported_attributes =  { ("optional" | method_version) }
 attribute            = ${ "#[" ~ supported_attributes ~ "]" }
 param_type           =  { ((ident | "interface") ~ bounded_array) | ((primitive_type | !"interface" ~ ident) ~ unbounded_array) | primitive_type | ident | "interface" | "buffer" }
 mutability           = @{ ("in" | "out") }

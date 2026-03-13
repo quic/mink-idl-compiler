@@ -24,8 +24,9 @@
 //! directly depending on AST and for MIR to produce an interface to shield
 //! codegens from AST changes; AST changes tomorrow which don't require MIR
 //! changes should not require codegen changes
+use crate::named_version::NamedVersion;
 use idlc_ast::Ast;
-pub use idlc_ast::Ident;
+pub use idlc_ast::{Ident, SemanticVersion, DEFAULT_VERSION};
 use idlc_ast_passes::idl_store::IDLStore;
 
 use std::collections::{HashMap, VecDeque};
@@ -45,7 +46,7 @@ pub struct Mir {
     /// This doesn't have to be unique.
     pub tag: PathBuf,
     /// Root node for the [`Mir`] tree.
-    pub nodes: Vec<Rc<Node>>,
+    pub nodes: Vec<Node>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -229,6 +230,21 @@ pub struct Interface {
     pub ident: Ident,
     pub base: Option<Rc<Interface>>,
     pub nodes: Vec<InterfaceNode>,
+}
+
+impl Interface {
+    // Determine the overall version of the IDL by finding the max version
+    // attribute of any function.
+    pub fn get_version(&self) -> &SemanticVersion {
+        self.nodes
+            .iter()
+            .filter_map(|n| match n {
+                InterfaceNode::Function(func) => func.get_version(),
+                _ => None,
+            })
+            .max()
+            .unwrap_or(&DEFAULT_VERSION)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -429,6 +445,12 @@ impl Function {
         self.attributes
             .contains(&idlc_ast::FunctionAttribute::Optional)
     }
+    pub fn get_version(&self) -> Option<&SemanticVersion> {
+        self.attributes.iter().find_map(|e| match e {
+            idlc_ast::FunctionAttribute::Version(a) => Some(a),
+            _ => None,
+        })
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -437,15 +459,15 @@ pub struct Error {
     pub value: i32,
 }
 
-fn parse_include(path: &Path) -> Rc<Node> {
-    Rc::new(Node::Include(path.to_path_buf()))
+fn parse_include(path: &Path) -> Node {
+    Node::Include(path.to_path_buf())
 }
 
-fn parse_const(const_: &idlc_ast::Const) -> Rc<Node> {
-    Rc::new(Node::Const(Const::from(const_)))
+fn parse_const(const_: &idlc_ast::Const) -> Node {
+    Node::Const(Const::from(const_))
 }
 
-fn parse_struct(struct_: &idlc_ast::Struct, idl_store: &IDLStore) -> Rc<Node> {
+fn parse_struct(struct_: &idlc_ast::Struct, idl_store: &IDLStore) -> Node {
     let ident = struct_.ident.clone();
     let mut fields = Vec::<StructField>::new();
     let mut size = 0;
@@ -459,14 +481,14 @@ fn parse_struct(struct_: &idlc_ast::Struct, idl_store: &IDLStore) -> Rc<Node> {
         fields.push(field);
     }
 
-    Rc::new(Node::Struct(Struct::new(
+    Node::Struct(Struct::new(
         StructInner {
             ident,
             fields,
             origin: None,
         },
         size,
-    )))
+    ))
 }
 
 fn parse_interface(
@@ -548,12 +570,12 @@ pub fn parse_to_mir(ast: &Ast, idl_store: &mut IDLStore) -> Mir {
             idlc_ast::Node::Interface(interface) => {
                 let mut err_code = ERROR_CODE_START;
                 let mut op_code = 0;
-                nodes.push(Rc::new(Node::Interface(parse_interface(
+                nodes.push(Node::Interface(parse_interface(
                     interface,
                     idl_store,
                     &mut err_code,
                     &mut op_code,
-                ))));
+                )));
             }
         }
     }
@@ -561,6 +583,33 @@ pub fn parse_to_mir(ast: &Ast, idl_store: &mut IDLStore) -> Mir {
     Mir {
         tag: ast.tag.clone(),
         nodes,
+    }
+}
+
+impl Mir {
+    /// Prune any methods which are above
+    pub fn prune(&mut self, specs: Vec<NamedVersion>) {
+        for spec in specs {
+            let NamedVersion { name, version } = spec;
+            // Find the interface whose name matches the targeted version, if it exists
+            if let Some(interface) = self.nodes.iter_mut().find_map(|node| match node {
+                Node::Interface(i_face) if i_face.ident.ident == name => Some(i_face),
+                _ => None,
+            }) {
+                // If the desired version is less than the interface version, prune it.
+                if version < *interface.get_version() {
+                    interface.nodes.retain(|x| {
+                        if let InterfaceNode::Function(f) = x {
+                            f.get_version().is_none_or(|v| *v <= version)
+                        } else {
+                            true
+                        }
+                    });
+                }
+            } else {
+                idlc_errors::error!("Spec `{}` was not found in Mir", name);
+            }
+        }
     }
 }
 
