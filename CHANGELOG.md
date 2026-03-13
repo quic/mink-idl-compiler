@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.4](https://github.com/quic/mink-idl-compiler/compare/v0.2.3...v0.2.4) (2026-03-13)
+
+
+### Bug Fixes
+
+* Add rust-version to top-level Cargo.toml ([#19](https://github.com/quic/mink-idl-compiler/issues/19)) ([9ea8ae3](https://github.com/quic/mink-idl-compiler/commit/9ea8ae3678e5e314d37f6f4a7d26c97d4443df45))
+
 ## [0.2.3] - 2025-11-27
 
 ### Fixes
