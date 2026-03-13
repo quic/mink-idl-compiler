@@ -1,6 +1,14 @@
 // Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 
+use std::sync::OnceLock;
+static BUNDLE_PARAMS_BY_SIZE: OnceLock<bool> = OnceLock::new();
+
+pub fn init(bundle_params_by_size: bool) {
+    // Set global static parameter for PackedPrimitives
+    BUNDLE_PARAMS_BY_SIZE.set(bundle_params_by_size).unwrap();
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Type {
     Primitive(idlc_mir::Primitive),
@@ -13,16 +21,11 @@ impl Type {
             Self::SmallStruct(s) => s.size(),
         }
     }
-}
-impl PartialOrd<Self> for Type {
-    #[inline]
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-impl std::cmp::Ord for Type {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.size().cmp(&other.size())
+    pub fn align(&self) -> usize {
+        match self {
+            Self::Primitive(p) => p.align(),
+            Self::SmallStruct(s) => s.align(),
+        }
     }
 }
 
@@ -40,18 +43,6 @@ impl Pair {
             ty,
             nth_param,
         }
-    }
-}
-
-impl PartialOrd for Pair {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for Pair {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.ty.cmp(&other.ty)
     }
 }
 
@@ -100,9 +91,19 @@ impl PackedPrimitives {
         let mut me = Self::default();
         super::functions::visit_params(function, &mut me);
 
-        me.inputs.sort_by(|a, b| b.cmp(a));
-        me.outputs.sort_by(|a, b| b.cmp(a));
-
+        if *BUNDLE_PARAMS_BY_SIZE
+            .get()
+            .expect("BUNDLE_PARAMS_BY_SIZE not initialized")
+        {
+            // Sort by size for compatibility with previous (buggy) behavior
+            me.inputs.sort_by(|a, b| b.ty.size().cmp(&a.ty.size()));
+            me.outputs.sort_by(|a, b| b.ty.size().cmp(&a.ty.size()));
+        } else {
+            // Order bundle members so that those with larger alignment come
+            // before those with smaller alignment
+            me.inputs.sort_by(|a, b| b.ty.align().cmp(&a.ty.align()));
+            me.outputs.sort_by(|a, b| b.ty.align().cmp(&a.ty.align()));
+        }
         me
     }
 

@@ -91,6 +91,13 @@ struct Cli {
     /// To allow undefined behavior to go through codegen enable this flag, outputs aren't
     /// guaranteed!
     allow_undefined_behavior: bool,
+
+    #[arg(long, default_value_t = false)]
+    /// Sort bundled parameters by size, rather than by alignment.
+    ///
+    /// This is for compatibility with headers that were generated with a buggy
+    /// compiler.
+    bundle_params_by_size: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, clap::ValueEnum)]
@@ -116,6 +123,9 @@ fn main() {
         idlc_ast::dump(&args.file);
         std::process::exit(0);
     }
+
+    // Init vars for serialization
+    idlc_codegen::serialization::init(args.bundle_params_by_size);
 
     // Change current dir based on the location of the input file.
     let input_file = &args.file.canonicalize().expect("Invalid input file.");
@@ -159,10 +169,9 @@ fn main() {
     trace!("Verifying interfaces");
     interface_verifier::InterfaceVerifier::new(&mir).run_pass();
 
-    let marking_cnt = if args.marking.is_some() {
-        std::fs::read_to_string(args.marking.unwrap()).expect("Failed to read marking file")
-    } else {
-        "".to_string()
+    let marking_cnt = match args.marking {
+        Some(m_file) => std::fs::read_to_string(m_file).expect("Failed to read marking file"),
+        _ => "".to_string(),
     };
 
     let output = args

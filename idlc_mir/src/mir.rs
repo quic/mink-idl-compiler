@@ -81,6 +81,11 @@ impl Primitive {
             Self::Uint64 | Self::Int64 | Self::Float64 => 8,
         }
     }
+    #[inline]
+    #[must_use]
+    pub const fn align(self) -> usize {
+        self.size()
+    }
 }
 
 impl Ord for Primitive {
@@ -127,6 +132,14 @@ impl StructField {
         };
 
         size * usize::from(count.get())
+    }
+    pub fn alignment(&self) -> usize {
+        match &self.val.0 {
+            Type::Primitive(p) => p.align(),
+            Type::Struct(s) => s.as_ref().align(),
+            Type::Interface(_) => Primitive::Uint64.align(),
+            _ => unreachable!(),
+        }
     }
 }
 
@@ -184,6 +197,11 @@ impl StructInner {
     #[inline]
     pub fn size(&self) -> usize {
         self.fields.iter().fold(0, |acc, e| acc + e.size())
+    }
+
+    #[inline]
+    pub fn align(&self) -> usize {
+        self.fields.iter().map(|e| e.alignment()).max().unwrap_or(1)
     }
 
     pub fn objects(&self) -> Vec<(Vec<&Ident>, Option<&str>)> {
