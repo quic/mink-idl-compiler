@@ -159,10 +159,9 @@ fn main() {
     trace!("Verifying interfaces");
     interface_verifier::InterfaceVerifier::new(&mir).run_pass();
 
-    let marking_cnt = if args.marking.is_some() {
-        std::fs::read_to_string(args.marking.unwrap()).expect("Failed to read marking file")
-    } else {
-        "".to_string()
+    let marking_cnt = match args.marking {
+        Some(m_file) => std::fs::read_to_string(m_file).expect("Failed to read marking file"),
+        _ => "".to_string(),
     };
 
     let output = args
