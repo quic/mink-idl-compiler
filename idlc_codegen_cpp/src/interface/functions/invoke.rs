@@ -217,12 +217,10 @@ pub fn emit(
     if !params.is_empty() {
         params.remove(0);
     }
-    if function.is_optional() {
-        weak_declarations.push_str(&format!(
-            r#"
+    weak_declarations.push_str(&format!(
+        r#"
     virtual int32_t {ident}({params}) {{ return Object_ERROR_INVALID; }}"#
-        ));
-    }
+    ));
 
     let counts = format!(
         "({0}, {1}, {2}, {3})",
