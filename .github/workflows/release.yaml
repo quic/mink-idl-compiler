@@ -23,8 +23,10 @@ jobs:
       - uses: googleapis/release-please-action@v4
         id: rp
         with:
-          config-file: release-please-config.json
-          manifest-file: .release-please-manifest.json
+          config-file: .github/workflows/release-please-config.json
+          manifest-file: .github/workflows/.release-please-manifest.json
+        env:
+          LOG_LEVEL: debug
 
 
   # When a release PR is merged, then also generate assets from that snapshot
