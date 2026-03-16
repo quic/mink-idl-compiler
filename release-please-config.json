@@ -3,9 +3,9 @@
 
   "release-type": "rust",
 
+  "plugins": ["cargo-workspace"],
+
   "packages": {
-    ".": {
-      "plugins": ["cargo-workspace"]
-    }
+      ".": {}
   }
 }
