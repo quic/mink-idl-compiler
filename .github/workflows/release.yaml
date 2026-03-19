@@ -11,9 +11,6 @@ permissions:
   pull-requests: write
 
 jobs:
-  # Whenever a commit is merged into 'main' or any of the listed branches above,
-  # create/update the release PR to generate a summary of all changes since the
-  # previous release.
   release-please:
     runs-on: ubuntu-latest
     outputs:
@@ -23,12 +20,8 @@ jobs:
       - uses: googleapis/release-please-action@v4
         id: rp
         with:
-          config-file: release-please-config.json
-          manifest-file: .release-please-manifest.json
+          release-type: simple
 
-
-  # When a release PR is merged, then also generate assets from that snapshot
-  # and upload them to the Github release that was created by release-please.
   build-and-upload-assets:
     name: ${{ matrix.job.target }}
     runs-on: ${{ matrix.job.os }}
