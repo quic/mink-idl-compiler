@@ -1,19 +1,31 @@
-name: Release (tag-first, GitHub-only)
+name: Release
 
 on:
   push:
-    tags:
-      - "v*.*.*"
+    branches:
+      - main
 
 permissions:
   contents: write
-
-env:
-  BIN_NAME: idlc
+  issues: write
+  pull-requests: write
 
 jobs:
-  build:
-    name: Build ${{ github.ref_name }}
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.rp.outputs.release_created }}
+      tag_name:        ${{ steps.rp.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: rp
+        with:
+          config-file: .github/release-please-config.json
+          manifest-file: .github/.release-please-manifest.json
+
+  build-and-upload-assets:
+    name: ${{ matrix.job.target }}
+    runs-on: ${{ matrix.job.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -21,68 +33,38 @@ jobs:
           - { target: x86_64-unknown-linux-musl , os: ubuntu-latest }
           - { target: aarch64-unknown-linux-musl, os: ubuntu-24.04-arm }
 
-    runs-on: ${{ matrix.os }}
+    needs: release-please
+    if: needs.release-please.outputs.release_created
+    permissions:
+      contents: write  # needed to upload release assets
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    - name: Checkout source code
+      uses: actions/checkout@v6
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
+    - name: Install Rust toolchain
+      run: rustup target add ${{ matrix.job.target }}
 
-      - name: Build (release)
-        run: cargo build --target ${{ matrix.target }} --profile opt --locked 
+    - name: Show version information (Rust, cargo, GCC)
+      shell: bash
+      run: |
+        ${CC} --version || true
+        ${CXX} --version || true
+        rustup -V
+        rustup toolchain list
+        rustup default
+        cargo -V
+        rustc -V
 
-      - name: Rename/move
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p dist
+    - name: Build
+      run: cargo build --target ${{ matrix.job.target }} --profile opt
 
-          SRC="target/${{ matrix.target }}/opt/${BIN_NAME}"
-          DST="dist/${BIN_NAME}-${{ matrix.target }}"
-
-          if [[ ! -f "$SRC" ]]; then
-            echo "Expected binary not found: $SRC"
-            ls -la "target/${{ matrix.target }}/opt" || true
-            exit 1
-          fi
-
-          cp "$SRC" "$DST"
-          echo "Packaged: $DST"
-
-  release:
-    name: Release ${{ github.ref_name }}
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Generate release notes
-        id: changelog
-        uses: requarks/changelog-action@v1
-        with:
-          token: ${{ github.token }}
-          tag: ${{ github.ref_name }}
-
-      # Create the GitHub release and upload ALL assets.
-      - name: Create/Update GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          body: ${{ steps.changelog.outputs.changes }}
-          files: |
-            dist/*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # OPTIONAL: commit CHANGELOG.md updates back to main.
-      # This follows the example workflow pattern from requarks/changelog-action docs.
-      - name: Commit CHANGELOG.md back to main (optional)
-        if: matrix.os == 'ubuntu-latest'
-        uses: stefanzweifel/git-auto-commit-action@v7
-        with:
-          branch: main
-          commit_message: "docs: update CHANGELOG.md for ${{ github.ref_name }}"
-          file_pattern: CHANGELOG.md
+    # --- attach to the GitHub Release created by release-please ---
+    - name: Upload assets to GitHub Release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        TAG: ${{ needs.release-please.outputs.tag_name }}
+        NAME: minkidl-${{ matrix.job.target }}
+      run: |
+        cp target/${{ matrix.job.target }}/opt/idlc "$NAME"
+        gh release upload "$TAG" "$NAME" --clobber
