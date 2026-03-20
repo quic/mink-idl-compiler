@@ -9,6 +9,7 @@
         { "type": "feat", "section": "Features" },
         { "type": "fix", "section": "Bug Fixes" },
         { "type": "chore", "section": "Miscellaneous" },
+        { "type": "ci", "section": "Integration/Automation" },
         { "type": "docs", "section": "Documentation" },
         { "type": "refactor", "section": "Code Refactoring" }
       ]
