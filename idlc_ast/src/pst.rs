@@ -3,7 +3,10 @@
 
 use std::{path::PathBuf, rc::Rc};
 
-use pest::{iterators::Pair, Parser};
+use pest::{
+    iterators::{Pair, Pairs},
+    Parser,
+};
 use pest_derive::Parser;
 
 // Import all AST types
@@ -349,8 +352,12 @@ fn parse_interface(pair: Pair<Rule>, allow_undefined_behavior: bool) -> Rc<Node>
     }))
 }
 
+pub fn parse_to_pst(idl_str: &str) -> Result<Pairs<'_, Rule>, Error> {
+    Ok(IDLParser::parse(Rule::idl, idl_str)?)
+}
+
 pub fn parse_to_ast(input: &str, allow_undefined_behavior: bool) -> Result<Vec<Rc<Node>>, Error> {
-    let mut pairs = IDLParser::parse(Rule::idl, input)?;
+    let mut pairs = parse_to_pst(input)?;
     let mut nodes = Vec::new();
 
     for p in pairs.next().unwrap().into_inner() {
@@ -367,18 +374,4 @@ pub fn parse_to_ast(input: &str, allow_undefined_behavior: bool) -> Result<Vec<R
         }
     }
     Ok(nodes)
-}
-
-pub fn dump<P: AsRef<std::path::Path>>(path: P) {
-    use std::time::Instant;
-
-    let inp = std::fs::read_to_string(path).unwrap();
-    let now = Instant::now();
-    let pst = IDLParser::parse(Rule::idl, &inp);
-    let duration = now.elapsed();
-    match pst {
-        Ok(pst) => println!("{pst:#?}"),
-        Err(e) => eprintln!("Parsing failed:\n{e}\n"),
-    }
-    eprintln!("'dump_pst' completed in {duration:?}");
 }
