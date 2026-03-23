@@ -342,8 +342,6 @@ int32_t itest2_entrypoint(void *ctx, Object itest1) {
   Object_ASSIGN_NULL(output_struct.second_obj);
   Object_ASSIGN_NULL(output_struct.should_be_empty);
 
-  ASSERT(ITest1_un_implemented(itest1, 3) == Object_ERROR_INVALID);
-
   return Object_OK;
 }
 

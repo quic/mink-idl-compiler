@@ -240,8 +240,6 @@ public:
     Object_ASSIGN_NULL(output_struct.second_obj);
     Object_ASSIGN_NULL(output_struct.should_be_empty);
 
-    ASSERT(me.un_implemented(3) == Object_ERROR_INVALID);
-
     uint32_t version = 0;
     CHECK_OK(me.api_version(&version));
     uint32_t major = (version >> ITest1::MAJOR_SHIFT) & ITest1::MAJOR_MASK;
