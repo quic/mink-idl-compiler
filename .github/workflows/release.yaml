@@ -64,7 +64,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         TAG: ${{ needs.release-please.outputs.tag_name }}
-        NAME: minkidl-${{ matrix.job.target }}
+        NAME: idlc-${{ matrix.job.target }}
       run: |
         cp target/${{ matrix.job.target }}/opt/idlc "$NAME"
         gh release upload "$TAG" "$NAME" --clobber
