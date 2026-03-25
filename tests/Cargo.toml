@@ -11,3 +11,6 @@ cc = "1.0.90"
 [features]
 default = ["std"]
 std = []
+
+[package.metadata.workspaces]
+independent = true

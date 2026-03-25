@@ -9,3 +9,6 @@ edition = "2021"
 convert_case = "0.6.0"
 idlc_codegen = { path="../idlc_codegen" }
 idlc_mir = { path="../idlc_mir" }
+
+[package.metadata.workspaces]
+independent = true

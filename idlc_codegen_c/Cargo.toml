@@ -8,3 +8,6 @@ edition = "2021"
 [dependencies]
 idlc_codegen = { path="../idlc_codegen" }
 idlc_mir = { path="../idlc_mir" }
+
+[package.metadata.workspaces]
+independent = true

@@ -79,11 +79,11 @@ Here is an example of the typical development flow:
    1. ```sh
        cargo install cargo-workspaces
        cargo ws changed
-       cargo ws version <BUMP> --no-git-push --no-git-tag -m "chore(release): bump crate versions"
+       cargo ws version --no-git-push --no-git-tag -m "chore(release): bump crate versions"
        ```
         1. This analyzes the workspace, bumps the Cargo.toml (AND Cargo.lock) versions based **solely** on if any changes occur within the crate, and commits the changes.
-        2. `<BUMP>` can be `patch`, `minor`, or `major`
-        3. **The `<BUMP>` is determined by the user**
+        2. `cargo ws` will prompt for each crate to specify which type of release (major, minor, or patch) is appropriate.
+        3. **The release type is determined by the user**
    2. Review the commit
    3. Push to `origin/main` - either directly or through PR.
 3. `release-please` captures all conventional commits through PRs and "bump" commit
