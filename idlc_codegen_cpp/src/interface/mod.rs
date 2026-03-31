@@ -5,6 +5,7 @@ use idlc_mir::{Interface, InterfaceNode};
 
 mod functions;
 
+use idlc_codegen_c::interface::variable_names::invoke::{ARGS, COUNTS, OP_CODE, OP_PREFIX};
 use idlc_codegen_c::types::{change_const_primitive, change_primitive};
 
 pub fn emit_interface_impl(interface: &Interface) -> String {
@@ -95,7 +96,7 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
                 ));
                 op_codes.push_str(&format!(
                     r#"
-    static constexpr ObjectOp OP_{} = {};"#,
+    static constexpr ObjectOp {OP_PREFIX}_{} = {};"#,
                     f.ident, f.id,
                 ));
                 implementations.push_str(&functions::implementation::emit(
@@ -185,8 +186,8 @@ class {ident}ImplBase : protected ImplBase, public I{ident} {{
     virtual ~{ident}ImplBase() {{}}
 {weak_declarations}
   protected:
-    virtual int32_t invoke(ObjectOp op, ObjectArg* a, ObjectCounts k) {{
-        switch (ObjectOp_methodID(op)) {{
+    virtual int32_t invoke(ObjectOp {OP_CODE}, ObjectArg* {ARGS}, ObjectCounts {COUNTS}) {{
+        switch (ObjectOp_methodID({OP_CODE})) {{
 {invokes}
             default: {{ return Object_ERROR_INVALID; }}
         }}

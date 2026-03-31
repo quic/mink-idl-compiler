@@ -5,7 +5,7 @@ use std::borrow::Cow;
 
 use idlc_codegen::serialization::Type;
 
-use crate::interface::variable_names::invoke::{BI, BO};
+use crate::interface::variable_names::invoke::{BI, BI_NAME, BO, BO_NAME};
 
 use crate::types::change_primitive;
 
@@ -40,13 +40,13 @@ impl<'a> PackedPrimitives<'a> {
             Type::Primitive(_) => {
                 assignments += &format!(
                     r#"
-    i.m_{ident} = {ident}_val;"#
+    {BI_NAME}.m_{ident} = {ident}_val;"#
                 );
             }
             Type::SmallStruct(_s) => {
                 assignments += &format!(
                     r#"
-    i.m_{ident} = *{ident}_ptr;"#
+    {BI_NAME}.m_{ident} = *{ident}_ptr;"#
                 );
             }
         });
@@ -87,13 +87,13 @@ impl<'a> PackedPrimitives<'a> {
             Type::Primitive(_) => {
                 assignments += &format!(
                     r"
-    *{ident}_ptr = o.m_{ident};"
+    *{ident}_ptr = {BO_NAME}.m_{ident};"
                 );
             }
             Type::SmallStruct(_) => {
                 assignments += &format!(
                     r"
-    *{ident}_ptr = o.m_{ident};"
+    *{ident}_ptr = {BO_NAME}.m_{ident};"
                 );
             }
         });

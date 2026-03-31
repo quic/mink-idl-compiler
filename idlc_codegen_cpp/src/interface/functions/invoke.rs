@@ -1,7 +1,7 @@
 // Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 
-use idlc_codegen_c::interface::variable_names::invoke::{ARGS, OP};
+use idlc_codegen_c::interface::variable_names::invoke::{ARGS, COUNTS, OP_PREFIX};
 
 use idlc_mir::Ident;
 
@@ -40,7 +40,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         let mut obj_args = String::new();
         for _ in 0..cnt.into() {
             let idx = self.0.idx();
-            obj_args.push_str(&format!(r"a[{idx}].o,"));
+            obj_args.push_str(&format!(r"{ARGS}[{idx}].o,"));
         }
         self.0.pre.push(format!(
             r#" \
@@ -231,8 +231,8 @@ pub fn emit(
 
     format!(
         r#"
-            case {OP}_{ident}: {{
-                if (k != ObjectCounts_pack{counts}{args}) {{
+            case {OP_PREFIX}_{ident}: {{
+                if ({COUNTS} != ObjectCounts_pack{counts}{args}) {{
                     break;
                 }}
 {pre}

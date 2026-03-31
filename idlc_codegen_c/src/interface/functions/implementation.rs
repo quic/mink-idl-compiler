@@ -3,7 +3,9 @@
 
 use idlc_mir::Ident;
 
-use crate::interface::variable_names::invoke::{ARGS, OBJECTBUF, OBJECTBUFIN, OP};
+use crate::interface::variable_names::invoke::{
+    ARGS, BI_NAME, BO_NAME, OBJECTBUF, OBJECTBUFIN, OP_PREFIX,
+};
 
 use crate::types::change_primitive;
 
@@ -118,14 +120,14 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let _idx = self.idx();
         let bi_embedded = packer.bi_embedded();
         self.initializations.push(format!(
-            r#"{definition} i;
+            r#"{definition} {BI_NAME};
 {0}{1}"#,
             bi_embedded,
             packer.bi_assignments(),
         ));
         self.args.push(format!(
             r#"
-        {{.b = ({OBJECTBUF}) {{ &i, {size} }} }},"#
+        {{.b = ({OBJECTBUF}) {{ &{BI_NAME}, {size} }} }},"#
         ));
     }
 
@@ -225,7 +227,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
             );
             self.post_call.push(format!(
                 r#"
-    (*{ident}_ptr)[{i}] = a[{idx}].o;"#,
+    (*{ident}_ptr)[{i}] = {ARGS}[{idx}].o;"#,
             ));
         }
     }
@@ -257,13 +259,13 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
 
         self.initializations.push(format!(
             r#"
-    {definition} o = {{{initialization}}};
+    {definition} {BO_NAME} = {{{initialization}}};
 "#
         ));
         self.post_call.push(packer.post_bo_assignments());
         self.args.push(format!(
             r#"
-        {{.b = ({OBJECTBUF}) {{  &o, {size} }} }},"#
+        {{.b = ({OBJECTBUF}) {{  &{BO_NAME}, {size} }} }},"#
         ));
     }
 
@@ -342,13 +344,13 @@ pub fn emit(
 
     if total > 0 {
         object_args = format!(
-            r#"ObjectArg a[] = {{{args}
+            r#"ObjectArg {ARGS}[] = {{{args}
     }};"#
         );
     }
 
     let returns = if total > 0 {
-        format!("Object_invoke(self, {iface_ident}_{OP}_{ident}, a, ObjectCounts_pack({0}, {1}, {2}, {3}));",
+        format!("Object_invoke(self, {iface_ident}_{OP_PREFIX}_{ident}, {ARGS}, ObjectCounts_pack({0}, {1}, {2}, {3}));",
         counts.input_buffers,
         counts.output_buffers,
         counts.input_objects,
@@ -359,7 +361,7 @@ pub fn emit(
 {documentation}
 static inline int32_t {current_iface_ident}_{ident}(Object self{params})
 {{
-    return Object_invoke(self, {iface_ident}_{OP}_{ident}, 0, 0);
+    return Object_invoke(self, {iface_ident}_{OP_PREFIX}_{ident}, 0, 0);
 }}
 "#
         );

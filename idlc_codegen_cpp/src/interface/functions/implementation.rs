@@ -1,7 +1,9 @@
 // Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 
-use idlc_codegen_c::interface::variable_names::invoke::{ARGS, OBJECTBUF, OBJECTBUFIN, OP};
+use idlc_codegen_c::interface::variable_names::invoke::{
+    ARGS, BI_NAME, BO_NAME, OBJECTBUF, OBJECTBUFIN, OP_PREFIX,
+};
 use idlc_mir::Ident;
 
 use super::serialization::TransportBuffer;
@@ -55,13 +57,13 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let _idx = self.0.idx();
         let bi_embedded = packer.bi_embedded();
         self.0.initializations.push(format!(
-            r#"{definition} i;{0}{1}"#,
+            r#"{definition} {BI_NAME};{0}{1}"#,
             bi_embedded,
             packer.bi_assignments(),
         ));
         self.0.args.push(format!(
             r#"
-        {{.b = ({OBJECTBUF}) {{ &i, {size} }} }},"#
+        {{.b = ({OBJECTBUF}) {{ &{BI_NAME}, {size} }} }},"#
         ));
     }
 
@@ -153,7 +155,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         self.0.post_call.push(format!(
             r#"
     for(size_t arg_idx=0;arg_idx<{cnt};arg_idx++)
-        ({ident}_ref)[arg_idx].consume(a[{idx}+arg_idx].o);"#,
+        ({ident}_ref)[arg_idx].consume({ARGS}[{idx}+arg_idx].o);"#,
         ));
 
         for _ in 1..cnt.into() {
@@ -182,11 +184,11 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
 
         self.0.initializations.push(format!(
             r#"
-    {definition} o = {{{initialization}}};"#
+    {definition} {BO_NAME} = {{{initialization}}};"#
         ));
         self.0.args.push(format!(
             r#"
-        {{.b = ({OBJECTBUF}) {{  &o, {size} }} }},"#
+        {{.b = ({OBJECTBUF}) {{  &{BO_NAME}, {size} }} }},"#
         ));
         self.0.post_call.push(packer.post_bo_assignments());
     }
@@ -276,21 +278,21 @@ pub fn emit(
     if total > 0 {
         object_args = format!(
             r#"
-        ObjectArg a[] = {{{args}
+        ObjectArg {ARGS}[] = {{{args}
         }};"#
         );
     }
 
     let returns = if total > 0 {
         format!(
-            "invoke({OP}_{ident}, a, ObjectCounts_pack({0}, {1}, {2}, {3}));",
+            "invoke({OP_PREFIX}_{ident}, {ARGS}, ObjectCounts_pack({0}, {1}, {2}, {3}));",
             counts.input_buffers,
             counts.output_buffers,
             counts.input_objects,
             counts.output_objects
         )
     } else {
-        format!("invoke({OP}_{ident}, 0, 0);")
+        format!("invoke({OP_PREFIX}_{ident}, 0, 0);")
     };
 
     format!(

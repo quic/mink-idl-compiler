@@ -7,6 +7,7 @@ pub mod functions;
 pub mod variable_names;
 
 use crate::types::change_const_primitive;
+use variable_names::invoke::{ARGS, CONTEXT, COUNTS, OP_CODE};
 
 pub fn emit_interface_impl(interface: &Interface, is_no_typed_objects: bool) -> String {
     let ident = interface.ident.to_string();
@@ -180,21 +181,21 @@ pub fn emit_interface_invoke(interface: &Interface, is_no_typed_objects: bool) -
 #endif
 
 #define {ident}_DEFINE_INVOKE(func, prefix, type) \
-    int32_t func(ObjectCxt h, ObjectOp op, ObjectArg *a, ObjectCounts k) \
+    int32_t func(ObjectCxt {CONTEXT}, ObjectOp {OP_CODE}, ObjectArg *{ARGS}, ObjectCounts {COUNTS}) \
     {{ \
         __compiler_pragma_pre \
         {weak_declarations} \
         __compiler_pragma_post \
-        type me = (type) h; \
-        switch (ObjectOp_methodID(op)) {{ \
+        type me = (type) {CONTEXT}; \
+        switch (ObjectOp_methodID({OP_CODE})) {{ \
             case Object_OP_release: {{ \
-                if (k != ObjectCounts_pack(0, 0, 0, 0)) {{ \
+                if ({COUNTS} != ObjectCounts_pack(0, 0, 0, 0)) {{ \
                     break; \
                 }} \
                 return prefix##release(me); \
             }} \
             case Object_OP_retain: {{ \
-                if (k != ObjectCounts_pack(0, 0, 0, 0)) {{ \
+                if ({COUNTS} != ObjectCounts_pack(0, 0, 0, 0)) {{ \
                     break; \
                 }} \
                 return prefix##retain(me); \

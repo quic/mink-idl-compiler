@@ -4,7 +4,7 @@
 use idlc_mir::Ident;
 
 use crate::interface::mink_primitives::{OK, PACK_COUNTS};
-use crate::interface::variable_names::invoke::{ARGS, BI_STRUCT, BO_STRUCT};
+use crate::interface::variable_names::invoke::{ARGS, BI_NAME, BI_STRUCT, BO_NAME, BO_STRUCT};
 use crate::types::change_primitive;
 
 use crate::interface::mink_primitives::ARG;
@@ -117,13 +117,13 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         self.initializations.push(format!(
             r#"
             {definition}
-            let mut bi = {BI_STRUCT}({idents});
+            let mut {BI_NAME} = {BI_STRUCT}({idents});
             "#
         ));
         self.args.push(format!(
             r#"{ARG} {{
                 bi: {INPUT_BUFFER} {{
-                    ptr: std::ptr::addr_of!(bi).cast(),
+                    ptr: std::ptr::addr_of!({BI_NAME}).cast(),
                     size: {size},
                 }}
             }}
@@ -236,16 +236,16 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         self.initializations.push(format!(
             r#"
                 {definition}
-                let mut bo = std::mem::MaybeUninit::<{BO_STRUCT}>::uninit();
+                let mut {BO_NAME} = std::mem::MaybeUninit::<{BO_STRUCT}>::uninit();
                 "#
         ));
         self.post_call.push(format!(
-            "let {BO_STRUCT}({idents}) = unsafe {{ bo.assume_init() }};"
+            "let {BO_STRUCT}({idents}) = unsafe {{ {BO_NAME}.assume_init() }};"
         ));
         self.args.push(format!(
             r#"{ARG} {{
                 b: {OUTPUT_BUFFER} {{
-                    ptr: std::ptr::addr_of_mut!(bo).cast(),
+                    ptr: std::ptr::addr_of_mut!({BO_NAME}).cast(),
                     size: {size},
                 }}
             }}"#

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 use crate::{
-    interface::variable_names::invoke::{ARGS, BI, BO, CONST, OP},
+    interface::variable_names::invoke::{ARGS, BI, BO, CONST, COUNTS, OP_PREFIX},
     types::change_primitive,
 };
 
@@ -113,7 +113,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         let mut objs = String::new();
         for _ in 0..cnt.into() {
             let idx = self.idx();
-            objs.push_str(&format!(r"a[{idx}].o,"));
+            objs.push_str(&format!(r"{ARGS}[{idx}].o,"));
         }
         self.pre.push(format!(
             r#" \
@@ -267,7 +267,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
             let idx = self.idx();
             objs.push_str("Object_NULL, ");
             obj_assign.push_str(&format!(
-                r#"a[{idx}].o = {name}[{i}]; \
+                r#"{ARGS}[{idx}].o = {name}[{i}]; \
                 "#
             ))
         }
@@ -421,8 +421,8 @@ pub fn emit(
 
     format!(
         r#" \
-            case {iface_ident}_{OP}_{ident}: {{ \
-                if (k != ObjectCounts_pack{counts}{args}) {{ \
+            case {iface_ident}_{OP_PREFIX}_{ident}: {{ \
+                if ({COUNTS} != ObjectCounts_pack{counts}{args}) {{ \
                     break; \
                 }} \
                 {pre} \
