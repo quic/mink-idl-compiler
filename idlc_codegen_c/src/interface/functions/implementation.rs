@@ -1,6 +1,8 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause
 
+use heck::ToSnakeCase;
+
 use idlc_mir::Ident;
 
 use crate::interface::variable_names::invoke::{
@@ -292,7 +294,7 @@ pub fn emit(
     counts: &idlc_codegen::counts::Counter,
     signature: &super::signature::Signature,
 ) -> String {
-    let ident = &function.ident;
+    let ident = &function.ident.to_snake_case();
     let total = counts.total();
 
     let params = signature.params();

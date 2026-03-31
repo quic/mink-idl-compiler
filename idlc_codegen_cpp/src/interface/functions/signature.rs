@@ -1,6 +1,8 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause
 
+use heck::ToSnakeCase;
+
 use idlc_mir::{Ident, Primitive, StructInner};
 
 use idlc_codegen_c::interface::variable_names::invoke::CONST;
@@ -46,7 +48,7 @@ impl Signature {
     pub fn param_iter(&self) -> impl Iterator<Item = String> + '_ {
         self.inputs
             .iter()
-            .map(|(ident, ty)| format!("{ty} {ident}"))
+            .map(|(ident, ty)| format!("{ty} {}", ident.to_snake_case()))
     }
 
     pub fn params(&self) -> String {
