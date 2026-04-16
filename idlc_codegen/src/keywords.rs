@@ -1,8 +1,13 @@
 // Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 
+pub mod invoke {
+    // Name of function which gets added to all auto-generated outputs
+    pub const VERSION_FUNC_NAME: &str = "api_version";
+}
+
 macro_rules! keyword_gen {
-    ($($lang: literal: [$($value: literal),*]),*) => {
+    ($($lang: literal: [$($value: expr),*]),*) => {
         &[$($($value,)*)*]
     };
 }
@@ -21,6 +26,7 @@ macro_rules! keyword_gen {
 /// keywords using the `r#` syntax. See
 /// [raw-identifiers](https://doc.rust-lang.org/rust-by-example/compatibility/raw_identifiers.html#raw-identifiers)
 const RESERVED_KEYWORDS: &[&str] = keyword_gen! {
+    "Mink IDL": [invoke::VERSION_FUNC_NAME],
     "C17": [
         "auto", "break", "case", "char", "const", "continue", "default", "do", "double",
         "else", "enum", "extern", "float", "for", "goto", "if", "inline", "int",
