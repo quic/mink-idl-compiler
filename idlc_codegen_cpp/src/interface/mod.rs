@@ -18,71 +18,33 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
     let mut func_titles = String::new();
     let mut implementations = String::new();
 
-    // need to have all of the base-class functions, error-codes and const values
-    interface.iter().skip(1).for_each(|iface| {
-        base_iface.push_str(&format!("I{} ", &iface.ident.to_string()));
-        iface.nodes.iter().for_each(|node| match node {
-            InterfaceNode::Const(c) => {
-                constants.push_str(&format!(
-                    r#"
+    // A closure to hold logic for the base class(es) and the root class
+    let mut process_intf_node = |node: &InterfaceNode, is_root: bool| match node {
+        InterfaceNode::Const(c) => {
+            constants.push_str(&format!(
+                r#"
     static constexpr {} {} = {}({});"#,
-                    change_primitive(c.r#type),
-                    c.ident,
-                    change_const_primitive(c.r#type),
-                    c.value
-                ));
-            }
-            InterfaceNode::Error(e) => {
-                errors.push_str(&format!(
-                    r#"
+                change_primitive(c.r#type),
+                c.ident,
+                change_const_primitive(c.r#type),
+                c.value
+            ));
+        }
+        InterfaceNode::Error(e) => {
+            errors.push_str(&format!(
+                r#"
     static constexpr int32_t {} = INT32_C({});"#,
-                    e.ident, e.value
-                ));
-            }
-            InterfaceNode::Function(f) => {
-                let counts = idlc_codegen::counts::Counter::new(f);
-                let signature = functions::signature::Signature::new(f, &counts);
-                let documentation = idlc_codegen::documentation::Documentation::new(
-                    f,
-                    idlc_codegen::documentation::DocumentationStyle::C,
-                );
-
-                implementations.push_str(&functions::implementation::emit(
-                    f,
-                    &documentation,
-                    &counts,
-                    &signature,
-                ));
-            }
-        })
-    });
-
-    for node in &interface.nodes {
-        match node {
-            InterfaceNode::Const(c) => {
-                constants.push_str(&format!(
-                    r#"
-    static constexpr {} {} = {}({});"#,
-                    change_primitive(c.r#type),
-                    c.ident,
-                    change_const_primitive(c.r#type),
-                    c.value
-                ));
-            }
-            InterfaceNode::Error(e) => {
-                errors.push_str(&format!(
-                    r#"
-    static constexpr int32_t {} = INT32_C({});"#,
-                    e.ident, e.value
-                ));
-            }
-            InterfaceNode::Function(f) => {
-                let counts = idlc_codegen::counts::Counter::new(f);
-                let signature = functions::signature::Signature::new(f, &counts);
-                let documentation = idlc_codegen::documentation::Documentation::new(
-                    f,
-                    idlc_codegen::documentation::DocumentationStyle::C,
-                );
+                e.ident, e.value
+            ));
+        }
+        InterfaceNode::Function(f) => {
+            let counts = idlc_codegen::counts::Counter::new(f);
+            let signature = functions::signature::Signature::new(f, &counts);
+            let documentation = idlc_codegen::documentation::Documentation::new(
+                f,
+                idlc_codegen::documentation::DocumentationStyle::C,
+            );
+            if is_root {
                 let mut params = idlc_codegen_c::interface::functions::signature::iter_to_string(
                     signature.params(),
                 );
@@ -99,14 +61,35 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
     static constexpr ObjectOp {OP_PREFIX}_{} = {};"#,
                     f.ident, f.id,
                 ));
-                implementations.push_str(&functions::implementation::emit(
-                    f,
-                    &documentation,
-                    &counts,
-                    &signature,
-                ));
             }
+            implementations.push_str(&functions::implementation::emit(
+                f,
+                &documentation,
+                &counts,
+                &signature,
+            ));
         }
+    };
+
+    // Create an iterator over all base class(es) nodes which generates a tuple
+    // for each element to prepare for the common closure
+    let iter_base_nodes = interface
+        .iter()
+        .skip(1)
+        .flat_map(|iface| {
+            base_iface.push_str(&format!("I{} ", &iface.ident.to_string()));
+            iface.nodes.iter()
+        })
+        .map(|node| (node, false));
+
+    // Create an iterator over root class nodes which generates a tuple for each
+    // element to prepare for the common closure
+    let iter_root_nodes = interface.nodes.iter().map(|node| (node, true));
+
+    // For all base class nodes AND THEN root class nodes,
+    for (i_node, is_root_node) in iter_base_nodes.chain(iter_root_nodes) {
+        // process the node with a closure
+        process_intf_node(i_node, is_root_node);
     }
 
     if !base_iface.is_empty() {
