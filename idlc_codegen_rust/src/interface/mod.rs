@@ -23,26 +23,30 @@ pub fn emit(interface: &Interface) -> String {
     let mut constants = String::new();
     let mut errors = Vec::new();
 
+    let interface_version = interface.get_version();
+
     for node in &interface.nodes {
         match node {
             InterfaceNode::Const(c) => constants.push_str(&emit_const(c)),
             InterfaceNode::Error(e) => errors.push(e),
             InterfaceNode::Function(f) => {
-                let signature = functions::signature::Signature::new(f);
-                let counts = idlc_codegen::counts::Counter::new(f);
-                let documentation = idlc_codegen::documentation::Documentation::new(
-                    f,
-                    idlc_codegen::documentation::DocumentationStyle::Rust,
-                );
+                if f.deprecated_in().is_none_or(|v| v < interface_version) {
+                    let signature = functions::signature::Signature::new(f);
+                    let counts = idlc_codegen::counts::Counter::new(f);
+                    let documentation = idlc_codegen::documentation::Documentation::new(
+                        f,
+                        idlc_codegen::documentation::DocumentationStyle::Rust,
+                    );
 
-                implementations.push(functions::implementation::emit(
-                    f,
-                    &documentation,
-                    counts,
-                    &signature,
-                ));
-                invoke_arms.push(functions::invoke::emit(f, &signature, counts));
-                trait_functions.push(functions::traits::emit(f, &documentation, &signature));
+                    implementations.push(functions::implementation::emit(
+                        f,
+                        &documentation,
+                        counts,
+                        &signature,
+                    ));
+                    invoke_arms.push(functions::invoke::emit(f, &signature, counts));
+                    trait_functions.push(functions::traits::emit(f, &documentation, &signature));
+                }
             }
         }
     }
@@ -60,12 +64,14 @@ pub fn emit(interface: &Interface) -> String {
                 }
             })
             .for_each(|f| {
-                let signature = functions::signature::Signature::new(f);
-                invoke_arms.push(functions::invoke::emit(
-                    f,
-                    &signature,
-                    idlc_codegen::counts::Counter::new(f),
-                ));
+                if f.deprecated_in().is_none_or(|v| v < interface_version) {
+                    let signature = functions::signature::Signature::new(f);
+                    invoke_arms.push(functions::invoke::emit(
+                        f,
+                        &signature,
+                        idlc_codegen::counts::Counter::new(f),
+                    ));
+                }
             });
     });
 

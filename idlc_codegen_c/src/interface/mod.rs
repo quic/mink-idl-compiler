@@ -17,6 +17,8 @@ pub fn emit_interface_impl(interface: &Interface, is_no_typed_objects: bool) -> 
     let mut op_codes = String::new();
     let mut implementations = String::new();
 
+    let interface_version = interface.get_version();
+
     // A closure to hold logic for the base class(es) and the root class
     let mut process_intf_node = |node: &InterfaceNode, prefix: &str, is_root: bool| match node {
         InterfaceNode::Const(c) => {
@@ -35,23 +37,26 @@ pub fn emit_interface_impl(interface: &Interface, is_no_typed_objects: bool) -> 
             ));
         }
         InterfaceNode::Function(f) => {
-            let counts = idlc_codegen::counts::Counter::new(f);
-            let signature = functions::signature::Signature::new(f, &counts, is_no_typed_objects);
-            let documentation = idlc_codegen::documentation::Documentation::new(
-                f,
-                idlc_codegen::documentation::DocumentationStyle::C,
-            );
-            if is_root {
-                op_codes.push_str(&format!("#define {}_OP_{} {}\n", ident, f.ident, f.id));
+            if f.deprecated_in().is_none_or(|v| v < interface_version) {
+                let counts = idlc_codegen::counts::Counter::new(f);
+                let signature =
+                    functions::signature::Signature::new(f, &counts, is_no_typed_objects);
+                let documentation = idlc_codegen::documentation::Documentation::new(
+                    f,
+                    idlc_codegen::documentation::DocumentationStyle::C,
+                );
+                if is_root {
+                    op_codes.push_str(&format!("#define {}_OP_{} {}\n", ident, f.ident, f.id));
+                }
+                implementations.push_str(&functions::implementation::emit(
+                    f,
+                    &ident,
+                    prefix,
+                    &documentation,
+                    &counts,
+                    &signature,
+                ));
             }
-            implementations.push_str(&functions::implementation::emit(
-                f,
-                &ident,
-                prefix,
-                &documentation,
-                &counts,
-                &signature,
-            ));
         }
     };
 
@@ -81,8 +86,6 @@ pub fn emit_interface_impl(interface: &Interface, is_no_typed_objects: bool) -> 
     } else {
         format!("typedef Object {ident};")
     };
-
-    let interface_version = interface.get_version();
 
     format!(
         r#"
@@ -127,35 +130,42 @@ pub fn emit_interface_invoke(interface: &Interface, is_no_typed_objects: bool) -
 
     let mut invokes = String::new();
 
+    let interface_version = interface.get_version();
+
     // need to have all of the base-class functions
     interface.iter().skip(1).for_each(|iface| {
         iface.nodes.iter().for_each(|node| {
             if let InterfaceNode::Function(f) = node {
-                let counts = idlc_codegen::counts::Counter::new(f);
-                let signature =
-                    functions::signature::Signature::new(f, &counts, is_no_typed_objects);
-                invokes.push_str(&functions::invoke::emit(
-                    f,
-                    &iface.ident,
-                    &signature,
-                    &counts,
-                    is_no_typed_objects,
-                ));
+                if f.deprecated_in().is_none_or(|v| v < interface_version) {
+                    let counts = idlc_codegen::counts::Counter::new(f);
+                    let signature =
+                        functions::signature::Signature::new(f, &counts, is_no_typed_objects);
+                    invokes.push_str(&functions::invoke::emit(
+                        f,
+                        &iface.ident,
+                        &signature,
+                        &counts,
+                        is_no_typed_objects,
+                    ));
+                }
             }
         })
     });
 
     for node in &interface.nodes {
         if let InterfaceNode::Function(f) = node {
-            let counts = idlc_codegen::counts::Counter::new(f);
-            let signature = functions::signature::Signature::new(f, &counts, is_no_typed_objects);
-            invokes.push_str(&functions::invoke::emit(
-                f,
-                &ident,
-                &signature,
-                &counts,
-                is_no_typed_objects,
-            ));
+            if f.deprecated_in().is_none_or(|v| v < interface_version) {
+                let counts = idlc_codegen::counts::Counter::new(f);
+                let signature =
+                    functions::signature::Signature::new(f, &counts, is_no_typed_objects);
+                invokes.push_str(&functions::invoke::emit(
+                    f,
+                    &ident,
+                    &signature,
+                    &counts,
+                    is_no_typed_objects,
+                ));
+            }
         }
     }
 

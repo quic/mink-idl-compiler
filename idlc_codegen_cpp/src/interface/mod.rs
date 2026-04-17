@@ -18,6 +18,8 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
     let mut func_titles = String::new();
     let mut implementations = String::new();
 
+    let interface_version = interface.get_version();
+
     // A closure to hold logic for the base class(es) and the root class
     let mut process_intf_node = |node: &InterfaceNode, is_root: bool| match node {
         InterfaceNode::Const(c) => {
@@ -38,33 +40,35 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
             ));
         }
         InterfaceNode::Function(f) => {
-            let counts = idlc_codegen::counts::Counter::new(f);
-            let signature = functions::signature::Signature::new(f, &counts);
-            let documentation = idlc_codegen::documentation::Documentation::new(
-                f,
-                idlc_codegen::documentation::DocumentationStyle::C,
-            );
-            let fn_ident = crate::safe_ident_cpp(f.ident.as_ref());
-            if is_root {
-                let params = signature.params();
-                func_titles.push_str(&format!(
-                    r#"
+            if f.deprecated_in().is_none_or(|v| v < interface_version) {
+                let counts = idlc_codegen::counts::Counter::new(f);
+                let signature = functions::signature::Signature::new(f, &counts);
+                let documentation = idlc_codegen::documentation::Documentation::new(
+                    f,
+                    idlc_codegen::documentation::DocumentationStyle::C,
+                );
+                let fn_ident = crate::safe_ident_cpp(f.ident.as_ref());
+                if is_root {
+                    let params = signature.params();
+                    func_titles.push_str(&format!(
+                        r#"
     virtual int32_t {}({}) = 0;"#,
-                    fn_ident, params,
-                ));
-                op_codes.push_str(&format!(
-                    r#"
+                        fn_ident, params,
+                    ));
+                    op_codes.push_str(&format!(
+                        r#"
     static constexpr ObjectOp {OP_PREFIX}_{} = {};"#,
-                    f.ident, f.id,
+                        f.ident, f.id,
+                    ));
+                }
+                implementations.push_str(&functions::implementation::emit(
+                    f,
+                    &documentation,
+                    &counts,
+                    &signature,
+                    &fn_ident,
                 ));
             }
-            implementations.push_str(&functions::implementation::emit(
-                f,
-                &documentation,
-                &counts,
-                &signature,
-                &fn_ident,
-            ));
         }
     };
 
@@ -93,8 +97,6 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
         let first_base_iface = base_iface.split_whitespace().next().unwrap();
         base_iface = format!(": public {first_base_iface} ");
     }
-
-    let interface_version = interface.get_version();
 
     format!(
         r#"
@@ -139,26 +141,32 @@ pub fn emit_interface_invoke(interface: &Interface) -> String {
 
     let mut invokes = String::new();
 
+    let interface_version = interface.get_version();
+
     // need to have all of the base-class functions
     interface.iter().skip(1).for_each(|iface| {
         iface.nodes.iter().for_each(|node| {
             if let InterfaceNode::Function(f) = node {
-                let fn_ident = crate::safe_ident_cpp(f.ident.as_ref());
-                let counts = idlc_codegen::counts::Counter::new(f);
-                let signature = functions::signature::Signature::new(f, &counts);
+                if f.deprecated_in().is_none_or(|v| v < interface_version) {
+                    let fn_ident = crate::safe_ident_cpp(f.ident.as_ref());
+                    let counts = idlc_codegen::counts::Counter::new(f);
+                    let signature = functions::signature::Signature::new(f, &counts);
 
-                invokes.push_str(&functions::invoke::emit(f, &signature, &counts, &fn_ident));
+                    invokes.push_str(&functions::invoke::emit(f, &signature, &counts, &fn_ident));
+                }
             }
         })
     });
 
     for node in &interface.nodes {
         if let InterfaceNode::Function(f) = node {
-            let fn_ident = crate::safe_ident_cpp(f.ident.as_ref());
-            let counts = idlc_codegen::counts::Counter::new(f);
-            let signature = functions::signature::Signature::new(f, &counts);
+            if f.deprecated_in().is_none_or(|v| v < interface_version) {
+                let fn_ident = crate::safe_ident_cpp(f.ident.as_ref());
+                let counts = idlc_codegen::counts::Counter::new(f);
+                let signature = functions::signature::Signature::new(f, &counts);
 
-            invokes.push_str(&functions::invoke::emit(f, &signature, &counts, &fn_ident));
+                invokes.push_str(&functions::invoke::emit(f, &signature, &counts, &fn_ident));
+            }
         }
     }
 
