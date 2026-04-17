@@ -78,6 +78,8 @@ interface ITest1 {
   method derive_v255(out uint32 a); // Major and Minor version must each fit into a byte (0-255)
   #[version = 2.0]
   method derive_v2p2(in uint32 a); // Major version takes highest priority
+  #[deprecated in 3.0]
+  method deprecated_method(in uint32 foo);
 };
 
 interface ITest2 {
