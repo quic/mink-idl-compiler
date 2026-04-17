@@ -257,7 +257,9 @@ impl Interface {
         self.nodes
             .iter()
             .filter_map(|n| match n {
-                InterfaceNode::Function(func) => func.get_version(),
+                InterfaceNode::Function(func) => {
+                    std::cmp::max(func.get_version(), func.deprecated_in())
+                }
                 _ => None,
             })
             .max()
@@ -462,10 +464,17 @@ impl Function {
     pub fn get_version(&self) -> Option<&APIVersion> {
         self.attributes
             .iter()
-            .map(|e| match e {
-                idlc_ast::FunctionAttribute::Version(a) => a,
+            .filter_map(|e| match e {
+                idlc_ast::FunctionAttribute::Version(a) => Some(a),
+                _ => None,
             })
             .next()
+    }
+    pub fn deprecated_in(&self) -> Option<&APIVersion> {
+        self.attributes.iter().find_map(|e| match e {
+            idlc_ast::FunctionAttribute::Deprecated(a) => Some(a),
+            _ => None,
+        })
     }
 }
 

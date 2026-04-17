@@ -182,6 +182,8 @@ fn function() {
               method foo(in buffer req, out buffer rsp);",
             r"#[version = 0.0]
               method foo(in buffer req, out buffer rsp);",
+            r"#[deprecated in      3.0]
+              method foo(in buffer req, out buffer rsp);",
         ]
     );
 
@@ -206,6 +208,8 @@ fn function() {
             r"#[version = 1]
               method foo(in buffer req, out buffer rsp);",
             r"#[version = a.i]
+              method foo(in buffer req, out buffer rsp);",
+            r"#[deprecated in2.0]
               method foo(in buffer req, out buffer rsp);",
         ]
     );

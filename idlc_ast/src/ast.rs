@@ -178,6 +178,7 @@ impl FromStr for APIVersion {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FunctionAttribute {
     Version(APIVersion),
+    Deprecated(APIVersion),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

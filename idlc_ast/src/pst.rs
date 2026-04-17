@@ -143,6 +143,16 @@ impl<'a> From<Pair<'a, Rule>> for FunctionAttribute {
                     Err(e) => idlc_errors::unrecoverable!("Error for `{}`: {}", attr, e),
                 }
             }
+            attr if attr.starts_with("deprecated") => {
+                let deprecated_ver = ast_unwrap!(attribute.into_inner().next());
+                debug_assert_eq!(deprecated_ver.as_rule(), Rule::deprecated_method);
+                let sem_ver = ast_unwrap!(deprecated_ver.into_inner().next());
+                debug_assert_eq!(sem_ver.as_rule(), Rule::version);
+                match sem_ver.as_str().parse::<APIVersion>() {
+                    Ok(ver) => Self::Deprecated(ver),
+                    Err(e) => idlc_errors::unrecoverable!("Error for `{}`: {}", attr, e),
+                }
+            }
             attr => {
                 idlc_errors::unrecoverable!("Unknown function attribute `{attr}`")
             }

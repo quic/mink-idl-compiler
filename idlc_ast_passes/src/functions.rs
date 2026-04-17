@@ -47,8 +47,9 @@ impl<'ast> CompilerPass<'ast> for Functions {
                     let version_attrs: Vec<&APIVersion> = function
                         .attributes
                         .iter()
-                        .map(|attr| match attr {
-                            idlc_ast::FunctionAttribute::Version(a) => a,
+                        .filter_map(|attr| match attr {
+                            idlc_ast::FunctionAttribute::Version(a) => Some(a),
+                            _ => None,
                         })
                         .collect();
                     // - Ensure that no more than 1 version is listed
@@ -78,6 +79,43 @@ impl<'ast> CompilerPass<'ast> for Functions {
                         if func_ver > &current_version {
                             // Carry the current version forward to the next function
                             current_version = *func_ver;
+                        }
+                    }
+                }
+            }
+            for node in &interface.nodes {
+                if let InterfaceNode::Function(function) = node {
+                    // Collect all deprecated method attributes for this function
+                    let deprecate_vers: Vec<&APIVersion> = function
+                        .attributes
+                        .iter()
+                        .filter_map(|attr| match attr {
+                            idlc_ast::FunctionAttribute::Deprecated(a) => Some(a),
+                            _ => None,
+                        })
+                        .collect();
+                    // - Ensure that no more than 1 deprecate is listed
+                    if deprecate_vers.len() > 1 {
+                        idlc_errors::unrecoverable!(
+                            "Function `{}::{}` has multiple 'deprecate' attributes: {}",
+                            interface.ident,
+                            function.ident,
+                            deprecate_vers
+                                .iter()
+                                .map(|a| a.to_string())
+                                .collect::<Vec<String>>()
+                                .join(", "),
+                        );
+                    }
+                    // - Ensure that method deprecates force a major version bump
+                    for dep_ver in deprecate_vers {
+                        if dep_ver.major < 2 {
+                            idlc_errors::unrecoverable!(
+                                "Function `{}::{}` is deprecated as of `{}` and must have a major version > 1",
+                                interface.ident,
+                                function.ident,
+                                dep_ver,
+                            );
                         }
                     }
                 }
