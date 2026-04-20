@@ -48,8 +48,8 @@ impl idlc_codegen::SplitInvokeGenerator for Generator {
 
         let input_name = &mir.tag.file_stem().unwrap().to_str().unwrap();
         result.push_str(&format!(
-            r#"#include "{input_name}.hpp"
-#include "impl_base.hpp"
+            r#"#include "impl_base.hpp"
+#include "{input_name}.hpp"
 "#
         ));
 
