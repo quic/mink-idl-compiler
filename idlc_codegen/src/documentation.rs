@@ -76,7 +76,9 @@ impl Documentation {
                 Some('*') => {
                     // User needs asterisk to be the first alignment so lets
                     // substitute it with a space
-                    if !docstring[1..].is_empty() {
+                    if docstring[1..].is_empty() {
+                        // A '*' will be added back. do nothing
+                    } else {
                         documentation.push(' ');
                         documentation.push_str(&docstring[1..]);
                     }

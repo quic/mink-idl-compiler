@@ -96,13 +96,13 @@ impl PackedPrimitives {
             .expect("BUNDLE_PARAMS_BY_SIZE not initialized")
         {
             // Sort by size for compatibility with previous (buggy) behavior
-            me.inputs.sort_by(|a, b| b.ty.size().cmp(&a.ty.size()));
-            me.outputs.sort_by(|a, b| b.ty.size().cmp(&a.ty.size()));
+            me.inputs.sort_by_key(|b| std::cmp::Reverse(b.ty.size()));
+            me.outputs.sort_by_key(|b| std::cmp::Reverse(b.ty.size()));
         } else {
             // Order bundle members so that those with larger alignment come
             // before those with smaller alignment
-            me.inputs.sort_by(|a, b| b.ty.align().cmp(&a.ty.align()));
-            me.outputs.sort_by(|a, b| b.ty.align().cmp(&a.ty.align()));
+            me.inputs.sort_by_key(|b| std::cmp::Reverse(b.ty.align()));
+            me.outputs.sort_by_key(|b| std::cmp::Reverse(b.ty.align()));
         }
         me
     }
