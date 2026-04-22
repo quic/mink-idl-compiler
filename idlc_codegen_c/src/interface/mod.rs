@@ -7,7 +7,7 @@ pub mod functions;
 pub mod variable_names;
 
 use crate::types::change_const_primitive;
-use variable_names::invoke::{ARGS, CONTEXT, COUNTS, OP_CODE};
+use variable_names::invoke::{ARGS, CONTEXT, COUNTS, INDENT, OP_CODE};
 
 pub fn emit_interface_impl(interface: &Interface, is_no_typed_objects: bool) -> String {
     let ident = interface.ident.to_string();
@@ -91,13 +91,13 @@ pub fn emit_interface_impl(interface: &Interface, is_no_typed_objects: bool) -> 
 static inline int32_t
 {ident}_release(Object self)
 {{
-    return Object_invoke(self, Object_OP_release, 0, 0);
+{INDENT}return Object_invoke(self, Object_OP_release, 0, 0);
 }}
 
 static inline int32_t
 {ident}_retain(Object self)
 {{
-    return Object_invoke(self, Object_OP_retain, 0, 0);
+{INDENT}return Object_invoke(self, Object_OP_retain, 0, 0);
 }}
 {implementations}
 "#

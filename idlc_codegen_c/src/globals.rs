@@ -3,6 +3,7 @@
 
 use idlc_mir::{Const, StructInner};
 
+use crate::interface::variable_names::invoke::INDENT;
 use crate::types::{change_const_primitive, change_primitive};
 
 pub fn emit_include(include: &std::path::Path) -> String {
@@ -24,9 +25,9 @@ pub fn emit_struct(r#struct: &StructInner) -> String {
             _ => unreachable!(),
         };
         result.push_str(&if count == 1 {
-            format!("  {ty} {ident};\n")
+            format!("{INDENT}{ty} {ident};\n")
         } else {
-            format!("  {ty} {ident}[{count}];\n")
+            format!("{INDENT}{ty} {ident}[{count}];\n")
         });
     }
     result.push_str(&format!("}} {};\n\n", r#struct.ident));
