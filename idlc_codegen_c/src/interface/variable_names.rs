@@ -14,4 +14,5 @@ pub mod invoke {
     pub const BO: &str = "bo";
     pub const BI_NAME: &str = "i";
     pub const BO_NAME: &str = "o";
+    pub const INDENT: &str = "    ";
 }

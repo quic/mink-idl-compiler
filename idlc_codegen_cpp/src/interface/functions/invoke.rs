@@ -1,7 +1,7 @@
 // Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 
-use idlc_codegen_c::interface::variable_names::invoke::{ARGS, COUNTS, OP_PREFIX};
+use idlc_codegen_c::interface::variable_names::invoke::{ARGS, COUNTS, INDENT, OP_PREFIX};
 
 use idlc_mir::Ident;
 
@@ -42,13 +42,12 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
             let idx = self.0.idx();
             obj_args.push_str(&format!(r"{ARGS}[{idx}].o,"));
         }
-        self.0.pre.push(format!(
-            r#" \
-                const union {ident} {{
-                    ~{ident}() {{}}
-                    {ty} inner[{cnt}];
-                }} {ident} = {{.inner= {{ {obj_args} }}}};"#,
-        ));
+        self.0.pre.push(format!("const union {ident} {{"));
+        self.0.pre.push(format!("{INDENT}~{ident}() {{}}"));
+        self.0.pre.push(format!("{INDENT}{ty} inner[{cnt}];"));
+        self.0
+            .pre
+            .push(format!("}} {ident} = {{.inner= {{ {obj_args} }}}};"));
     }
 
     fn visit_input_primitive(&mut self, ident: &Ident, ty: idlc_mir::Primitive) {
@@ -73,14 +72,8 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
     fn visit_input_object(&mut self, ident: &Ident, ty: Option<&str>) {
         let idx = self.0.idx();
         let ty = ty.unwrap_or("ProxyBase").to_string();
-        self.0.pre.push(format!(
-            r#" \
-                {ty} p_{ident}({ARGS}[{idx}].o);"#
-        ));
-        self.0.post.push(format!(
-            r#" \
-                p_{ident}.extract();"#
-        ));
+        self.0.pre.push(format!("{ty} p_{ident}({ARGS}[{idx}].o);"));
+        self.0.post.push(format!("p_{ident}.extract();"));
     }
 
     fn visit_output_primitive_buffer(&mut self, ident: &Ident, ty: idlc_mir::Primitive) {
@@ -103,23 +96,19 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
     ) {
         let ty = ty.unwrap_or("ProxyBase").to_string();
         let mut objs = String::new();
-        let mut obj_assign = String::new();
         for i in 0..cnt.into() {
+            if i != 0 {
+                objs.push_str(", ");
+            }
             let idx = self.0.idx();
-            objs.push_str("Object_NULL, ");
-            obj_assign.push_str(&format!(
-                r#"
-                {ARGS}[{idx}].o=p_{ident}[{i}].extract();"#
-            ));
+            objs.push_str("Object_NULL");
+            self.0
+                .post
+                .push(format!("{ARGS}[{idx}].o = p_{ident}[{i}].extract();"));
         }
-        self.0.pre.push(format!(
-            r#" \
-                {ty} p_{ident}[{cnt}] = {{ {objs} }};"#
-        ));
-        self.0.post.push(format!(
-            r#" \
-{obj_assign}"#,
-        ));
+        self.0
+            .pre
+            .push(format!("{ty} p_{ident}[{cnt}] = {{ {objs} }};"));
     }
 
     fn visit_output_primitive(&mut self, ident: &Ident, ty: idlc_mir::Primitive) {
@@ -143,8 +132,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         if ty.contains_interfaces() {
             let name = format!("{}_ptr", ident);
             self.0.pre.push(format!(
-                r#" \
-                {ty_ident} *{name} = &(*({ty_ident}*){ARGS}[{idx}].b.ptr);"#
+                "{ty_ident} *{name} = &(*({ty_ident}*){ARGS}[{idx}].b.ptr);"
             ));
 
             let objects = ty.objects();
@@ -165,8 +153,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
             }
         } else {
             self.0.pre.push(format!(
-                r#" \
-                {ty_ident} *{name} = ({ty_ident}*){ARGS}[{idx}].b.ptr;"#
+                "{ty_ident} *{name} = ({ty_ident}*){ARGS}[{idx}].b.ptr;"
             ));
         }
     }
@@ -178,14 +165,10 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
     fn visit_output_object(&mut self, ident: &Ident, ty: Option<&str>) {
         let idx = self.0.idx();
         let ty = ty.unwrap_or("ProxyBase").to_string();
-        self.0.pre.push(format!(
-            r#" \
-                {ty} p_{ident};"#
-        ));
-        self.0.post.push(format!(
-            r#" \
-                {ARGS}[{idx}].o = p_{ident}.extract();"#
-        ));
+        self.0.pre.push(format!("{ty} p_{ident};"));
+        self.0
+            .post
+            .push(format!("{ARGS}[{idx}].o = p_{ident}.extract();"));
     }
 }
 
@@ -198,13 +181,6 @@ pub fn emit(
     let ident = &function.ident;
 
     let invoke = Invoke::new(function);
-    let mut pre = invoke.0.pre();
-    let mut post = invoke.0.post();
-    let mut args = invoke.0.args();
-
-    args = args.replace(" \\", "");
-    pre = pre.replace(" \\", "");
-    post = post.replace(" \\\n", "\n");
 
     let mut return_idents =
         idlc_codegen_c::interface::functions::signature::iter_to_string(signature.return_idents());
@@ -224,21 +200,30 @@ pub fn emit(
         ));
     }
 
+    let call = format!("int32_t r = {ident}({return_idents});");
+
     let counts = format!(
-        "({0}, {1}, {2}, {3})",
+        "{0}, {1}, {2}, {3}",
         counts.input_buffers, counts.output_buffers, counts.input_objects, counts.output_objects,
     );
 
+    let mut body = vec![];
+    body.push(format!(
+        "if ({COUNTS} != ObjectCounts_pack({counts}){}){{",
+        invoke.0.args()
+    ));
+    body.push(format!("{INDENT}break;"));
+    body.push("}".to_string());
+    body.extend(invoke.0.pre());
+    body.push(call);
+    body.extend(invoke.0.post());
+    body.push("return r;".to_string());
+    let formatted_body = idlc_codegen::join_with_prefix(&body, INDENT, 4, "\n");
+
     format!(
         r#"
-            case {OP_PREFIX}_{ident}: {{
-                if ({COUNTS} != ObjectCounts_pack{counts}{args}) {{
-                    break;
-                }}
-{pre}
-                int32_t r = {ident}({return_idents});
-{post}
-                return r;
-            }}"#
+{INDENT}{INDENT}{INDENT}case {OP_PREFIX}_{ident}: {{
+{formatted_body}
+{INDENT}{INDENT}{INDENT}}}"#
     )
 }

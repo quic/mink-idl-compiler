@@ -5,7 +5,7 @@ use idlc_mir::{Interface, InterfaceNode};
 
 mod functions;
 
-use idlc_codegen_c::interface::variable_names::invoke::{ARGS, COUNTS, OP_CODE, OP_PREFIX};
+use idlc_codegen_c::interface::variable_names::invoke::{ARGS, COUNTS, INDENT, OP_CODE, OP_PREFIX};
 use idlc_codegen_c::types::{change_const_primitive, change_primitive};
 
 pub fn emit_interface_impl(interface: &Interface) -> String {
@@ -169,13 +169,13 @@ class {ident}ImplBase : protected ImplBase, public I{ident} {{
     virtual ~{ident}ImplBase() {{}}
 {weak_declarations}
   protected:
-    virtual int32_t invoke(ObjectOp {OP_CODE}, ObjectArg* {ARGS}, ObjectCounts {COUNTS}) {{
-        switch (ObjectOp_methodID({OP_CODE})) {{
+{INDENT}virtual int32_t invoke(ObjectOp {OP_CODE}, ObjectArg* {ARGS}, ObjectCounts {COUNTS}) {{
+{INDENT}{INDENT}switch (ObjectOp_methodID({OP_CODE})) {{
 {invokes}
-            default: {{ return Object_ERROR_INVALID; }}
-        }}
-        return Object_ERROR_INVALID;
-    }}
+{INDENT}{INDENT}{INDENT}default: {{ return Object_ERROR_INVALID; }}
+{INDENT}{INDENT}}}
+{INDENT}{INDENT}return Object_ERROR_INVALID;
+{INDENT}}}
 }};
 "#
     )

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 use crate::{
-    interface::variable_names::invoke::{ARGS, BI, BO, CONST, COUNTS, OP_PREFIX},
+    interface::variable_names::invoke::{ARGS, BI, BO, CONST, COUNTS, INDENT, OP_PREFIX},
     types::change_primitive,
 };
 
@@ -36,21 +36,18 @@ impl Invoke {
     pub fn args(&self) -> String {
         let mut acc = String::new();
         for arg in &self.args {
-            acc.push_str(
-                r" || \
-                    ",
-            );
+            acc.push_str(" || ");
             acc += arg.as_ref();
         }
         acc
     }
 
-    pub fn pre(&self) -> String {
-        self.pre.concat()
+    pub fn pre(&self) -> Vec<String> {
+        self.pre.clone()
     }
 
-    pub fn post(&self) -> String {
-        self.post.concat()
+    pub fn post(&self) -> Vec<String> {
+        self.post.clone()
     }
 }
 
@@ -69,12 +66,11 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         let idx = self.idx();
         let sz = ty.size();
         let ty: &str = change_primitive(ty);
-        let name = format!("*{}_ptr", ident);
         self.pre.push(format!(
-            r#" \
-                {CONST} {ty} {name} = ({CONST} {ty}*){ARGS}[{idx}].b.ptr; \
-                size_t {ident}_len = {ARGS}[{idx}].b.size / {sz};"#
+            "{CONST} {ty} *{ident}_ptr = ({CONST} {ty}*){ARGS}[{idx}].b.ptr;"
         ));
+        self.pre
+            .push(format!("size_t {ident}_len = {ARGS}[{idx}].b.size / {sz};"));
     }
 
     fn visit_input_untyped_buffer(&mut self, ident: &idlc_mir::Ident) {
@@ -82,10 +78,10 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         let ty = "void".to_string();
         let name = format!("*{}_ptr", ident);
         self.pre.push(format!(
-            r#" \
-                {CONST} {ty} {name} = ({CONST} {ty}*){ARGS}[{idx}].b.ptr; \
-                size_t {ident}_len = {ARGS}[{idx}].b.size;"#
+            "{CONST} {ty} {name} = ({CONST} {ty}*){ARGS}[{idx}].b.ptr;"
         ));
+        self.pre
+            .push(format!("size_t {ident}_len = {ARGS}[{idx}].b.size;"));
     }
 
     fn visit_input_struct_buffer(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::StructInner) {
@@ -93,9 +89,10 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         let ty: &str = ty.ident.as_ref();
         let name = format!("*{}_ptr", ident);
         self.pre.push(format!(
-            r#" \
-                {CONST} {ty} {name} = ({CONST} {ty}*){ARGS}[{idx}].b.ptr; \
-                size_t {ident}_len = {ARGS}[{idx}].b.size / sizeof({ty});"#
+            "{CONST} {ty} {name} = ({CONST} {ty}*){ARGS}[{idx}].b.ptr;"
+        ));
+        self.pre.push(format!(
+            "size_t {ident}_len = {ARGS}[{idx}].b.size / sizeof({ty});"
         ));
     }
 
@@ -115,10 +112,8 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
             let idx = self.idx();
             objs.push_str(&format!(r"{ARGS}[{idx}].o,"));
         }
-        self.pre.push(format!(
-            r#" \
-                const {ty} {ident}[{cnt}] = {{ {objs} }};"#,
-        ));
+        self.pre
+            .push(format!("const {ty} {ident}[{cnt}] = {{ {objs} }};"));
     }
 
     fn visit_input_primitive(&mut self, ident: &idlc_mir::Ident, ty: idlc_mir::Primitive) {
@@ -128,8 +123,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         let name = format!("*{}_ptr", ident);
         self.args.push(format!("{ARGS}[{idx}].b.size != {sz}"));
         self.pre.push(format!(
-            r#" \
-                {CONST} {ty} {name} = ({CONST} {ty}*){ARGS}[{idx}].b.ptr;"#
+            "{CONST} {ty} {name} = ({CONST} {ty}*){ARGS}[{idx}].b.ptr;"
         ));
     }
 
@@ -139,17 +133,22 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
     ) {
         let packer = super::serialization::PackedPrimitives::new(packed_primitives);
         let Some(TransportBuffer {
-            definition, size, ..
-        }) = packer.bi_definition(true)
+            mut definition,
+            size,
+            ..
+        }) = packer.bi_definition(// true
+        )
         else {
             unreachable!()
         };
         let idx = self.idx();
         self.args.push(format!("{ARGS}[{idx}].b.size != {size}"));
-        self.pre.push(format!(
-            r#" \
-                {CONST} {definition} *i = (const struct {BI}*){ARGS}[{idx}].b.ptr;"#
-        ));
+        self.pre.push(format!("{CONST} {}", definition.remove(0)));
+        self.pre.extend(definition);
+        self.pre
+            .last_mut()
+            .unwrap()
+            .push_str(&format!(" *i = (const struct {BI}*){ARGS}[{idx}].b.ptr;"));
     }
 
     fn visit_input_big_struct(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::StructInner) {
@@ -160,8 +159,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         self.args.push(format!("{ARGS}[{idx}].b.size != {sz}"));
         if ty.contains_interfaces() {
             self.pre.push(format!(
-                r#" \
-                {ty_ident} {name} = *({CONST} {ty_ident}*){ARGS}[{idx}].b.ptr;"#
+                "{ty_ident} {name} = *({CONST} {ty_ident}*){ARGS}[{idx}].b.ptr;"
             ));
             let objects = ty.objects();
             for object in objects {
@@ -173,15 +171,11 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
                     .join(".");
                 let idx = self.idx();
                 let field_ident = format!("{name}.{}", path);
-                self.pre.push(format!(
-                    r#" \
-                {field_ident} = {ARGS}[{idx}].o;"#
-                ));
+                self.pre.push(format!("{field_ident} = {ARGS}[{idx}].o;"));
             }
         } else {
             self.pre.push(format!(
-                r#" \
-                {CONST} {ty_ident} *{name} = ({CONST} {ty_ident}*){ARGS}[{idx}].b.ptr;"#
+                "{CONST} {ty_ident} *{name} = ({CONST} {ty_ident}*){ARGS}[{idx}].b.ptr;"
             ));
         }
     }
@@ -197,10 +191,8 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
             ty.unwrap_or("Object").to_string()
         };
 
-        self.pre.push(format!(
-            r#" \
-                {ty} *{ident}_ptr = &{ARGS}[{idx}].o;"#
-        ));
+        self.pre
+            .push(format!("{ty} *{ident}_ptr = &{ARGS}[{idx}].o;"));
     }
 
     fn visit_output_primitive_buffer(&mut self, ident: &idlc_mir::Ident, ty: idlc_mir::Primitive) {
@@ -208,44 +200,37 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         let sz = ty.size();
         let ty: &str = change_primitive(ty);
         let name = format!("*{}_ptr", ident);
-        self.pre.push(format!(
-            r#" \
-                {ty} {name} = ({ty}*){ARGS}[{idx}].b.ptr; \
-                size_t {ident}_len = {ARGS}[{idx}].b.size / {sz};"#
-        ));
-        self.post.push(format!(
-            r#" \
-                {ARGS}[{idx}].b.size = {ident}_len * {sz};"#
-        ));
+        self.pre
+            .push(format!("{ty} {name} = ({ty}*){ARGS}[{idx}].b.ptr;"));
+        self.pre
+            .push(format!("size_t {ident}_len = {ARGS}[{idx}].b.size / {sz};"));
+        self.post
+            .push(format!("{ARGS}[{idx}].b.size = {ident}_len * {sz};"));
     }
 
     fn visit_output_untyped_buffer(&mut self, ident: &idlc_mir::Ident) {
         let idx = self.idx();
         let ty = "void".to_string();
         let name = format!("*{}_ptr", ident);
-        self.pre.push(format!(
-            r#" \
-                {ty} {name} = ({ty}*){ARGS}[{idx}].b.ptr; \
-                size_t {ident}_len = {ARGS}[{idx}].b.size;"#
-        ));
-        self.post.push(format!(
-            r#" \
-                {ARGS}[{idx}].b.size = {ident}_len;"#
-        ));
+        self.pre
+            .push(format!("{ty} {name} = ({ty}*){ARGS}[{idx}].b.ptr;"));
+        self.pre
+            .push(format!("size_t {ident}_len = {ARGS}[{idx}].b.size;"));
+        self.post
+            .push(format!("{ARGS}[{idx}].b.size = {ident}_len;"));
     }
 
     fn visit_output_struct_buffer(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::StructInner) {
         let idx = self.idx();
         let ty: &str = ty.ident.as_ref();
         let name = format!("*{}_ptr", ident);
+        self.pre
+            .push(format!("{ty} {name} = ({ty}*){ARGS}[{idx}].b.ptr;"));
         self.pre.push(format!(
-            r#" \
-                {ty} {name} = ({ty}*){ARGS}[{idx}].b.ptr; \
-                size_t {ident}_len = {ARGS}[{idx}].b.size / sizeof({ty});"#
+            "size_t {ident}_len = {ARGS}[{idx}].b.size / sizeof({ty});"
         ));
         self.post.push(format!(
-            r#" \
-                {ARGS}[{idx}].b.size = {ident}_len * sizeof({ty});"#
+            "{ARGS}[{idx}].b.size = {ident}_len * sizeof({ty});"
         ));
     }
 
@@ -272,14 +257,8 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
             ))
         }
 
-        self.pre.push(format!(
-            r#" \
-                {ty} {name}[{cnt}] = {{ {objs} }};"#,
-        ));
-        self.post.push(format!(
-            r#" \
-                {obj_assign}"#
-        ));
+        self.pre.push(format!("{ty} {name}[{cnt}] = {{ {objs} }};"));
+        self.post.push(obj_assign);
     }
 
     fn visit_output_big_struct(&mut self, ident: &idlc_mir::Ident, ty: &idlc_mir::StructInner) {
@@ -290,8 +269,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         self.args.push(format!("{ARGS}[{idx}].b.size != {sz}"));
         if ty.contains_interfaces() {
             self.pre.push(format!(
-                r#" \
-                {ty_ident} *{name} = &(*({ty_ident}*){ARGS}[{idx}].b.ptr);"#
+                "{ty_ident} *{name} = &(*({ty_ident}*){ARGS}[{idx}].b.ptr);"
             ));
             let objects = ty.objects();
             for object in objects {
@@ -311,8 +289,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
             }
         } else {
             self.pre.push(format!(
-                r#" \
-                {ty_ident} *{name} = ({ty_ident}*){ARGS}[{idx}].b.ptr;"#
+                "{ty_ident} *{name} = ({ty_ident}*){ARGS}[{idx}].b.ptr;"
             ));
         }
     }
@@ -327,10 +304,8 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         let ty: &str = change_primitive(ty);
         let name = format!("*{}_ptr", ident);
         self.args.push(format!("{ARGS}[{idx}].b.size != {sz}"));
-        self.pre.push(format!(
-            r#" \
-                {ty} {name} = ({ty}*){ARGS}[{idx}].b.ptr;"#
-        ));
+        self.pre
+            .push(format!("{ty} {name} = ({ty}*){ARGS}[{idx}].b.ptr;"));
     }
 
     fn visit_output_bundled(
@@ -340,16 +315,18 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         let packer = super::serialization::PackedPrimitives::new(packed_primitives);
         let Some(TransportBuffer {
             definition, size, ..
-        }) = packer.bo_definition(true)
+        }) = packer.bo_definition(// true
+        )
         else {
             unreachable!()
         };
         let idx = self.idx();
         self.args.push(format!("{ARGS}[{idx}].b.size != {size}"));
-        self.pre.push(format!(
-            r#" \
-                {definition} *o = (struct {BO}*){ARGS}[{idx}].b.ptr;"#
-        ));
+        self.pre.extend(definition);
+        self.pre
+            .last_mut()
+            .unwrap()
+            .push_str(&format!(" *o = (struct {BO}*){ARGS}[{idx}].b.ptr;"));
     }
 
     fn visit_output_object(&mut self, ident: &idlc_mir::Ident, ty: Option<&str>) {
@@ -362,20 +339,11 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
         };
         if !ident.contains("->") && !ident.contains('.') {
             name = format!("*{name}");
-            self.pre.push(format!(
-                r#" \
-                {ty} {name} = &{ARGS}[{idx}].o;"#
-            ));
+            self.pre.push(format!("{ty} {name} = &{ARGS}[{idx}].o;"));
         } else {
-            self.pre.push(format!(
-                r#" \
-                {name} = {ARGS}[{idx}].o;"#
-            ));
-            self.post.push(format!(
-                r#" \
-                {ARGS}[{idx}].o = {name}; \
-                {name} = Object_NULL;"#
-            ));
+            self.pre.push(format!("{name} = {ARGS}[{idx}].o;"));
+            self.post.push(format!("{ARGS}[{idx}].o = {name};"));
+            self.post.push(format!("{name} = Object_NULL;"));
         }
     }
 }
@@ -391,9 +359,6 @@ pub fn emit(
     let ident = &function.ident;
 
     let invoke = Invoke::new(function, is_no_typed_objects);
-    let pre = invoke.pre();
-    let post = invoke.post();
-    let args = invoke.args();
 
     let return_idents = super::signature::iter_to_string(signature.return_idents());
     let params = super::signature::iter_to_string(signature.params());
@@ -408,27 +373,34 @@ pub fn emit(
                     r = prefix##{ident}(me{return_idents}); \
                 }} else {{ \
                     return Object_ERROR_INVALID; \
-                }} \"
+                }}"
         )
     } else {
-        format!(r"int32_t r = prefix##{ident}(me{return_idents}); \")
+        format!(r"int32_t r = prefix##{ident}(me{return_idents});")
     };
 
     let counts = format!(
-        "({0},{1},{2},{3})",
+        "{0}, {1}, {2}, {3}",
         counts.input_buffers, counts.output_buffers, counts.input_objects, counts.output_objects,
     );
 
+    let mut body = vec![];
+    body.push(format!(
+        "if ({COUNTS} != ObjectCounts_pack({counts}){}) {{",
+        invoke.args()
+    ));
+    body.push(format!("{INDENT}break;"));
+    body.push("}".to_string());
+    body.extend(invoke.pre());
+    body.push(call);
+    body.extend(invoke.post());
+    body.push("return r;".to_string());
+    let formatted_body = idlc_codegen::join_with_prefix(&body, INDENT, 4, " \\\n");
+
     format!(
         r#" \
-            case {iface_ident}_{OP_PREFIX}_{ident}: {{ \
-                if ({COUNTS} != ObjectCounts_pack{counts}{args}) {{ \
-                    break; \
-                }} \
-                {pre} \
-                {call}
-                {post} \
-                return r; \
-            }} "#
+{INDENT}{INDENT}{INDENT}case {iface_ident}_{OP_PREFIX}_{ident}: {{ \
+{formatted_body} \
+{INDENT}{INDENT}{INDENT}}}"#
     )
 }

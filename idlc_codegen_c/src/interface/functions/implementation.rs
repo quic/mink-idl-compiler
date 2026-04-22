@@ -4,7 +4,7 @@
 use idlc_mir::Ident;
 
 use crate::interface::variable_names::invoke::{
-    ARGS, BI_NAME, BO_NAME, OBJECTBUF, OBJECTBUFIN, OP_PREFIX,
+    ARGS, BI_NAME, BO_NAME, INDENT, OBJECTBUF, OBJECTBUFIN, OP_PREFIX,
 };
 
 use crate::types::change_primitive;
@@ -36,20 +36,20 @@ impl Implementation {
         me
     }
 
-    pub fn args(&self) -> String {
-        self.args.concat()
+    pub fn args(&self) -> Vec<String> {
+        self.args.clone()
     }
 
-    pub fn initializations(&self) -> String {
-        self.initializations.concat()
+    pub fn initializations(&self) -> Vec<String> {
+        self.initializations.clone()
     }
 
-    pub fn pre_call_assignments(&self) -> String {
-        self.pre_call.concat()
+    pub fn pre_call_assignments(&self) -> Vec<String> {
+        self.pre_call.clone()
     }
 
-    pub fn post_call_assignments(&self) -> String {
-        self.post_call.concat()
+    pub fn post_call_assignments(&self) -> Vec<String> {
+        self.post_call.clone()
     }
 }
 
@@ -70,8 +70,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let ty = change_primitive(ty);
 
         self.args.push(format!(
-            r#"
-        {{.bi = ({OBJECTBUFIN}) {{ {name}, {ident}_len * sizeof({ty}) }} }},"#
+            "{INDENT}{{.bi = ({OBJECTBUFIN}) {{ {name}, {ident}_len * sizeof({ty}) }} }},"
         ));
     }
 
@@ -81,18 +80,15 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let ty = ty.ident.to_string();
 
         self.args.push(format!(
-            r#"
-        {{.bi = ({OBJECTBUFIN}) {{ {name}, {ident}_len * sizeof({ty}) }} }},"#
+            "{INDENT}{{.bi = ({OBJECTBUFIN}) {{ {name}, {ident}_len * sizeof({ty}) }} }},"
         ));
     }
 
     fn visit_input_object_array(&mut self, ident: &Ident, _ty: Option<&str>, cnt: idlc_mir::Count) {
         for i in 0..cnt.into() {
             let _idx = self.idx();
-            self.args.push(format!(
-                r#"
-        {{.o = (*{ident}_ptr)[{i}] }},"#
-            ));
+            self.args
+                .push(format!("{INDENT}{{.o = (*{ident}_ptr)[{i}] }},"));
         }
     }
 
@@ -101,8 +97,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let name = format!("{}_val", ident);
         let ty = change_primitive(ty);
         self.args.push(format!(
-            r#"
-        {{.b = ({OBJECTBUF}) {{ &{name}, sizeof({ty}) }} }},"#
+            "{INDENT}{{.b = ({OBJECTBUF}) {{ &{name}, sizeof({ty}) }} }},"
         ));
     }
 
@@ -113,21 +108,20 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let packer = super::serialization::PackedPrimitives::new(packed_primitives);
         let Some(TransportBuffer {
             definition, size, ..
-        }) = packer.bi_definition(false)
+        }) = packer.bi_definition()
         else {
             unreachable!()
         };
         let _idx = self.idx();
-        let bi_embedded = packer.bi_embedded();
-        self.initializations.push(format!(
-            r#"{definition} {BI_NAME};
-{0}{1}"#,
-            bi_embedded,
-            packer.bi_assignments(),
-        ));
+        self.initializations.extend(definition);
+        self.initializations
+            .last_mut()
+            .unwrap()
+            .push_str(&format!(" {BI_NAME};"));
+        self.initializations.extend(packer.bi_embedded());
+        self.initializations.extend(packer.bi_assignments());
         self.args.push(format!(
-            r#"
-        {{.b = ({OBJECTBUF}) {{ &{BI_NAME}, {size} }} }},"#
+            "{INDENT}{{.b = ({OBJECTBUF}) {{ &{BI_NAME}, {size} }} }},"
         ));
     }
 
@@ -136,13 +130,10 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let name = format!("{}_ptr", ident);
         let ty_ident = ty.ident.to_string();
         if ty.contains_interfaces() {
-            self.initializations.push(format!(
-                r#"{ty_ident} {ident}_cpy = *{name};
-    "#
-            ));
+            self.initializations
+                .push(format!("{ty_ident} {ident}_cpy = *{name};"));
             self.args.push(format!(
-                r#"
-            {{.bi = ({OBJECTBUFIN}) {{ &{ident}_cpy, sizeof({ty_ident}) }} }},"#
+                "{INDENT}{{.bi = ({OBJECTBUFIN}) {{ &{ident}_cpy, sizeof({ty_ident}) }} }},"
             ));
             let objects = ty.objects();
             for object in objects {
@@ -152,10 +143,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
                     .map(|ident| ident.to_string())
                     .collect::<Vec<String>>()
                     .join(".");
-                self.pre_call.push(format!(
-                    r#"{ident}_cpy.{path} = Object_NULL;
-    "#
-                ));
+                self.pre_call
+                    .push(format!("{ident}_cpy.{path} = Object_NULL;"));
                 self.visit_input_object(
                     &idlc_mir::Ident {
                         ident: format!("{ident}_cpy.{}", path),
@@ -166,8 +155,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
             }
         } else {
             self.args.push(format!(
-                r#"
-            {{.bi = ({OBJECTBUFIN}) {{ {name}, sizeof({ty_ident}) }} }},"#
+                "{INDENT}{{.bi = ({OBJECTBUFIN}) {{ {name}, sizeof({ty_ident}) }} }},"
             ));
         }
     }
@@ -178,10 +166,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
 
     fn visit_input_object(&mut self, ident: &Ident, _: Option<&str>) {
         let _idx = self.idx();
-        self.args.push(format!(
-            r#"
-        {{.o = {ident} }},"#
-        ));
+        self.args.push(format!("{INDENT}{{.o = {ident} }},"));
     }
 
     fn visit_output_primitive_buffer(&mut self, ident: &Ident, ty: idlc_mir::Primitive) {
@@ -189,12 +174,10 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let name = format!("{}_ptr", ident);
         let ty = change_primitive(ty);
         self.post_call.push(format!(
-            r#"
-    *{ident}_lenout = {ARGS}[{idx}].b.size / sizeof({ty});"#
+            "*{ident}_lenout = {ARGS}[{idx}].b.size / sizeof({ty});"
         ));
         self.args.push(format!(
-            r#"
-        {{.b = ({OBJECTBUF}) {{ {name}, {ident}_len * sizeof({ty}) }} }},"#
+            "{INDENT}{{.b = ({OBJECTBUF}) {{ {name}, {ident}_len * sizeof({ty}) }} }},"
         ));
     }
 
@@ -203,12 +186,10 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let name = format!("{}_ptr", ident);
         let ty = ty.ident.to_string();
         self.post_call.push(format!(
-            r#"
-    *{ident}_lenout = {ARGS}[{idx}].b.size / sizeof({ty});"#
+            "*{ident}_lenout = {ARGS}[{idx}].b.size / sizeof({ty});"
         ));
         self.args.push(format!(
-            r#"
-        {{.b = ({OBJECTBUF}) {{ {name}, {ident}_len * sizeof({ty}) }} }},"#
+            "{INDENT}{{.b = ({OBJECTBUF}) {{ {name}, {ident}_len * sizeof({ty}) }} }},"
         ));
     }
 
@@ -220,15 +201,9 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
     ) {
         for i in 0..cnt.into() {
             let idx = self.idx();
-            self.args.push(
-                r#"
-        {.o = (Object) { NULL, NULL } },"#
-                    .to_string(),
-            );
-            self.post_call.push(format!(
-                r#"
-    (*{ident}_ptr)[{i}] = {ARGS}[{idx}].o;"#,
-            ));
+            self.args.push(format!("{INDENT}{{.o = Object_NULL}},"));
+            self.post_call
+                .push(format!("(*{ident}_ptr)[{i}] = {ARGS}[{idx}].o;"));
         }
     }
 
@@ -237,8 +212,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let name = format!("{}_ptr", ident);
         let ty = change_primitive(ty);
         self.args.push(format!(
-            r#"
-        {{.b = ({OBJECTBUF}) {{ {name}, sizeof({ty}) }} }},"#
+            "{INDENT}{{.b = ({OBJECTBUF}) {{ {name}, sizeof({ty}) }} }},"
         ));
     }
 
@@ -251,22 +225,21 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
             definition,
             size,
             initialization,
-        }) = packer.bo_definition(false)
+        }) = packer.bo_definition()
         else {
             unreachable!()
         };
         let _idx = self.idx();
 
-        self.initializations.push(format!(
-            r#"
-    {definition} {BO_NAME} = {{{initialization}}};
-"#
-        ));
-        self.post_call.push(packer.post_bo_assignments());
+        self.initializations.extend(definition);
+        self.initializations
+            .last_mut()
+            .unwrap()
+            .push_str(&format!(" {BO_NAME} = {{{initialization}}};"));
         self.args.push(format!(
-            r#"
-        {{.b = ({OBJECTBUF}) {{  &{BO_NAME}, {size} }} }},"#
+            "{INDENT}{{.b = ({OBJECTBUF}) {{ &{BO_NAME}, {size} }} }},"
         ));
+        self.post_call.extend(packer.post_bo_assignments());
     }
 
     fn visit_output_big_struct(&mut self, ident: &Ident, ty: &idlc_mir::StructInner) {
@@ -274,8 +247,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let name = format!("{}_ptr", ident);
         let ty_ident = ty.ident.to_string();
         self.args.push(format!(
-            r#"
-        {{.b = ({OBJECTBUF}) {{  {name}, sizeof({ty_ident}) }} }},"#
+            "{INDENT}{{.b = ({OBJECTBUF}) {{  {name}, sizeof({ty_ident}) }} }},"
         ));
         let objects = ty.objects();
         for object in objects {
@@ -285,10 +257,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
                 .map(|ident| ident.to_string())
                 .collect::<Vec<String>>()
                 .join(".");
-            self.initializations.push(format!(
-                r#"{name}->{path} = Object_NULL;
-    "#
-            ));
+            self.initializations
+                .push(format!("{name}->{path} = Object_NULL;"));
             self.visit_output_object(
                 &idlc_mir::Ident {
                     ident: format!("{name}->{}", path),
@@ -309,15 +279,8 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         if !ident.contains("->") {
             name = format!("*{name}");
         }
-        self.post_call.push(format!(
-            r#"
-    {name} = {ARGS}[{idx}].o;"#
-        ));
-        self.args.push(
-            r#"
-        {.o = Object_NULL },"#
-                .to_string(),
-        );
+        self.post_call.push(format!("{name} = {ARGS}[{idx}].o;"));
+        self.args.push(format!("{INDENT}{{.o = Object_NULL }},"));
     }
 }
 
@@ -331,72 +294,45 @@ pub fn emit(
 ) -> String {
     let ident = &function.ident;
     let total = counts.total();
-    let mut object_args = String::new();
-    // let mut returns = String::new();
 
     let params = super::signature::iter_to_string(signature.params());
 
     let implementation = Implementation::new(function);
-    let initializations = implementation.initializations();
-    let pre_call_assignments = implementation.pre_call_assignments();
-    let args = implementation.args();
-    let post_call_assignments = implementation.post_call_assignments();
 
-    if total > 0 {
-        object_args = format!(
-            r#"ObjectArg {ARGS}[] = {{{args}
-    }};"#
-        );
-    }
-
-    let returns = if total > 0 {
-        format!("Object_invoke(self, {iface_ident}_{OP_PREFIX}_{ident}, {ARGS}, ObjectCounts_pack({0}, {1}, {2}, {3}));",
-        counts.input_buffers,
-        counts.output_buffers,
-        counts.input_objects,
-        counts.output_objects)
+    let arguments = if total > 0 {
+        format!(
+            "{ARGS}, ObjectCounts_pack({0}, {1}, {2}, {3})",
+            counts.input_buffers,
+            counts.output_buffers,
+            counts.input_objects,
+            counts.output_objects
+        )
     } else {
-        return format!(
-            r#"
-{documentation}
-static inline int32_t {current_iface_ident}_{ident}(Object self{params})
-{{
-    return Object_invoke(self, {iface_ident}_{OP_PREFIX}_{ident}, 0, 0);
-}}
-"#
-        );
+        "NULL, 0".to_string()
     };
+
+    let mut body = Vec::new();
+    body.extend(implementation.initializations());
+    if total > 0 {
+        body.push(format!("ObjectArg {ARGS}[] = {{"));
+        body.extend(implementation.args());
+        body.push("};".to_string());
+    }
+    body.extend(implementation.pre_call_assignments());
+    body.push(format!(
+        "int32_t result = Object_invoke(self, {iface_ident}_{OP_PREFIX}_{ident}, {arguments});"
+    ));
+    body.extend(implementation.post_call_assignments());
+    body.push("return result;".to_string());
+    let formatted_body = idlc_codegen::join_with_prefix(&body, INDENT, 1, "\n");
 
     format!(
         r#"
 {documentation}
 static inline int32_t {current_iface_ident}_{ident}(Object self{params})
 {{
-{0}{1}{2}
-    int32_t result = {returns}
-{3}
-    return result;
+{formatted_body}
 }}
-"#,
-        if !initializations.is_empty() {
-            format!("    {initializations}\n")
-        } else {
-            "".to_string()
-        },
-        if !object_args.is_empty() {
-            format!("    {object_args}\n")
-        } else {
-            "".to_string()
-        },
-        if !pre_call_assignments.is_empty() {
-            format!("    {pre_call_assignments}\n")
-        } else {
-            "".to_string()
-        },
-        if !post_call_assignments.is_empty() {
-            post_call_assignments.to_string()
-        } else {
-            "".to_string()
-        }
+"#
     )
 }

@@ -38,3 +38,24 @@ pub trait SplitInvokeGenerator {
     /// Generates the backend language of skel side based on input IDL
     fn generate_invoke(&self, mir: &idlc_mir::Mir) -> String;
 }
+
+pub fn join_with_prefix(v: &[String], prefix: &str, level: usize, sep: &str) -> String {
+    // Rough capacity estimate: sum of element lengths + prefix per element + separators
+    let total_len: usize = v.iter().map(|s| s.len()).sum::<usize>()
+        + prefix.len() * v.len()
+        + sep.len() * v.len().saturating_sub(1);
+
+    let mut out = String::with_capacity(total_len); // pre-allocate for fewer reallocations [1](https://doc.rust-lang.org/std/vec/struct.Vec.html)
+
+    for (i, s) in v.iter().enumerate() {
+        if i != 0 {
+            out.push_str(sep);
+        }
+        for _ in 0..level {
+            out.push_str(prefix);
+        }
+        out.push_str(s);
+    }
+
+    out
+}
