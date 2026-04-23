@@ -18,10 +18,7 @@ fn long_version() -> &'static str {
 
 #[derive(clap::Parser)]
 #[command(author, version, long_version=long_version(), about = None, long_about)]
-/// Parse .idl files into AST.
-///
-/// The C-compiler for example returns `nested too deeply`, rust detects cyclic
-/// imports nicer.
+/// Compile Mink IDL files into a header to be used by one of the supported language
 pub struct Cli {
     /// Input IDL file
     pub file: std::path::PathBuf,
