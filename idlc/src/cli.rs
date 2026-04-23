@@ -2,12 +2,18 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 fn long_version() -> &'static str {
-    format!(
-        "{}\nCompiled from (git hash): {}",
-        env!("CARGO_PKG_VERSION"),
-        env!("GIT_HASH")
-    )
-    .leak()
+    let git_hash = env!("GIT_HASH");
+
+    if git_hash == "unknown" {
+        env!("CARGO_PKG_VERSION")
+    } else {
+        format!(
+            "{}\nCompiled from (git hash): {}",
+            env!("CARGO_PKG_VERSION"),
+            git_hash
+        )
+        .leak()
+    }
 }
 
 #[derive(clap::Parser)]
