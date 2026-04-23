@@ -53,12 +53,12 @@ impl Compiler {
         match lang {
             Language::C | Language::CPP => {
                 if out.is_dir() {
-                    idlc_errors::error!("Codegen language expects output file.")
+                    idlc_errors::unrecoverable!("Codegen language expects output file.")
                 }
             }
             Language::Java | Language::Rust => {
                 if out.is_file() {
-                    idlc_errors::error!("Codegen language expects output directory.")
+                    idlc_errors::unrecoverable!("Codegen language expects output directory.")
                 }
             }
         }
