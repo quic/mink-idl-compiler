@@ -1,9 +1,25 @@
 # Contributing
 
+This guide is for contributors to the Mink IDL compiler. It covers local setup, basic workflow, and
+what to run before opening a PR.
+
 All types of contributions are encouraged and valued.
 
-Build Instructions
-----
+## What This Repository Contains
+
+The project is a Rust workspace that compiles `.idl` files into language bindings for:
+- C
+- C++
+- Java
+- Rust
+
+## Prerequisites
+
+- Rust stable toolchain (`cargo`, `rustc`) - minimum supported Rust version = 1.81.0
+- `clang` and `clang++` (integration tests compile C/C++ shims)
+- Optional: nightly Rust for sanitizer and miri runs
+
+## Build Instructions
 Install Rust with Rustup using [Rustup](https://rustup.rs/).
 
 Fork, then clone the repo:
@@ -26,12 +42,34 @@ Push to your fork and submit a pull request.
 ### Expectations
 For each PR branch, ensure that the source code
 1. is formatted with `cargo fmt`
-2. has no warnings from `clippy`
+2. has no warnings from `cargo clippy --all-targets -- -D clippy::all -D unused -D warnings`
 3. has properly formatted documentation
-4. can build against MUSL for x86 and arm architectures
+4. can build against MUSL for x86 and ARM architectures
 
-Releases
-----
+## Pre-PR Checklist
+
+Run these before opening a pull request:
+
+```sh
+cargo fmt -- --check
+cargo clippy --all-targets -- -D clippy::all -D unused -D warnings
+cargo test
+cd tests && cargo test && cargo test --release
+```
+
+## Troubleshooting
+
+`idlc` not found in integration tests:
+- Ensure `cargo build` has completed.
+- Set `IDLC=../target/debug/idlc` before running `tests` crate commands.
+
+Rust/Java output path errors:
+- Rust and Java generation require `-o` to point to a directory.
+
+C/C++ integration failures:
+- Confirm `clang` and `clang++` are installed and available on `PATH`.
+
+# Releases
 The release process strives to ensure that each release contains the following:
 1. A succinctly-worded release body
 2. A git tag with a matching version
@@ -43,7 +81,7 @@ ensure uniformity among the releases.
 Due to the structure of this repo and QUIC policies, some obvious approaches to automating releases are
 not possible. The current approach uses a mix of semi-manual updates with [cargo-workspaces](https://github.com/pksunkara/cargo-workspaces) and automated releases with [release-please](https://github.com/marketplace/actions/release-please-action).
 
-### Release-prep model
+## Release-prep model
 
 Changes are introduces through Pull Requests (PRs) that are merged through squash commits.
 
@@ -72,7 +110,7 @@ your PR branch must contain the prefix keyword.
 2. `main` stays clean and stable
 3. No version churn, no Cargo.lock noise
 
-### Example
+## Example
 Here is an example of the typical development flow:
 1. Merge 1 or more feature/patch/bug fix PRs (no version changes)
 2. Prepare for release

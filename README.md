@@ -1,47 +1,56 @@
+# The Mink IDL Compiler
 
+## Background
+Mink IDL describes programming interfaces that can be used to communicate across security domain boundaries. It defines its own type system, independent of any particular target language. See [Mink IPC](https://github.com/qualcomm/minkipc) for more detail.
 
-The Mink IDL Compiler
-====
+The Mink IDL compiler generates target language header files which include bindings for Mink interfaces and their associates structures. The generated header files introduce proxy functions that facilitate method invocation using Mink's `Object_invoke` IPC mechanism. This abstraction shields both client-side proxy, called `stubs`, and implementation-side proxy, called `skeletons`, from the details of direct invocation.
 
-Background
-----
-Mink IDL is used to describe programming interfaces that can be used to communicate across security domain boundaries. Once an interface is described in an IDL source file, the Mink IDL compiler can generate target language header files. It defines its own type system, independent of any particular target language. However, it's worth noting that certain aspects of the Java output are specifically tailored for Android development.
+## Getting Started
+By default, the output language is C.
 
-Additionally, the generated header files introduce proxy functions that faciliate method invocation using Mink's `Object_invoke` IPC mechanism. This abstraction shields both client-side proxy, called `stubs`, and implementation-side proxy, called `skeletons`, from the details of direct invocation.
-
-### Build Mink IDL Compiler
-Run the following command to build the project:
+Run the compiler (file output):
 ```sh
-$ idlc <IDL File> -o <Output file>
+cargo run -- tests/idl/ITest.idl -o /tmp/ITest.h
 ```
 
-#### Options
-Run `idlc --help` to see the available options.
-
-### Testing
-
-First run `cargo build` from the root directory.
-Navigate to the `tests` directory, and run the following command.
+Generate Rust output (directory output):
 ```sh
-$ RUST_BACKTRACE=1 cargo test
+mkdir -p /tmp/rust_out
+cargo run -- tests/idl/ITest.idl --rust -o /tmp/rust_out
 ```
-`IDLC` defaults to `../target/debug/idlc`
 
-Restriction
-----
-This is a guideline for the new MinkIDL compiler. This serve as a precaution to maintain backward compatibility.
+Run `cargo run -- --help` to see all available options.
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for more detail.
+
+## Notable Features
+- Arrays of Objects
+  - **bounded** arrays of Objects are allowed (e.g. `in IFoo[3] arr`)
+  - Only 1 Object array allowed per direction per method (i.e. one array per `in` or `out`)
+  - At most 16 Objects can be moved in either direction
+- Objects in struct
+  - struct fields can include Objects
+  - e.g.
+    ```C
+    struct ObjInStruct {
+      uint32[4] p1;
+      ITest1 first_obj;
+    };
+
+    ```
+  - Structs with Objects inside cannot be used in an array
+
+## Restrictions
 - No cyclic includes.
 - Argument names within a method must be unique.
-- Ensures every struct is aligned to the size of the largest member, this rule
-  holds for recursive structs as well.
-- Interface error name should not be duplicated.
-- Interface function name should not be duplicated.
-- Interface consts should not be duplicated, error definitions are also considered consts.
+- Every struct is aligned to the size of the largest member, this rule holds for recursive structs as well.
+- Interface consts must be unique.
+  - Error definitions are considered as consts.
+- Interface function name must be unique.
 - Structs with Object in them directly or transitively cannot be used as an array in a function.
-- Cannot have input Object array + any type of input objects. Same for Output.
-- Cannot have multiple input Object arrays in a method. Same for Output.
-- When adding new method in interface, this should be appened at the bottom. 
+- Cannot have Object array and standalone Object parameters _with the same directionality_ in a method.
+- Cannot have multiple Object arrays _with the same directionality_ in a method.
+- New methods must be appended at the bottom since method op_codes are positional.
 
 Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
 SPDX-License-Identifier: BSD-3-Clause
