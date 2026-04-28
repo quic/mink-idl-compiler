@@ -23,7 +23,7 @@ impl MirCompilerPass<'_> for InterfaceVerifier<'_> {
 
     fn run_pass(&'_ mut self) -> Self::Output {
         for src in self.mir.nodes.iter().filter_map(|x| {
-            if let Node::Interface(src) = x.as_ref() {
+            if let Node::Interface(src) = x {
                 Some(src)
             } else {
                 None

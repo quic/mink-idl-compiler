@@ -1,7 +1,8 @@
 // Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 
-use idlc_mir::{Interface, InterfaceNode};
+use idlc_codegen::keywords::invoke::VERSION_FUNC_NAME;
+use idlc_mir::{APIVersion, Interface, InterfaceNode};
 
 pub mod functions;
 pub mod variable_names;
@@ -82,8 +83,17 @@ pub fn emit_interface_impl(interface: &Interface, is_no_typed_objects: bool) -> 
         format!("typedef Object {ident};")
     };
 
+    let interface_version = interface.get_version();
+
     format!(
         r#"
+#define {ident}_MAJOR_MASK  ((uint32_t)0x3FF)  /* 10 bits */
+#define {ident}_MINOR_MASK  ((uint32_t)0x3FF)  /* 10 bits */
+#define {ident}_MAJOR_SHIFT ((uint32_t)22)
+#define {ident}_MINOR_SHIFT ((uint32_t)12)
+#define {ident}_PATCH_MASK  ((uint32_t)0xFFF)  /* 12 bits */
+
+// '{ident}' interface at version '{interface_version}'
 {object_defined}
 {constants}
 {errors}
@@ -98,6 +108,15 @@ static inline int32_t
 {ident}_retain(Object self)
 {{
 {INDENT}return Object_invoke(self, Object_OP_retain, 0, 0);
+}}
+
+static inline int32_t
+{ident}_{VERSION_FUNC_NAME}(Object self, uint32_t *a_ptr)
+{{
+    ObjectArg a[] = {{
+        {{.b = (ObjectBuf) {{ a_ptr, sizeof(uint32_t) }} }},
+    }};
+    return Object_invoke(self, Object_OP_version, a, ObjectCounts_pack(0, 1, 0, 0));
 }}
 {implementations}
 "#
@@ -148,6 +167,8 @@ pub fn emit_interface_invoke(interface: &Interface, is_no_typed_objects: bool) -
         .then_some(format!(r#"typedef Object {ident};"#))
         .unwrap_or_default();
 
+    let APIVersion { major, minor } = interface.get_version();
+
     // weak_delcarations goes inside `func` to preserve the expected when the macro is instantiated
     // with `static IFoo_DEFINE_INVOKE`. It is OK to declare functions within functions for C.
     format!(
@@ -161,6 +182,10 @@ pub fn emit_interface_invoke(interface: &Interface, is_no_typed_objects: bool) -
 #define __compiler_pragma_pre
 #define __compiler_pragma_post
 #endif
+
+#define {ident}_VERSION_MAJOR {major}
+#define {ident}_VERSION_MINOR {minor}
+#define {ident}_VERSION_PATCH 0
 
 #define {ident}_DEFINE_INVOKE(func, prefix, type) \
     int32_t func(ObjectCxt {CONTEXT}, ObjectOp {OP_CODE}, ObjectArg *{ARGS}, ObjectCounts {COUNTS}) \
@@ -181,6 +206,17 @@ pub fn emit_interface_invoke(interface: &Interface, is_no_typed_objects: bool) -
                     break; \
                 }} \
                 return prefix##retain(me); \
+            }} \
+            case Object_OP_version: {{ \
+                if (k != ObjectCounts_pack(0, 1, 0, 0) || a[0].b.size != 4) {{ \
+                  break; \
+                }} \
+                uint32_t *a_ptr = (void*)a[0].b.ptr; \
+                *a_ptr = (({ident}_VERSION_MAJOR & {ident}_MAJOR_MASK) << {ident}_MAJOR_SHIFT) | \
+                         (({ident}_VERSION_MINOR & {ident}_MINOR_MASK) << {ident}_MINOR_SHIFT) | \
+                          ({ident}_VERSION_PATCH & {ident}_PATCH_MASK); \
+                a[0].b.size = sizeof(uint32_t); \
+                return Object_OK; \
             }} \
             {invokes} \
         }} \

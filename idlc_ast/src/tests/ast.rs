@@ -93,4 +93,14 @@ fn duplicately_defined_function_attribute() {
         false,
     )
     .unwrap_err();
+    crate::from_string(
+        std::path::PathBuf::new(),
+        r"interface IFoo {
+        #[version = 1.1]
+        #[version = 1.1]
+        method tmp();
+    };",
+        false,
+    )
+    .unwrap_err();
 }

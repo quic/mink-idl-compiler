@@ -11,8 +11,9 @@ use pest_derive::Parser;
 
 // Import all AST types
 use super::ast::{
-    Const, Count, Documentation, Function, FunctionAttribute, Ident, Interface, InterfaceNode,
-    Node, Param, ParamTypeIn, ParamTypeOut, Primitive, Span, Struct, StructField, Type,
+    APIVersion, Const, Count, Documentation, Function, FunctionAttribute, Ident, Interface,
+    InterfaceNode, Node, Param, ParamTypeIn, ParamTypeOut, Primitive, Span, Struct, StructField,
+    Type,
 };
 
 #[derive(thiserror::Error, Debug)]
@@ -133,6 +134,16 @@ impl<'a> From<Pair<'a, Rule>> for FunctionAttribute {
         debug_assert_eq!(attribute.as_rule(), Rule::supported_attributes);
         match attribute.as_str() {
             "optional" => Self::Optional,
+            attr if attr.starts_with("version") => {
+                let method_ver = ast_unwrap!(attribute.into_inner().next());
+                debug_assert_eq!(method_ver.as_rule(), Rule::method_version);
+                let sem_ver = ast_unwrap!(method_ver.into_inner().next());
+                debug_assert_eq!(sem_ver.as_rule(), Rule::version);
+                match sem_ver.as_str().parse::<APIVersion>() {
+                    Ok(ver) => Self::Version(ver),
+                    Err(e) => idlc_errors::unrecoverable!("Error for `{}`: {}", attr, e),
+                }
+            }
             attr => {
                 idlc_errors::unrecoverable!("Unknown function attribute `{attr}`")
             }

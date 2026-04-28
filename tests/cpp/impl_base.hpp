@@ -37,6 +37,13 @@ class ImplBase {
                 me->retain();
                 return Object_OK;
             }
+            case Object_OP_version: {
+                if (arg_count != ObjectCounts_pack(0, 1, 0, 0) || args[0].b.size != 4) {
+                    return Object_ERROR_INVALID;
+                }
+                uint32_t *a_ptr = (uint32_t*)args[0].b.ptr;
+                return me->api_version(a_ptr);
+            }
             default:
                 return me->invoke(op, args, arg_count);
         }
@@ -56,6 +63,11 @@ class ImplBase {
         auto old_value = refcount--;
         assert(old_value > 0);
         return old_value == 1;
+    }
+
+    // Auto-generated classes override this function
+    virtual int32_t api_version(uint32_t *a_ptr) {
+      return Object_ERROR_INVALID;
     }
 
    private:

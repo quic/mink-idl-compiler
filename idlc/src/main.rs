@@ -50,6 +50,6 @@ fn main() {
         Some(cli::Dumpable::Pst) => compiler.dump_pst(),
         Some(cli::Dumpable::Ast) => compiler.dump_ast(),
         Some(cli::Dumpable::Mir) => compiler.dump_mir(),
-        _ => compiler.generate(marking, args.skel, args.no_typed_objects),
+        _ => compiler.generate(marking, args.skel, args.no_typed_objects, args.spec),
     }
 }

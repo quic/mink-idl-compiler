@@ -7,6 +7,7 @@ use idlc_test::{
     c::{create_itest1, create_itest2, create_itest3},
     implementation,
     interfaces::itest2::ITest2,
+    interfaces::itest3::IDLVersion,
 };
 
 #[test]
@@ -16,6 +17,15 @@ fn implementation() {
     assert_eq!(c_wrapper.entrypoint(Some(&input)), Ok(()));
     let c_wrapper_itest3 = unsafe { create_itest3().unwrap() };
     assert_eq!(c_wrapper_itest3.single_in(0xdead), Ok(()));
+    {
+        // Test that an IDL with no method attributes defaults to 1.0
+        let expected = IDLVersion::new(1,0,0);
+        let expected_val: u32 = expected.into();
+        assert_eq!(c_wrapper_itest3.api_version(), Ok(expected_val));
+        assert_eq!(1, expected.major());
+        assert_eq!(0, expected.minor());
+        assert_eq!(0, expected.patch());
+    }
 }
 
 #[test]

@@ -59,6 +59,17 @@ int32_t test_singular_object(Object itest1) {
     CHECK_OK(ITest1_well_documented_method(itest1, SUCCESS_FLAG, &out));
     ASSERT(out == SUCCESS_FLAG);
   }
+  {
+    // Check for version against typed and generic Objects
+    uint32_t version = 0;
+    CHECK_OK(ITest1_api_version(itest1, &version));
+    uint32_t major = (version >> ITest1_MAJOR_SHIFT) & ITest1_MAJOR_MASK;
+    uint32_t minor = (version >> ITest1_MINOR_SHIFT) & ITest1_MINOR_MASK;
+    uint32_t patch =  version                        & ITest1_PATCH_MASK;
+    ASSERT(major == 2);
+    ASSERT(minor == 0);
+    ASSERT(patch == 0);
+  }
 
   return Object_OK;
 }
@@ -248,6 +259,27 @@ int32_t itest1_objects_in_struct(struct CTest1 *ctx, const ObjInStruct *input,
   output->second_obj = create_c_itest1(2);
   output->should_be_empty = Object_NULL;
 
+  return Object_OK;
+}
+
+int32_t itest1_derive_v0(struct CTest1 *ctx, uint32_t a_val) {
+  return Object_OK;
+}
+
+int32_t itest1_derive_v1(struct CTest1 *ctx, uint32_t a_val) {
+  return Object_OK;
+}
+
+int32_t itest1_derive_v2(struct CTest1 *ctx, uint32_t a_val) {
+  return Object_OK;
+}
+
+int32_t itest1_derive_v255(struct CTest1 *ctx, uint32_t *output_ptr) {
+  *output_ptr = 0xdead;
+  return Object_OK;
+}
+
+int32_t itest1_derive_v2p2(struct CTest1 *ctx, uint32_t a_val) {
   return Object_OK;
 }
 
@@ -443,6 +475,27 @@ int32_t itest3_objects_in_struct(struct CTest1 *ctx, const ObjInStruct *input,
   return itest1_objects_in_struct(ctx, input, output);
 }
 
-ITest3_DEFINE_INVOKE(itest3_invoke, itest3_, void *);
+int32_t itest3_derive_v0(struct CTest1 *ctx, uint32_t a_val) {
+  return Object_OK;
+}
+
+int32_t itest3_derive_v1(struct CTest1 *ctx, uint32_t a_val) {
+  return Object_OK;
+}
+
+int32_t itest3_derive_v2(struct CTest1 *ctx, uint32_t a_val) {
+  return Object_OK;
+}
+
+int32_t itest3_derive_v255(struct CTest1 *ctx, uint32_t *output_ptr) {
+  *output_ptr = 0xdead;
+  return Object_OK;
+}
+
+int32_t itest3_derive_v2p2(struct CTest1 *ctx, uint32_t a_val) {
+  return Object_OK;
+}
+
+ITest3_DEFINE_INVOKE(itest3_invoke, itest3_, struct CTest1 *);
 
 Object create_c_itest3() { return (Object){itest3_invoke, NULL}; }

@@ -1,7 +1,8 @@
 // Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 
-use idlc_mir::{Interface, InterfaceNode};
+use idlc_codegen::keywords::invoke::VERSION_FUNC_NAME;
+use idlc_mir::{APIVersion, Interface, InterfaceNode};
 
 mod functions;
 
@@ -97,11 +98,19 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
         base_iface = format!(": public {first_base_iface} ");
     }
 
+    let interface_version = interface.get_version();
+
     format!(
         r#"
+// '{ident}' interface at version '{interface_version}'
 class {ident};
 class I{ident} {base_iface}{{
   public:{constants}
+    static constexpr uint16_t PATCH_MASK  = 0x0FFF; /* 12 bits */
+    static constexpr uint16_t MINOR_MASK  = 0x03FF; /* 10 bits */
+    static constexpr uint16_t MAJOR_MASK  = 0x03FF; /* 10 bits */
+    static constexpr uint16_t MINOR_SHIFT = UINT8_C(12);
+    static constexpr uint16_t MAJOR_SHIFT = MINOR_SHIFT + UINT8_C(10);
 {errors}
 
     virtual ~I{ident}() {{}}
@@ -116,7 +125,12 @@ class {ident} : public I{ident}, public ProxyBase {{
     {ident}() {{}}
     {ident}(Object impl) : ProxyBase(impl) {{}}
     virtual ~{ident}() {{}}
-
+    virtual int32_t {VERSION_FUNC_NAME}(uint32_t *a_ptr) {{
+        ObjectArg a[] = {{
+            {{.b = (ObjectBuf) {{ a_ptr, sizeof(uint32_t) }} }},
+        }};
+        return invoke(Object_OP_version, a, ObjectCounts_pack(0, 1, 0, 0));
+    }}
 {implementations}
 }};
 
@@ -161,12 +175,23 @@ pub fn emit_interface_invoke(interface: &Interface) -> String {
         }
     }
 
+    let APIVersion { major, minor } = interface.get_version();
+
     format!(
         r#"
 class {ident}ImplBase : protected ImplBase, public I{ident} {{
   public:
     {ident}ImplBase() {{}}
     virtual ~{ident}ImplBase() {{}}
+    static constexpr uint16_t VERSION_MAJOR = UINT16_C({major});
+    static constexpr uint16_t VERSION_MINOR = UINT16_C({minor});
+    static constexpr uint16_t VERSION_PATCH = 0;
+    virtual int32_t {VERSION_FUNC_NAME}(uint32_t *a_ptr) {{
+        *a_ptr = ((VERSION_MAJOR & MAJOR_MASK) << MAJOR_SHIFT) | \
+                 ((VERSION_MINOR & MINOR_MASK) << MINOR_SHIFT) | \
+                  (VERSION_PATCH & PATCH_MASK);
+        return Object_OK;
+    }}
 {weak_declarations}
   protected:
 {INDENT}virtual int32_t invoke(ObjectOp {OP_CODE}, ObjectArg* {ARGS}, ObjectCounts {COUNTS}) {{

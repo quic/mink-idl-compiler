@@ -81,5 +81,12 @@ fn test_singlular_object(
 
     assert_eq!(o.well_documented_method(SUCCESS_FLAG), Ok(SUCCESS_FLAG));
 
+    let expected = crate::interfaces::itest1::IDLVersion::new(2,0,0);
+    let expected_val: u32 = expected.into();
+    assert_eq!(o.api_version(), Ok(expected_val));
+    assert_eq!(2, expected.major());
+    assert_eq!(0, expected.minor());
+    assert_eq!(0, expected.patch());
+
     Ok(())
 }

@@ -16,7 +16,7 @@ impl idlc_codegen::SplitInvokeGenerator for Generator {
         result.push_str(&generate_common());
 
         for node in &mir.nodes {
-            match node.as_ref() {
+            match node {
                 Node::Include(i) => {
                     let inc_name = i.display().to_string().replace(".idl", "");
                     result.push_str(&format!("#include \"{}.hpp\"\n", inc_name));
@@ -54,7 +54,7 @@ impl idlc_codegen::SplitInvokeGenerator for Generator {
         ));
 
         for node in &mir.nodes {
-            match node.as_ref() {
+            match node {
                 Node::Include(i) => {
                     let inc_name = i.display().to_string().replace(".idl", "");
                     result.push_str(&format!("#include \"{}.hpp\"\n", inc_name));
