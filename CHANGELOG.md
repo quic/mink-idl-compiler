@@ -2,6 +2,47 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0](https://github.com/quic/mink-idl-compiler/compare/v0.2.4...v0.3.0) (2026-04-28)
+
+
+### Features
+
+* Interface versioning with method attributes ([03a4aa1](https://github.com/quic/mink-idl-compiler/commit/03a4aa1befd3b7df2c9755fb54fa11c563cd3b12))
+
+
+### Bug Fixes
+
+* **idlc:** Make GIT_HASH optional for long version ([#33](https://github.com/quic/mink-idl-compiler/issues/33)) ([f3a84fe](https://github.com/quic/mink-idl-compiler/commit/f3a84feb97de8529d4fa8361eaa909696860b8f9))
+
+
+### Miscellaneous
+
+* **release:** bump crate versions ([f07ca6b](https://github.com/quic/mink-idl-compiler/commit/f07ca6b0acf28282c33a9278ab8f80566a72fd07))
+* Remove author names from sub-crates ([339295a](https://github.com/quic/mink-idl-compiler/commit/339295ac7d31625956ebf5a3eabda155ae2880f3))
+* Sub-crates versioned independently ([bdc6d79](https://github.com/quic/mink-idl-compiler/commit/bdc6d79ddce8b345b3dd709a1128121682c960bb))
+* **test:** update object.h and C++ base headers ([3c82a8c](https://github.com/quic/mink-idl-compiler/commit/3c82a8c97af325e28c4e7362d5091236a33465ce))
+
+
+### Integration/Automation
+
+* Pre-built binary renamed to idlc-{target} ([cbbef30](https://github.com/quic/mink-idl-compiler/commit/cbbef300f394feb940960d5812f5f98e44c6e1ad))
+
+
+### Documentation
+
+* Update documentation ([#36](https://github.com/quic/mink-idl-compiler/issues/36)) ([4a87a0c](https://github.com/quic/mink-idl-compiler/commit/4a87a0ca1c3d7da71a338d70b4490f3156c712fb)), closes [#34](https://github.com/quic/mink-idl-compiler/issues/34)
+
+
+### Code Refactoring
+
+* C/C++ header emission logic ([4028966](https://github.com/quic/mink-idl-compiler/commit/402896623ba07607471914c1b624c58e75f8de02))
+* C++ #include ordering ([2bcbf12](https://github.com/quic/mink-idl-compiler/commit/2bcbf127daef6c4de21ebe9d7b73fd930da8649f))
+* cargo clippy 1.95.0 changes ([ed91200](https://github.com/quic/mink-idl-compiler/commit/ed91200061f950e8f40b4f67d1b01008c4b58d80))
+* **idlc:** Split main and lib ([13637c2](https://github.com/quic/mink-idl-compiler/commit/13637c2d936f16679d275371aa1d54602ac47153))
+* Shared closures for logic re-use ([37cdc0c](https://github.com/quic/mink-idl-compiler/commit/37cdc0c74a5986cbaa223e6c748f7defd92d8699))
+* struct fields use {INDENT} ([6873e0f](https://github.com/quic/mink-idl-compiler/commit/6873e0f1990460468cc49274242b11c1225dc77f))
+* Use programmable, not hard-coded, names ([0e0b4bf](https://github.com/quic/mink-idl-compiler/commit/0e0b4bf8e8b24888ab8cebf32abf711a1de579da))
+
 ## [0.2.4](https://github.com/quic/mink-idl-compiler/compare/v0.2.3...v0.2.4) (2026-03-20)
 
 
