@@ -76,6 +76,7 @@ jobs:
       run: cargo test --target=${{ matrix.job.target }}
 
     - name: Run Rust+C integration test
+      shell: bash
       env:
         IDLC: ../target/${{ matrix.job.target }}/opt/${{ matrix.job.idlc_exe }}
       run: |
