@@ -47,9 +47,9 @@ jobs:
       fail-fast: false
       matrix:
         job:
-          - { target: x86_64-pc-windows-msvc    , os: windows-latest   , idlc_exe: idlc.exe, static_crt: true}
-          - { target: x86_64-unknown-linux-musl , os: ubuntu-latest    , idlc_exe: idlc                      }
-          - { target: aarch64-unknown-linux-musl, os: ubuntu-24.04-arm , idlc_exe: idlc                      }
+          - { target: x86_64-pc-windows-msvc    , os: windows-latest   , idlc_exe: idlc.exe}
+          - { target: x86_64-unknown-linux-musl , os: ubuntu-latest    , idlc_exe: idlc    }
+          - { target: aarch64-unknown-linux-musl, os: ubuntu-24.04-arm , idlc_exe: idlc    }
 
     steps:
     - name: Checkout source code
@@ -70,12 +70,7 @@ jobs:
         rustc -V
 
     - name: Build
-      shell: bash
-      env:
-        RUSTFLAGS: ${{ matrix.job.static_crt && '-C target-feature=+crt-static' || '' }}
-      run: |
-        echo RUSTFLAGS=$RUSTFLAGS
-        cargo build --target ${{ matrix.job.target }} --profile opt
+      run: cargo build --target ${{ matrix.job.target }} --profile opt
 
     - name: Run tests
       run: cargo test --target=${{ matrix.job.target }}
