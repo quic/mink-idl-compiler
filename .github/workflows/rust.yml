@@ -47,7 +47,7 @@ jobs:
       fail-fast: false
       matrix:
         job:
-          - { target: x86_64-pc-windows-msvc    , os: windows-latest   , idlc_exe: idlc.exe}
+          - { target: x86_64-pc-windows-gnu     , os: windows-latest   , idlc_exe: idlc.exe}
           - { target: x86_64-unknown-linux-musl , os: ubuntu-latest    , idlc_exe: idlc    }
           - { target: aarch64-unknown-linux-musl, os: ubuntu-24.04-arm , idlc_exe: idlc    }
 
