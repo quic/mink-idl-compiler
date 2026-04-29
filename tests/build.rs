@@ -10,20 +10,27 @@ use std::{
 static IDLC: OnceLock<PathBuf> = OnceLock::new();
 fn idlc() -> &'static Path {
     IDLC.get_or_init(|| {
-        let p = PathBuf::from(
-            std::env::var("IDLC").unwrap_or_else(|_| "../target/debug/idlc".to_string()),
-        );
+        let idlc_location = if cfg!(test) {
+            // Integration tests: Cargo-built binary
+            std::env::var_os("CARGO_BIN_EXE_idlc").expect("Cargo to set idlc location")
+        } else {
+            // build.rs / normal build: external tool resolution
+            std::env::var_os("IDLC").unwrap_or_else(|| "../target/debug/idlc".into())
+        };
+        let p = PathBuf::from(idlc_location);
+
         assert!(
             p.exists(),
-            "`idlc` not found @ ../target/debug/idlc nor was it set using `IDLC`
-        environment variable"
+            "`idlc` not found @ {:?} nor was it set using the `IDLC` environment variable",
+            p,
         );
         p
     })
 }
+
 static OUT_DIR: OnceLock<PathBuf> = OnceLock::new();
 fn out_dir() -> &'static Path {
-    OUT_DIR.get_or_init(|| PathBuf::from(std::env::var("OUT_DIR").unwrap()))
+    OUT_DIR.get_or_init(|| PathBuf::from(std::env::var_os("OUT_DIR").expect("OUT_DIR not set")))
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
