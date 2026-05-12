@@ -111,10 +111,10 @@ static inline int32_t
 }}
 
 static inline int32_t
-{ident}_{VERSION_FUNC_NAME}(Object self, uint32_t *a_ptr)
+{ident}_{VERSION_FUNC_NAME}(Object self, uint32_t *version_ptr)
 {{
     ObjectArg a[] = {{
-        {{.b = (ObjectBuf) {{ a_ptr, sizeof(uint32_t) }} }},
+        {{.b = (ObjectBuf) {{ version_ptr, sizeof(uint32_t) }} }},
     }};
     return Object_invoke(self, Object_OP_version, a, ObjectCounts_pack(0, 1, 0, 0));
 }}

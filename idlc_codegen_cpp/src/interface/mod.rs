@@ -125,9 +125,9 @@ class {ident} : public I{ident}, public ProxyBase {{
     {ident}() {{}}
     {ident}(Object impl) : ProxyBase(impl) {{}}
     virtual ~{ident}() {{}}
-    virtual int32_t {VERSION_FUNC_NAME}(uint32_t *a_ptr) {{
+    virtual int32_t {VERSION_FUNC_NAME}(uint32_t *version_ptr) {{
         ObjectArg a[] = {{
-            {{.b = (ObjectBuf) {{ a_ptr, sizeof(uint32_t) }} }},
+            {{.b = (ObjectBuf) {{ version_ptr, sizeof(uint32_t) }} }},
         }};
         return invoke(Object_OP_version, a, ObjectCounts_pack(0, 1, 0, 0));
     }}
