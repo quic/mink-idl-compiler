@@ -8,7 +8,7 @@ pub fn emit(
 ) -> String {
     let ident = &function.ident;
     let returns = super::signature::iter_to_string(signature.return_types());
-    let params = super::signature::iter_to_string(signature.params());
+    let params = signature.params();
     format!(
         r#"
     {documentation}

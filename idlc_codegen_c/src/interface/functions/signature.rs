@@ -19,27 +19,6 @@ pub struct Signature {
     is_no_typed_objects: bool,
 }
 
-pub fn iter_to_string(iter: impl Iterator<Item = impl AsRef<str>>) -> String {
-    let mut acc = String::new();
-    for item in iter {
-        acc.push(',');
-        acc.push(' ');
-        acc += item.as_ref();
-    }
-
-    acc
-}
-
-pub fn addition_iter_to_string(iter: impl Iterator<Item = impl AsRef<str>>) -> String {
-    let mut acc = String::new();
-    for item in iter {
-        acc.push('+');
-        acc += item.as_ref();
-    }
-
-    acc
-}
-
 impl Signature {
     pub fn new(
         function: &idlc_mir::Function,
@@ -72,15 +51,33 @@ impl Signature {
         self.input_obj_arg.iter()
     }
 
-    pub fn params(&self) -> impl Iterator<Item = String> + '_ {
+    pub fn param_iter(&self) -> impl Iterator<Item = String> + '_ {
         self.inputs
             .iter()
             .map(|(ident, ty)| format!("{ty} {ident}"))
     }
 
+    pub fn params(&self) -> String {
+        let mut acc = String::new();
+        for ident in self.param_iter() {
+            acc.push_str(", ");
+            acc += ident.as_ref();
+        }
+        acc
+    }
+
     #[inline]
-    pub fn return_idents(&self) -> impl Iterator<Item = &str> {
+    pub fn return_idents_iter(&self) -> impl Iterator<Item = &str> {
         self.outputs.iter().map(|(ident, _)| ident.as_str())
+    }
+
+    pub fn return_idents(&self) -> String {
+        let mut acc = String::new();
+        for ident in self.return_idents_iter() {
+            acc.push_str(", ");
+            acc += ident.as_ref();
+        }
+        acc
     }
 }
 

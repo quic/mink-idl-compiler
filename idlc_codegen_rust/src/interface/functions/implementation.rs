@@ -341,7 +341,7 @@ pub fn emit(
 
     let return_idents = super::signature::iter_to_string(signature.return_idents());
     let returns_types = super::signature::iter_to_string(signature.return_types());
-    let params = super::signature::iter_to_string(signature.params());
+    let params = signature.params();
 
     let counts = (
         counts.input_buffers,

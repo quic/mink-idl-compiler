@@ -48,7 +48,11 @@ impl Signature {
         self.inputs.iter().map(|(ident, _)| ident.as_str())
     }
 
-    pub fn params(&self) -> impl Iterator<Item = String> + '_ {
+    pub fn params(&self) -> String {
+        self.param_iter().collect::<Vec<String>>().join(", ")
+    }
+
+    pub fn param_iter(&self) -> impl Iterator<Item = String> + '_ {
         self.inputs
             .iter()
             .map(|(ident, ty)| format!("{ident}: {ty}"))

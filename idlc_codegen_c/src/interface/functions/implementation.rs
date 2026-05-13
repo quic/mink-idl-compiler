@@ -295,7 +295,7 @@ pub fn emit(
     let ident = &function.ident;
     let total = counts.total();
 
-    let params = super::signature::iter_to_string(signature.params());
+    let params = signature.params();
 
     let implementation = Implementation::new(function);
 
