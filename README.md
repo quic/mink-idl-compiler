@@ -39,6 +39,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for more detail.
 
     ```
   - Structs with Objects inside cannot be used in an array
+  - Struct fields cannot be an array of Objects
 
 ## Restrictions
 - No cyclic includes.
