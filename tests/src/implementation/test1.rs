@@ -10,6 +10,10 @@ use crate::interfaces::itest4::{self, IITest4};
 macro_rules! itest1_impl {
     ($impl: ident) => {
         impl IITest1 for $impl {
+            fn no_args(&mut self) -> Result<(), itest1::Error> {
+                Ok(())
+            }
+
             fn test_f1(&mut self, a: u32) -> Result<u32, itest1::Error> {
                 Ok(self.value + a + 1000)
             }

@@ -27,6 +27,9 @@ public:
   ITest1Impl(struct c::CTest1 ctest) { this->ctest = ctest; }
   ~ITest1Impl() {}
 
+  int32_t no_args() {
+    return c::itest1_no_args(&this->ctest);
+  }
   int32_t test_f1(uint32_t a_val, uint32_t *b_ptr) {
     return c::itest1_test_f1(&this->ctest, a_val, b_ptr);
   }
@@ -267,6 +270,9 @@ public:
   ~ITest3Impl() {}
   int32_t extra_test3(uint32_t *output_ptr) {
     return c::itest3_extra_test3(&this->ctest, output_ptr);
+  }
+  int32_t no_args() {
+    return c::itest1_no_args(&this->ctest);
   }
   int32_t test_f1(uint32_t a_val, uint32_t *b_ptr) {
     return c::itest1_test_f1(&this->ctest, a_val, b_ptr);
