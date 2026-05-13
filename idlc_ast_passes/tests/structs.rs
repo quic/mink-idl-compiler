@@ -141,15 +141,16 @@ fn embedded_object_custom() {
 }
 
 #[test]
+#[should_panic]
 fn embedded_object_arr() {
-    assert!(verify(
+    verify(
         r"
         interface Foo {};
         struct A {
             Foo[4] f;
-        };"
+        };",
     )
-    .is_ok());
+    .unwrap();
 }
 
 #[test]
