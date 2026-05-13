@@ -108,6 +108,7 @@ pub fn emit(interface: &Interface) -> String {
 
     /// '{ident}' interface at version '{interface_version}'
     impl {ident} {{
+        #[inline]
         pub fn r#{VERSION_FUNC_NAME}(&self) -> Result<(u32), Error> {{
             let mut r#version = std::mem::MaybeUninit::<u32>::uninit();
             let mut args = [
