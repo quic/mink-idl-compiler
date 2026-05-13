@@ -60,7 +60,7 @@ int32_t test_singular_object(Object itest1) {
     ASSERT(out == SUCCESS_FLAG);
   }
   {
-    // Check for version against typed and generic Objects
+    // Check for version against typed Objects
     uint32_t version = 0;
     CHECK_OK(ITest1_api_version(itest1, &version));
     uint32_t major = (version >> ITest1_MAJOR_SHIFT) & ITest1_MAJOR_MASK;
