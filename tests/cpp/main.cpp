@@ -65,7 +65,7 @@ public:
   int32_t multiple_primitive(const void *unused_ptr, size_t unused_len,
                              void *unused2_ptr, size_t unused2_len,
                              size_t *unused2_lenout, uint16_t input_val,
-                             uint16_t *output_ptr, const ProxyBase &unused3_ref,
+                             uint16_t *output_ptr, ProxyBase &unused3_ref,
                              ProxyBase &unused4_ref, uint32_t input2_val,
                              uint64_t *output2_ptr, void *unused5_ptr,
                              size_t unused5_len, size_t *unused5_lenout) {
@@ -189,9 +189,7 @@ Object create_cpp_itest1(uint32_t value) {
 
 class ITest2Impl : public ITest2ImplBase {
 public:
-  int32_t entrypoint(const ITest1 &o) {
-    struct c::CTest1 ctest = {.refs = 1, .value = 1};
-    ITest1Impl me(ctest);
+  int32_t entrypoint(ITest1 &o) {
     const Object itest1 = o.get();
     ASSERT(!Object_isNull(itest1));
     CHECK_OK(c::test_singular_object(itest1));
@@ -200,10 +198,10 @@ public:
                               create_cpp_itest1(2)};
     ITest1 objects_out[3] = {Object_NULL, Object_NULL, Object_NULL};
     uint32_t a = 0;
-    CHECK_OK(me.test_obj_array_in(objects, &a));
+    CHECK_OK(o.test_obj_array_in(objects, &a));
     ASSERT(a == SUCCESS_FLAG);
     a = 0;
-    CHECK_OK(me.test_obj_array_out(objects_out, &a));
+    CHECK_OK(o.test_obj_array_out(objects_out, &a));
     ASSERT(a == SUCCESS_FLAG);
 
     for (size_t i = 0; i < sizeof(objects) / sizeof(objects[0]); i++) {
@@ -223,7 +221,7 @@ public:
     memcpy(&input_struct.p2, VALID_PS, sizeof(VALID_PS));
     memcpy(&input_struct.p3, VALID_PS, sizeof(VALID_PS));
     ObjInStruct output_struct{};
-    CHECK_OK(me.objects_in_struct(input_struct, output_struct));
+    CHECK_OK(o.objects_in_struct(input_struct, output_struct));
     ASSERT(memcmp(&output_struct.p1, VALID_PS, sizeof(VALID_PS)) == 0);
     ASSERT(memcmp(&output_struct.p2, VALID_PS, sizeof(VALID_PS)) == 0);
     ASSERT(memcmp(&output_struct.p3, VALID_PS, sizeof(VALID_PS)) == 0);
@@ -240,10 +238,10 @@ public:
     Object_ASSIGN_NULL(output_struct.second_obj);
     Object_ASSIGN_NULL(output_struct.should_be_empty);
 
-    ASSERT(me.unimplemented(3) == Object_ERROR_INVALID);
+    ASSERT(o.unimplemented(3) == Object_ERROR_INVALID);
 
     uint32_t version = 0;
-    CHECK_OK(me.api_version(&version));
+    CHECK_OK(o.api_version(&version));
     uint32_t major = (version >> ITest1::MAJOR_SHIFT) & ITest1::MAJOR_MASK;
     uint32_t minor = (version >> ITest1::MINOR_SHIFT) & ITest1::MINOR_MASK;
     uint32_t patch =  version                         & ITest1::PATCH_MASK;
@@ -310,7 +308,7 @@ public:
   int32_t multiple_primitive(const void *unused_ptr, size_t unused_len,
                              void *unused2_ptr, size_t unused2_len,
                              size_t *unused2_lenout, uint16_t input_val,
-                             uint16_t *output_ptr, const ProxyBase &unused3_ref,
+                             uint16_t *output_ptr, ProxyBase &unused3_ref,
                              ProxyBase &unused4_ref, uint32_t input2_val,
                              uint64_t *output2_ptr, void *unused5_ptr,
                              size_t unused5_len, size_t *unused5_lenout) {
