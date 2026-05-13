@@ -14,21 +14,6 @@ pub struct Signature {
     outputs: Vec<(String, String)>,
 }
 
-pub fn iter_to_string(iter: impl Iterator<Item = impl AsRef<str>>) -> String {
-    let mut acc = String::new();
-    for item in iter {
-        acc += item.as_ref();
-        acc.push(',');
-    }
-
-    if !acc.is_empty() {
-        // Remove leading commas, this can make single element values a tuple.
-        acc.truncate(acc.len() - 1);
-    }
-
-    acc
-}
-
 pub fn idents_to_struct_path(objects: &[&Ident]) -> String {
     objects
         .iter()

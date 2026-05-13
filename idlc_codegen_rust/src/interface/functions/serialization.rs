@@ -77,10 +77,13 @@ impl<'a> PackedPrimitives<'a> {
             return None;
         }
 
-        let fields = super::signature::iter_to_string(types.map(|ty| match ty {
-            &Type::Primitive(p) => Cow::Borrowed(change_primitive(p)),
-            Type::SmallStruct(s) => Cow::Owned(namespaced_struct(s)),
-        }));
+        let fields = types
+            .map(|ty| match ty {
+                &Type::Primitive(p) => Cow::Borrowed(change_primitive(p)),
+                Type::SmallStruct(s) => Cow::Owned(namespaced_struct(s)),
+            })
+            .collect::<Vec<_>>()
+            .join(", ");
         let definition = format!(
             r#"
         #[repr(C, packed)]

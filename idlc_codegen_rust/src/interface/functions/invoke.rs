@@ -111,7 +111,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
             unreachable!()
         };
         let idx = self.idx();
-        let idents = super::signature::iter_to_string(packer.bi_definition_idents());
+        let idents = packer.bi_definition_idents().collect::<Vec<_>>().join(", ");
         self.pre.push(definition);
         self.pre.push(format!(
             r#"
@@ -146,10 +146,15 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
                 "let mut {ident} = std::mem::ManuallyDrop::new(std::ptr::read({ARGS}[{idx}].bi.ptr.cast::<{ty}>()));"
             ));
             for (object, _) in objects {
-                let path = super::signature::idents_to_struct_path(&object);
+                dbg!(&object);
+                let path = object
+                    .iter()
+                    .map(|i| i.to_string())
+                    .collect::<Vec<_>>()
+                    .join(".");
                 let idx = self.idx();
                 self.pre.push(format!(
-                    "std::ptr::write(&mut {ident}{path}, std::mem::transmute_copy(&{ARGS}[{idx}].o));"
+                    "std::ptr::write(&mut {ident}.{path}, std::mem::transmute_copy(&{ARGS}[{idx}].o));"
                 ));
             }
             self.pre.push(format!("let {ident} = &{ident};"))
@@ -253,7 +258,7 @@ impl idlc_codegen::functions::ParameterVisitor for Invoke {
             }}
             "#,
         ));
-        let idents = super::signature::iter_to_string(packer.bo_idents());
+        let idents = packer.bo_idents().collect::<Vec<String>>().join(", ");
         self.post.push(format!(
             r#"
             std::ptr::write({ARGS}[{idx}].b.ptr.cast::<{BO_STRUCT}>(), {BO_STRUCT}({idents}));
@@ -304,8 +309,8 @@ pub fn emit(
     let pre = params.pre();
     let post = params.post();
 
-    let params = super::signature::iter_to_string(signature.param_idents());
-    let returns = super::signature::iter_to_string(signature.return_idents());
+    let params = signature.param_idents().collect::<Vec<_>>().join(", ");
+    let returns = signature.return_idents().collect::<Vec<_>>().join(", ");
 
     format!(
         r#"
