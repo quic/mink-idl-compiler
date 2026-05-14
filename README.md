@@ -52,5 +52,5 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for more detail.
 - Cannot have multiple Object arrays _with the same directionality_ in a method.
 - New methods must be appended at the bottom since method op_codes are positional.
 
-Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 SPDX-License-Identifier: BSD-3-Clause
