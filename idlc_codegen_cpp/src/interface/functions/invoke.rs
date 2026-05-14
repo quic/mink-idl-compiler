@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+// Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause
 
 use idlc_codegen_c::interface::variable_names::invoke::{ARGS, COUNTS, INDENT, OP_PREFIX};
