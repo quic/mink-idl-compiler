@@ -35,6 +35,35 @@ int32_t test_singular_object(Object itest1) {
   ASSERT(flag2 == SUCCESS_FLAG);
   CHECK_OK(ITest1_bundled_with_unbundled(itest1, &single_encapsulated,
                                          SUCCESS_FLAG, &TRUTH));
+  CHECK_OK(ITest1_in_struct(itest1, &TRUTH));
+  CHECK_OK(ITest1_in_small_struct(itest1, &TRUTH2));
+  {
+    uint32_t b = 0;
+    CHECK_OK(ITest1_add_1000(itest1, 5, &b));
+    ASSERT(b == 1005);
+  }
+  {
+    Collection s_in[2] = {TRUTH, TRUTH};
+    CHECK_OK(ITest1_struct_array_in(itest1, s_in, 2));
+  }
+  {
+    Collection s_out[2] = {0};
+    size_t s_out_lenout = 0;
+    CHECK_OK(ITest1_struct_array_out(itest1, s_out, 2, &s_out_lenout));
+    ASSERT(s_out_lenout == 2);
+    ASSERT(memcmp(&s_out[0], &TRUTH, sizeof(TRUTH)) == 0);
+    ASSERT(memcmp(&s_out[1], &TRUTH, sizeof(TRUTH)) == 0);
+  }
+  {
+    ArrInStruct arr = {0};
+    uint32_t magic = 0;
+    CHECK_OK(ITest1_primitive_array_in_struct(itest1, &arr, &magic));
+    ASSERT(arr.a[0] == 7 && arr.a[1] == 8);
+    ASSERT(arr.c[0].a == 9 && arr.c[0].b == 7);
+    ASSERT(arr.c[1].a == 8 && arr.c[1].b == 9);
+    ASSERT(arr.d == SUCCESS_FLAG);
+    ASSERT(magic == SUCCESS_FLAG);
+  }
   {
     uint32_t out = 0;
     CHECK_OK(ITest1_single_out(itest1, &out));
@@ -53,6 +82,16 @@ int32_t test_singular_object(Object itest1) {
         ITest1_primitive_plus_struct_out(itest1, &single_encapsulated, &out));
     ASSERT(out == SUCCESS_FLAG);
     ASSERT(single_encapsulated.inner == SUCCESS_FLAG);
+  }
+  {
+    Collection out = {0};
+    CHECK_OK(ITest1_out_struct(itest1, &out));
+    ASSERT(memcmp(&out, &TRUTH, sizeof(TRUTH)) == 0);
+  }
+  {
+    SingleEncapsulated out = {0};
+    CHECK_OK(ITest1_out_small_struct(itest1, &out));
+    ASSERT(memcmp(&out, &TRUTH2, sizeof(TRUTH2)) == 0);
   }
   {
     uint32_t out = 0;
@@ -90,8 +129,8 @@ int32_t itest1_no_args(struct CTest1 *ctx) {
   return Object_OK;
 }
 
-int32_t itest1_test_f1(struct CTest1 *ctx, uint32_t a_val, uint32_t *b_ptr) {
-  *b_ptr = a_val + ctx->value;
+int32_t itest1_add_1000(struct CTest1 *ctx, uint32_t a_val, uint32_t *b_ptr) {
+  *b_ptr = a_val + 1000;
   return Object_OK;
 }
 
@@ -354,9 +393,17 @@ ITest2_DEFINE_INVOKE(itest2_invoke, itest2_, void *);
 Object create_c_itest2() { return (Object){itest2_invoke, NULL}; }
 
 
-int32_t itest3_release(void *ctx) { return Object_OK; }
+int32_t itest3_release(struct CTest1 *ctx) {
+  if (--ctx->refs == 0) {
+    free(ctx);
+  }
+  return Object_OK;
+}
 
-int32_t itest3_retain(void *ctx) { return Object_OK; }
+int32_t itest3_retain(struct CTest1 *ctx) {
+  ctx->refs++;
+  return Object_OK;
+}
 
 int32_t itest3_extra_test3(struct CTest1 *ctx, uint32_t *output_ptr) {
   *output_ptr = 0xdead;
@@ -366,8 +413,8 @@ int32_t itest3_extra_test3(struct CTest1 *ctx, uint32_t *output_ptr) {
 int32_t itest3_no_args(struct CTest1 *ctx) {
   return itest1_no_args(ctx);
 }
-int32_t itest3_test_f1(struct CTest1 *ctx, uint32_t a_val, uint32_t *b_ptr) {
-  return itest1_test_f1(ctx, a_val, b_ptr);
+int32_t itest3_add_1000(struct CTest1 *ctx, uint32_t a_val, uint32_t *b_ptr) {
+  return itest1_add_1000(ctx, a_val, b_ptr);
 }
 
 int32_t itest3_single_in(struct CTest1 *ctx, uint32_t input_val) {
@@ -462,12 +509,12 @@ int32_t itest3_well_documented_method(struct CTest1 *ctx, uint32_t foo_val,
 
 int32_t itest3_test_obj_array_in(struct CTest1 *ctx,
                                  const Object (*o_in_ptr)[3], uint32_t *a_ptr) {
-  return Object_OK;
+  return itest1_test_obj_array_in(ctx, o_in_ptr, a_ptr);
 }
 
 int32_t itest3_test_obj_array_out(struct CTest1 *ctx, Object (*o_ptr)[3],
                                   uint32_t *a_ptr) {
-  return Object_OK;
+  return itest1_test_obj_array_out(ctx, o_ptr, a_ptr);
 }
 
 int32_t itest3_objects_in_struct(struct CTest1 *ctx, const ObjInStruct *input,
@@ -498,4 +545,12 @@ int32_t itest3_derive_v2p2(struct CTest1 *ctx, uint32_t a_val) {
 
 ITest3_DEFINE_INVOKE(itest3_invoke, itest3_, struct CTest1 *);
 
-Object create_c_itest3() { return (Object){itest3_invoke, NULL}; }
+Object create_c_itest3() {
+  struct CTest1 *ctx = (struct CTest1 *)malloc(sizeof(struct CTest1));
+  if (!ctx)
+    return Object_NULL;
+
+  ctx->refs = 1;
+  ctx->value = 0;
+  return (Object){itest3_invoke, ctx};
+}

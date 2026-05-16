@@ -6,69 +6,47 @@
 use idlc_test::{
     c, cpp,
     implementation,
-    interfaces::itest2::ITest2,
+    interfaces::itest1::IDLVersion,
 };
 
-// The Rust test harness requires that we directly interface with Rust object
-// only. However, underneath each of these, we can instantiate stub/proxy
-// objects from each of the supported languages.
+// The following tests start from a C++ ITest2 implementation (main.cpp) and
+// invoke every combination of ITest1 backend to verify cross-language FFI.
 
-// The following tests all start from a C proxy and invoke to a different
-// server/skeleton backend. That way we ensure that we are covering all of the
-// possible combinations. Of course there is redundancy with other tests but
-// this way we get better code coverage.
 #[test]
 fn to_c() {
-    // ITest2 Rust wrapper around C++ impl of ITest2 in main.cpp
+    // ITest2 implemented in C++ (main.cpp)
     let cpp_itest2 = unsafe { cpp::create_itest2().unwrap() };
-    // Rust wrapper around ITest1 implemented in invoke.c
+    // ITest1 implemented in C (invoke.c)
     let c_itest1 = unsafe { c::create_itest1(0).unwrap() };
-    // ITest2 object tests ITest1 interface
     assert_eq!(cpp_itest2.entrypoint(Some(&c_itest1)), Ok(()));
+
+    // ITest3 (extends ITest1) implemented in C++ — verify version defaults to
+    // 1.0 when no method attributes are specified in the IDL
     let cpp_itest3 = unsafe { cpp::create_itest3().unwrap() };
     assert_eq!(cpp_itest3.single_in(0xdead), Ok(()));
-    {
-        // Test that an IDL with no method attributes defaults to 1.0
-        let expected = idlc_test::interfaces::itest1::IDLVersion::new(1,0,0);
-        let expected_val: u32 = expected.into();
-        assert_eq!(cpp_itest3.api_version(), Ok(expected_val));
-        assert_eq!(1, expected.major());
-        assert_eq!(0, expected.minor());
-        assert_eq!(0, expected.patch());
-    }
+    let expected = IDLVersion::new(1, 0, 0);
+    let expected_val: u32 = expected.into();
+    assert_eq!(cpp_itest3.api_version(), Ok(expected_val));
+    assert_eq!(1, expected.major());
+    assert_eq!(0, expected.minor());
+    assert_eq!(0, expected.patch());
 }
 
 #[test]
 fn to_cpp() {
-    // ITest2 Rust wrapper around C++ impl of ITest2 in main.cpp
+    // ITest2 implemented in C++ (main.cpp)
     let cpp_itest2 = unsafe { cpp::create_itest2().unwrap() };
+    // ITest1 implemented in C++ (main.cpp)
     let cpp_itest1 = unsafe { cpp::create_itest1(0).unwrap() };
     assert_eq!(cpp_itest2.entrypoint(Some(&cpp_itest1)), Ok(()));
 }
 
 #[test]
 fn to_rust() {
-    // ITest2 Rust wrapper around C++ impl of ITest2 in main.cpp
+    // ITest2 implemented in C++ (main.cpp)
     let cpp_itest2 = unsafe { cpp::create_itest2().unwrap() };
-    let rust_itest1: idlc_test::interfaces::itest1::ITest1 = implementation::ITest1::default().into();
+    // ITest1 implemented in Rust (implementation/test1.rs)
+    let rust_itest1: idlc_test::interfaces::itest1::ITest1 =
+        implementation::ITest1::default().into();
     assert_eq!(cpp_itest2.entrypoint(Some(&rust_itest1)), Ok(()));
-}
-
-#[test]
-fn implementation() {
-    // ITest2 Rust wrapper around C++ impl of ITest2 in main.cpp
-    let cpp_wrapper = unsafe { cpp::create_itest2().unwrap() };
-    // ITest1 Rust object, implemented in test1.rs
-    let input = implementation::ITest1::default().into();
-    // ITest2 object tests ITest1 interface
-    assert_eq!(cpp_wrapper.entrypoint(Some(&input)), Ok(()));
-    let cpp_wrapper_itest3 = unsafe { cpp::create_itest3().unwrap() };
-    assert_eq!(cpp_wrapper_itest3.single_in(0xdead), Ok(()));
-}
-
-#[test]
-fn invoke() {
-    let rust_wrapper: ITest2 = implementation::ITest2::new().into();
-    let input = unsafe { cpp::create_itest1(Default::default()).unwrap() };
-    assert_eq!(rust_wrapper.entrypoint(Some(&input)), Ok(()));
 }

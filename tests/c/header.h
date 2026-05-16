@@ -58,7 +58,7 @@ int32_t itest1_retain(struct CTest1 *ctx);
 
 int32_t itest1_no_args(struct CTest1 *ctx);
 
-int32_t itest1_test_f1(struct CTest1 *ctx, uint32_t a_val, uint32_t *b_ptr);
+int32_t itest1_add_1000(struct CTest1 *ctx, uint32_t a_val, uint32_t *b_ptr);
 
 int32_t itest1_single_in(struct CTest1 *ctx, uint32_t input_val);
 

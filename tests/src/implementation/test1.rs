@@ -14,8 +14,8 @@ macro_rules! itest1_impl {
                 Ok(())
             }
 
-            fn test_f1(&mut self, a: u32) -> Result<u32, itest1::Error> {
-                Ok(self.value + a + 1000)
+            fn add_1000(&mut self, a: u32) -> Result<u32, itest1::Error> {
+                Ok(a + 1000)
             }
 
             fn in_struct(
@@ -134,7 +134,7 @@ macro_rules! itest1_impl {
                     ArrInStruct {
                         a: [7, 8],
                         c: [F2 { a: 9, b: 7 }, F2 { a: 8, b: 9 }],
-                        d: 7,
+                        d: SUCCESS_FLAG as u16,
                     },
                     SUCCESS_FLAG,
                 ))
@@ -192,7 +192,7 @@ macro_rules! itest1_impl {
                 o_in: &[Option<crate::interfaces::itest1::ITest1>; 3],
             ) -> Result<u32, itest1::Error> {
                 for o in o_in.iter().filter(|o| o.is_some()) {
-                    assert_eq!(super::test_singlular_object(o.as_ref()), Ok(()));
+                    assert_eq!(super::test_singular_object(o.as_ref()), Ok(()));
                 }
 
                 Ok(SUCCESS_FLAG)
@@ -216,11 +216,11 @@ macro_rules! itest1_impl {
                 r#input: &crate::interfaces::itest::r#ObjInStruct,
             ) -> Result<crate::interfaces::itest::r#ObjInStruct, itest1::Error> {
                 assert_eq!(
-                    super::test_singlular_object(input.first_obj.as_ref()),
+                    super::test_singular_object(input.first_obj.as_ref()),
                     Ok(())
                 );
                 assert_eq!(
-                    super::test_singlular_object(input.second_obj.as_ref()),
+                    super::test_singular_object(input.second_obj.as_ref()),
                     Ok(())
                 );
                 assert!(input.should_be_empty.is_none());
