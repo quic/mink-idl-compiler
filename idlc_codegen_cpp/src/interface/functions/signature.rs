@@ -43,15 +43,23 @@ impl Signature {
         me
     }
 
-    pub fn params(&self) -> impl Iterator<Item = String> + '_ {
+    pub fn param_iter(&self) -> impl Iterator<Item = String> + '_ {
         self.inputs
             .iter()
             .map(|(ident, ty)| format!("{ty} {ident}"))
     }
 
+    pub fn params(&self) -> String {
+        self.param_iter().collect::<Vec<_>>().join(", ")
+    }
+
     #[inline]
-    pub fn return_idents(&self) -> impl Iterator<Item = &str> {
+    pub fn return_idents_iter(&self) -> impl Iterator<Item = &str> {
         self.outputs.iter().map(|(ident, _)| ident.as_str())
+    }
+
+    pub fn return_idents(&self) -> String {
+        self.return_idents_iter().collect::<Vec<_>>().join(", ")
     }
 }
 

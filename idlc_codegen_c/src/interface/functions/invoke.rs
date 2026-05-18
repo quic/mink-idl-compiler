@@ -359,7 +359,7 @@ pub fn emit(
 
     let invoke = Invoke::new(function, is_no_typed_objects);
 
-    let return_idents = super::signature::iter_to_string(signature.return_idents());
+    let return_idents = signature.return_idents();
     let call = format!(r"int32_t r = prefix##{ident}(me{return_idents});");
 
     let counts = format!(

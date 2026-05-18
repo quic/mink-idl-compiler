@@ -7,8 +7,8 @@ pub fn emit(
     signature: &super::signature::Signature,
 ) -> String {
     let ident = &function.ident;
-    let returns = super::signature::iter_to_string(signature.return_types());
-    let params = super::signature::iter_to_string(signature.params());
+    let returns = signature.return_types().collect::<Vec<_>>().join(", ");
+    let params = signature.params();
     format!(
         r#"
     {documentation}

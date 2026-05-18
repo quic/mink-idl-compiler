@@ -236,11 +236,7 @@ pub fn emit(
     let ident = &function.ident;
     let total = counts.total();
 
-    let mut params =
-        idlc_codegen_c::interface::functions::signature::iter_to_string(signature.params());
-    if !params.is_empty() {
-        params.remove(0);
-    }
+    let params = signature.params();
 
     let implementation = Implementation::new(function);
 

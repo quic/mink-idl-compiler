@@ -113,7 +113,10 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let Some(TransportBuffer { definition, size }) = packer.bi_definition() else {
             unreachable!()
         };
-        let idents = super::signature::iter_to_string(packer.bi_assignment_idents());
+        let idents = packer
+            .bi_assignment_idents()
+            .collect::<Vec<String>>()
+            .join(", ");
         self.initializations.push(format!(
             r#"
             {definition}
@@ -232,7 +235,7 @@ impl idlc_codegen::functions::ParameterVisitor for Implementation {
         let Some(TransportBuffer { definition, size }) = packer.bo_definition() else {
             unreachable!()
         };
-        let idents = super::signature::iter_to_string(packer.bo_idents());
+        let idents = packer.bo_idents().collect::<Vec<String>>().join(", ");
         self.initializations.push(format!(
             r#"
                 {definition}
@@ -339,9 +342,9 @@ pub fn emit(
     let post_call_assignments = implementation.post_call_assignments();
     let args = implementation.args();
 
-    let return_idents = super::signature::iter_to_string(signature.return_idents());
-    let returns_types = super::signature::iter_to_string(signature.return_types());
-    let params = super::signature::iter_to_string(signature.params());
+    let return_idents = signature.return_idents().collect::<Vec<_>>().join(", ");
+    let returns_types = signature.return_types().collect::<Vec<_>>().join(", ");
+    let params = signature.params();
 
     let counts = (
         counts.input_buffers,
