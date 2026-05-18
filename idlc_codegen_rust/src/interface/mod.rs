@@ -108,12 +108,13 @@ pub fn emit(interface: &Interface) -> String {
 
     /// '{ident}' interface at version '{interface_version}'
     impl {ident} {{
+        #[inline]
         pub fn r#{VERSION_FUNC_NAME}(&self) -> Result<(u32), Error> {{
-            let mut r#a = std::mem::MaybeUninit::<u32>::uninit();
+            let mut r#version = std::mem::MaybeUninit::<u32>::uninit();
             let mut args = [
                 crate::object::Arg {{
                     bi: crate::object::BufIn {{
-                        ptr: std::ptr::addr_of_mut!(r#a).cast(),
+                        ptr: std::ptr::addr_of_mut!(r#version).cast(),
                         size: std::mem::size_of::<u32>(),
                     }},
                 }},
@@ -122,8 +123,8 @@ pub fn emit(interface: &Interface) -> String {
                 self.0.invoke({OP_VERSION}, args.as_mut_ptr(), crate::object::pack_counts(0, 1, 0, 0))
             }} {{
                 0 => {{
-                    let r#a = unsafe {{ r#a.assume_init() }};
-                    Ok((r#a))
+                    let r#version = unsafe {{ r#version.assume_init() }};
+                    Ok((r#version))
                 }}
                 err => Err(unsafe {{ std::mem::transmute(err) }}),
             }}

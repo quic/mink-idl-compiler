@@ -125,9 +125,9 @@ class {ident} : public I{ident}, public ProxyBase {{
     {ident}() {{}}
     {ident}(Object impl) : ProxyBase(impl) {{}}
     virtual ~{ident}() {{}}
-    virtual int32_t {VERSION_FUNC_NAME}(uint32_t *a_ptr) {{
+    virtual int32_t {VERSION_FUNC_NAME}(uint32_t *version_ptr) {{
         ObjectArg a[] = {{
-            {{.b = (ObjectBuf) {{ a_ptr, sizeof(uint32_t) }} }},
+            {{.b = (ObjectBuf) {{ version_ptr, sizeof(uint32_t) }} }},
         }};
         return invoke(Object_OP_version, a, ObjectCounts_pack(0, 1, 0, 0));
     }}
@@ -175,15 +175,19 @@ class {ident}ImplBase : protected ImplBase, public I{ident} {{
     static constexpr uint16_t VERSION_MAJOR = UINT16_C({major});
     static constexpr uint16_t VERSION_MINOR = UINT16_C({minor});
     static constexpr uint16_t VERSION_PATCH = 0;
-    virtual int32_t {VERSION_FUNC_NAME}(uint32_t *a_ptr) {{
-        *a_ptr = ((VERSION_MAJOR & MAJOR_MASK) << MAJOR_SHIFT) | \
-                 ((VERSION_MINOR & MINOR_MASK) << MINOR_SHIFT) | \
-                  (VERSION_PATCH & PATCH_MASK);
-        return Object_OK;
-    }}
   protected:
 {INDENT}virtual int32_t invoke(ObjectOp {OP_CODE}, ObjectArg* {ARGS}, ObjectCounts {COUNTS}) {{
 {INDENT}{INDENT}switch (ObjectOp_methodID({OP_CODE})) {{
+{INDENT}{INDENT}{INDENT}case Object_OP_version: {{
+{INDENT}{INDENT}{INDENT}{INDENT}if (k != ObjectCounts_pack(0, 1, 0, 0) || a[0].b.size != 4){{
+{INDENT}{INDENT}{INDENT}{INDENT}{INDENT}break;
+{INDENT}{INDENT}{INDENT}{INDENT}}}
+{INDENT}{INDENT}{INDENT}{INDENT}uint32_t *version_ptr = (uint32_t*)a[0].b.ptr;
+{INDENT}{INDENT}{INDENT}{INDENT}*version_ptr = ((VERSION_MAJOR & MAJOR_MASK) << MAJOR_SHIFT) | \
+{INDENT}{INDENT}{INDENT}{INDENT}               ((VERSION_MINOR & MINOR_MASK) << MINOR_SHIFT) | \
+{INDENT}{INDENT}{INDENT}{INDENT}                (VERSION_PATCH & PATCH_MASK);
+{INDENT}{INDENT}{INDENT}{INDENT}return Object_OK;
+{INDENT}{INDENT}{INDENT}}}
 {invokes}
 {INDENT}{INDENT}{INDENT}default: {{ return Object_ERROR_INVALID; }}
 {INDENT}{INDENT}}}
