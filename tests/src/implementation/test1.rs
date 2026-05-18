@@ -5,7 +5,6 @@ use super::{TRUTH, TRUTH2};
 use crate::interfaces::itest::{self, ArrInStruct, SingleEncapsulated, F2, SUCCESS_FLAG};
 use crate::interfaces::itest1::{self, IITest1};
 use crate::interfaces::itest3::{self, IITest3};
-use crate::interfaces::itest4::{self, IITest4};
 
 macro_rules! itest1_impl {
     ($impl: ident) => {
@@ -14,8 +13,8 @@ macro_rules! itest1_impl {
                 Ok(())
             }
 
-            fn test_f1(&mut self, a: u32) -> Result<u32, itest1::Error> {
-                Ok(self.value + a + 1000)
+            fn add_1000(&mut self, a: u32) -> Result<u32, itest1::Error> {
+                Ok(a + 1000)
             }
 
             fn in_struct(
@@ -134,7 +133,7 @@ macro_rules! itest1_impl {
                     ArrInStruct {
                         a: [7, 8],
                         c: [F2 { a: 9, b: 7 }, F2 { a: 8, b: 9 }],
-                        d: 7,
+                        d: SUCCESS_FLAG as u16,
                     },
                     SUCCESS_FLAG,
                 ))
@@ -192,7 +191,7 @@ macro_rules! itest1_impl {
                 o_in: &[Option<crate::interfaces::itest1::ITest1>; 3],
             ) -> Result<u32, itest1::Error> {
                 for o in o_in.iter().filter(|o| o.is_some()) {
-                    assert_eq!(super::test_singlular_object(o.as_ref()), Ok(()));
+                    assert_eq!(super::test_singular_object(o.as_ref()), Ok(()));
                 }
 
                 Ok(SUCCESS_FLAG)
@@ -216,11 +215,11 @@ macro_rules! itest1_impl {
                 r#input: &crate::interfaces::itest::r#ObjInStruct,
             ) -> Result<crate::interfaces::itest::r#ObjInStruct, itest1::Error> {
                 assert_eq!(
-                    super::test_singlular_object(input.first_obj.as_ref()),
+                    super::test_singular_object(input.first_obj.as_ref()),
                     Ok(())
                 );
                 assert_eq!(
-                    super::test_singlular_object(input.second_obj.as_ref()),
+                    super::test_singular_object(input.second_obj.as_ref()),
                     Ok(())
                 );
                 assert!(input.should_be_empty.is_none());
@@ -299,16 +298,4 @@ macro_rules! generate_itest3_impl {
 
 generate_itest1_impl!(ITest1);
 
-generate_itest1_impl!(ITest3);
-impl IITest3 for ITest3 {
-    fn r#extra_test3(&mut self) -> Result<u32, itest3::Error> {
-        Ok(SUCCESS_FLAG)
-    }
-}
-
-generate_itest3_impl!(ITest4);
-impl IITest4 for ITest4 {
-    fn r#extra_test4(&mut self) -> Result<u32, itest4::Error> {
-        Ok(SUCCESS_FLAG)
-    }
-}
+generate_itest3_impl!(ITest3);

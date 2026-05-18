@@ -17,6 +17,12 @@ namespace c {
 #include "../c/header.h"
 }
 
+const Collection TRUTH = {
+    .a = 0,
+    .b = 1,
+    .c = 2,
+    .d = 3,
+};
 
 extern "C" {
 Object create_cpp_itest1(uint32_t value);
@@ -30,8 +36,8 @@ public:
   int32_t no_args() {
     return c::itest1_no_args(&this->ctest);
   }
-  int32_t test_f1(uint32_t a_val, uint32_t *b_ptr) {
-    return c::itest1_test_f1(&this->ctest, a_val, b_ptr);
+  int32_t add_1000(uint32_t a_val, uint32_t *b_ptr) {
+    return c::itest1_add_1000(&this->ctest, a_val, b_ptr);
   }
   int32_t in_struct(const Collection &input_ref) {
     return c::itest1_in_struct(&this->ctest, (const c::Collection *)(&input_ref));
@@ -192,21 +198,112 @@ Object create_cpp_itest1(uint32_t value) {
 
 class ITest2Impl : public ITest2ImplBase {
 public:
-  int32_t entrypoint(const ITest1 &o) {
-    struct c::CTest1 ctest = {.refs = 1, .value = 1};
-    ITest1Impl me(ctest);
-    const Object itest1 = o.get();
-    ASSERT(!Object_isNull(itest1));
-    CHECK_OK(c::test_singular_object(itest1));
+  int32_t entrypoint(const ITest1 &o_ref) {
+    ITest1 &o = const_cast<ITest1 &>(o_ref);
+    if (o.isNull()) {
+      return Object_ERROR_BADOBJ;
+    }
+    uint8_t empty[] = {};
+    size_t lenout = 0;
+    ProxyBase empty_o = ProxyBase();
+    uint16_t flag1 = 0;
+    uint64_t flag2 = 0;
+    const SingleEncapsulated single_encapsulated = {.inner = SUCCESS_FLAG};
+
+    CHECK_OK(o.single_in(SUCCESS_FLAG));
+    CHECK_OK(o.single_primitive_in(empty, sizeof(empty), empty, sizeof(empty),
+                                   &lenout, SUCCESS_FLAG));
+    CHECK_OK(o.primitive_plus_struct_in(single_encapsulated, SUCCESS_FLAG));
+    CHECK_OK(o.multiple_primitive(empty, sizeof(empty), empty, sizeof(empty),
+                                  &lenout, SUCCESS_FLAG, &flag1, empty_o,
+                                  empty_o, SUCCESS_FLAG, &flag2, empty,
+                                  sizeof(empty), &lenout));
+    ASSERT(flag1 == SUCCESS_FLAG);
+    ASSERT(flag2 == SUCCESS_FLAG);
+    CHECK_OK(
+        o.bundled_with_unbundled(single_encapsulated, SUCCESS_FLAG, TRUTH));
+    CHECK_OK(o.in_struct(TRUTH));
+    CHECK_OK(o.in_small_struct({.inner = 0}));
+    {
+      uint32_t b = 0;
+      CHECK_OK(o.add_1000(5, &b));
+      ASSERT(b == 1005);
+    }
+    {
+      Collection s_in[2] = {TRUTH, TRUTH};
+      CHECK_OK(o.struct_array_in(s_in, 2));
+    }
+    {
+      Collection s_out[2] = {};
+      size_t s_out_lenout = 0;
+      CHECK_OK(o.struct_array_out(s_out, 2, &s_out_lenout));
+      ASSERT(s_out_lenout == 2);
+      ASSERT(memcmp(&s_out[0], &TRUTH, sizeof(TRUTH)) == 0);
+      ASSERT(memcmp(&s_out[1], &TRUTH, sizeof(TRUTH)) == 0);
+    }
+    {
+      ArrInStruct arr = {};
+      uint32_t magic = 0;
+      CHECK_OK(o.primitive_array_in_struct(arr, &magic));
+      ASSERT(arr.a[0] == 7 && arr.a[1] == 8);
+      ASSERT(arr.c[0].a == 9 && arr.c[0].b == 7);
+      ASSERT(arr.c[1].a == 8 && arr.c[1].b == 9);
+      ASSERT(arr.d == SUCCESS_FLAG);
+      ASSERT(magic == SUCCESS_FLAG);
+    }
+    {
+      uint32_t out = 0;
+      CHECK_OK(o.single_out(&out));
+      ASSERT(out == SUCCESS_FLAG);
+    }
+    {
+      uint32_t out = 0;
+      CHECK_OK(o.single_primitive_out(empty, sizeof(empty), empty,
+                                      sizeof(empty), &lenout, &out));
+      ASSERT(out == SUCCESS_FLAG);
+    }
+    {
+      SingleEncapsulated single_encapsulated = {0};
+      uint32_t out = 0;
+      CHECK_OK(o.primitive_plus_struct_out(single_encapsulated, &out));
+      ASSERT(out == SUCCESS_FLAG);
+      ASSERT(single_encapsulated.inner == SUCCESS_FLAG);
+    }
+    {
+      Collection out = {};
+      CHECK_OK(o.out_struct(out));
+      ASSERT(memcmp(&out, &TRUTH, sizeof(TRUTH)) == 0);
+    }
+    {
+      SingleEncapsulated out = {};
+      CHECK_OK(o.out_small_struct(out));
+      ASSERT(out.inner == 0);
+    }
+    {
+      uint32_t out = 0;
+      CHECK_OK(o.well_documented_method(SUCCESS_FLAG, &out));
+      ASSERT(out == SUCCESS_FLAG);
+    }
+    {
+      // Check for version against typed Objects
+      uint32_t version = 0;
+      CHECK_OK(o.api_version(&version));
+      uint32_t major = (version >> ITest1::MAJOR_SHIFT) & ITest1::MAJOR_MASK;
+      uint32_t minor = (version >> ITest1::MINOR_SHIFT) & ITest1::MINOR_MASK;
+      uint32_t patch = version & ITest1::PATCH_MASK;
+      ASSERT(major == 2);
+      ASSERT(minor == 0);
+      ASSERT(patch == 0);
+    }
 
     ITest1 objects[3] = {create_cpp_itest1(1), Object_NULL,
-                              create_cpp_itest1(2)};
+                         create_cpp_itest1(2)};
     ITest1 objects_out[3] = {Object_NULL, Object_NULL, Object_NULL};
     uint32_t a = 0;
-    CHECK_OK(me.test_obj_array_in(objects, &a));
+    CHECK_OK(o.test_obj_array_in(objects, &a));
     ASSERT(a == SUCCESS_FLAG);
     a = 0;
-    CHECK_OK(me.test_obj_array_out(objects_out, &a));
+    CHECK_OK(o.test_obj_array_out(objects_out, &a));
     ASSERT(a == SUCCESS_FLAG);
 
     for (size_t i = 0; i < sizeof(objects) / sizeof(objects[0]); i++) {
@@ -226,7 +323,7 @@ public:
     memcpy(&input_struct.p2, VALID_PS, sizeof(VALID_PS));
     memcpy(&input_struct.p3, VALID_PS, sizeof(VALID_PS));
     ObjInStruct output_struct{};
-    CHECK_OK(me.objects_in_struct(input_struct, output_struct));
+    CHECK_OK(o.objects_in_struct(input_struct, output_struct));
     ASSERT(memcmp(&output_struct.p1, VALID_PS, sizeof(VALID_PS)) == 0);
     ASSERT(memcmp(&output_struct.p2, VALID_PS, sizeof(VALID_PS)) == 0);
     ASSERT(memcmp(&output_struct.p3, VALID_PS, sizeof(VALID_PS)) == 0);
@@ -242,15 +339,6 @@ public:
     Object_ASSIGN_NULL(output_struct.first_obj);
     Object_ASSIGN_NULL(output_struct.second_obj);
     Object_ASSIGN_NULL(output_struct.should_be_empty);
-
-    uint32_t version = 0;
-    CHECK_OK(me.api_version(&version));
-    uint32_t major = (version >> ITest1::MAJOR_SHIFT) & ITest1::MAJOR_MASK;
-    uint32_t minor = (version >> ITest1::MINOR_SHIFT) & ITest1::MINOR_MASK;
-    uint32_t patch =  version                         & ITest1::PATCH_MASK;
-    ASSERT(major == 2);
-    ASSERT(minor == 0);
-    ASSERT(patch == 0);
 
     return Object_OK;
   }
@@ -276,8 +364,8 @@ public:
   int32_t no_args() {
     return c::itest1_no_args(&this->ctest);
   }
-  int32_t test_f1(uint32_t a_val, uint32_t *b_ptr) {
-    return c::itest1_test_f1(&this->ctest, a_val, b_ptr);
+  int32_t add_1000(uint32_t a_val, uint32_t *b_ptr) {
+    return c::itest1_add_1000(&this->ctest, a_val, b_ptr);
   }
   int32_t in_struct(const Collection &input_ref) {
     return c::itest1_in_struct(&this->ctest, (const c::Collection *)(&input_ref));

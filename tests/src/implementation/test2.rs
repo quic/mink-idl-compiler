@@ -22,7 +22,7 @@ impl IITest2 for ITest2 {
         &mut self,
         o: Option<&crate::interfaces::itest1::ITest1>,
     ) -> Result<(), itest2::Error> {
-        assert_eq!(super::test_singlular_object(o), Ok(()));
+        assert_eq!(super::test_singular_object(o), Ok(()));
         let o = o.unwrap();
         let objects: [Option<crate::interfaces::itest1::ITest1>; 3] = [
             Some(super::ITest1::new(1).into()),
@@ -33,7 +33,7 @@ impl IITest2 for ITest2 {
         let (objects, flag) = o.test_obj_array_out().unwrap();
         assert_eq!(flag, SUCCESS_FLAG);
         for object in objects {
-            assert_eq!(super::test_singlular_object(object.as_ref()), Ok(()));
+            assert_eq!(super::test_singular_object(object.as_ref()), Ok(()));
         }
 
         const VALID_PS: [u32; 4] = [SUCCESS_FLAG; 4];
@@ -50,9 +50,9 @@ impl IITest2 for ITest2 {
         assert_eq!(output.p1, VALID_PS);
         assert_eq!(output.p2, VALID_PS);
         assert_eq!(output.p3, VALID_PS);
-        super::test_singlular_object(output.first_obj.as_ref()).unwrap();
+        super::test_singular_object(output.first_obj.as_ref()).unwrap();
         assert_eq!(output.should_be_empty, None);
-        super::test_singlular_object(output.second_obj.as_ref()).unwrap();
+        super::test_singular_object(output.second_obj.as_ref()).unwrap();
 
         Ok(())
     }

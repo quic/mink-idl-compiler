@@ -20,3 +20,30 @@ fn duplicate_params() {
         };",
     );
 }
+
+#[should_panic = "Function `Duplicates::foo` has multiple 'version' attributes: 1.1, 1.2"]
+#[test]
+fn multiple_version_attr() {
+    verify(
+        r"
+        interface Duplicates {
+            #[version = 1.1]
+            #[version = 1.2]
+            method foo();
+        };",
+    );
+}
+
+#[should_panic = "Function `Duplicates::bar` version `1.1` cannot be less than the previous method `1.2`"]
+#[test]
+fn version_attr_not_monotonic() {
+    verify(
+        r"
+        interface Duplicates {
+            #[version = 1.2]
+            method foo();
+            #[version = 1.1]
+            method bar();
+        };",
+    );
+}
