@@ -11,19 +11,20 @@ static IDLC: OnceLock<PathBuf> = OnceLock::new();
 fn idlc() -> &'static Path {
     IDLC.get_or_init(|| {
         let p = PathBuf::from(
-            std::env::var("IDLC").unwrap_or_else(|_| "../target/debug/idlc".to_string()),
+            std::env::var_os("IDLC").unwrap_or_else(|| "../target/debug/idlc".into()),
         );
         assert!(
             p.exists(),
-            "`idlc` not found @ ../target/debug/idlc nor was it set using `IDLC`
-        environment variable"
+            "`idlc` not found @ {:?} nor was it set using the `IDLC` environment variable",
+            p,
         );
         p
     })
 }
+
 static OUT_DIR: OnceLock<PathBuf> = OnceLock::new();
 fn out_dir() -> &'static Path {
-    OUT_DIR.get_or_init(|| PathBuf::from(std::env::var("OUT_DIR").unwrap()))
+    OUT_DIR.get_or_init(|| PathBuf::from(std::env::var_os("OUT_DIR").expect("OUT_DIR not set")))
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
