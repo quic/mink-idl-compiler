@@ -5,7 +5,6 @@ use super::{TRUTH, TRUTH2};
 use crate::interfaces::itest::{self, ArrInStruct, SingleEncapsulated, F2, SUCCESS_FLAG};
 use crate::interfaces::itest1::{self, IITest1};
 use crate::interfaces::itest3::{self, IITest3};
-use crate::interfaces::itest4::{self, IITest4};
 
 macro_rules! itest1_impl {
     ($impl: ident) => {
@@ -299,16 +298,4 @@ macro_rules! generate_itest3_impl {
 
 generate_itest1_impl!(ITest1);
 
-generate_itest1_impl!(ITest3);
-impl IITest3 for ITest3 {
-    fn r#extra_test3(&mut self) -> Result<u32, itest3::Error> {
-        Ok(SUCCESS_FLAG)
-    }
-}
-
-generate_itest3_impl!(ITest4);
-impl IITest4 for ITest4 {
-    fn r#extra_test4(&mut self) -> Result<u32, itest4::Error> {
-        Ok(SUCCESS_FLAG)
-    }
-}
+generate_itest3_impl!(ITest3);
