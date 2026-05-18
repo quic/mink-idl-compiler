@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 fn idlc_bin() -> PathBuf {
-    PathBuf::from(std::env::var_os("CARGO_BIN_EXE_idlc").expect("missing idlc test binary path"))
+    PathBuf::from(env!("CARGO_BIN_EXE_idlc"))
 }
 
 fn repo_root() -> PathBuf {

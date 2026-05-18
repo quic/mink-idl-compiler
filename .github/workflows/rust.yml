@@ -47,8 +47,9 @@ jobs:
       fail-fast: false
       matrix:
         job:
-          - { target: x86_64-unknown-linux-musl , os: ubuntu-latest }
-          - { target: aarch64-unknown-linux-musl, os: ubuntu-24.04-arm }
+          - { target: x86_64-pc-windows-msvc    , os: windows-latest   , idlc_exe: idlc.exe}
+          - { target: x86_64-unknown-linux-musl , os: ubuntu-latest    , idlc_exe: idlc    }
+          - { target: aarch64-unknown-linux-musl, os: ubuntu-24.04-arm , idlc_exe: idlc    }
 
     steps:
     - name: Checkout source code
@@ -75,8 +76,11 @@ jobs:
       run: cargo test --target=${{ matrix.job.target }}
 
     - name: Run Rust+C integration test
+      # Integration tests hit '(exit code: 0xc0000135, STATUS_DLL_NOT_FOUND)' on Windows OS
+      if: runner.os != 'Windows'
+      shell: bash
       env:
-        IDLC: "../target/${{ matrix.job.target }}/opt/idlc"
+        IDLC: ../target/${{ matrix.job.target }}/opt/${{ matrix.job.idlc_exe }}
       run: |
         cargo build --target=${{ matrix.job.target }} --profile opt
         cd tests
@@ -92,7 +96,7 @@ jobs:
       uses: actions/upload-artifact@v7
       with:
         name: minkidl-${{ matrix.job.target }}
-        path: target/${{ matrix.job.target }}/opt/idlc
+        path: target/${{ matrix.job.target }}/opt/${{ matrix.job.idlc_exe }}
 
   documentation:
     runs-on: ubuntu-latest
