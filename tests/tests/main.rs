@@ -1,8 +1,9 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause
 
+#[cfg(not(miri))]
+use idlc_test::{c, cpp};
 use idlc_test::{
-    c, cpp,
     implementation::{self, ITest1},
     interfaces::itest2::ITest2,
 };
@@ -10,6 +11,7 @@ use idlc_test::{
 // The following tests start from a Rust ITest2 implementation (test2.rs) and
 // invoke every combination of ITest1 backend to verify cross-language FFI.
 
+#[cfg(not(miri))]
 #[test]
 fn to_c() {
     // ITest2 implemented in Rust (implementation/test2.rs)
@@ -31,6 +33,7 @@ fn to_c() {
     assert_eq!(0, expected.patch());
 }
 
+#[cfg(not(miri))]
 #[test]
 fn to_cpp() {
     // ITest2 implemented in Rust (implementation/test2.rs)
