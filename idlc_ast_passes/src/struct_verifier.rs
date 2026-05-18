@@ -75,14 +75,12 @@ impl StructVerifier {
                                 obj_arr: ident.clone(),
                             });
                         }
-                        Type::Custom(c) => {
-                            // Need to clarify if custom type is actually a named interface
-                            if idl_store.iface_lookup(c).is_some() {
-                                return Err(Error::StructFieldObjArray {
-                                    parent: node.ident.clone(),
-                                    obj_arr: c.clone(),
-                                });
-                            };
+                        // Custom type that is a known Mink interface
+                        Type::Custom(c) if idl_store.iface_lookup(c).is_some() => {
+                            return Err(Error::StructFieldObjArray {
+                                parent: node.ident.clone(),
+                                obj_arr: c.clone(),
+                            });
                         }
                         _ => {}
                     }
