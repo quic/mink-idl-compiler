@@ -147,10 +147,8 @@ impl idlc_codegen::functions::ParameterVisitor for Signature {
         // Since Mink interfaces are not `const`, we should not declare input
         // Objects as `const`. Otherwise they won't be able to use any of the
         // Mink interface methods.
-        self.inputs.push((
-            format!("&{}", ident),
-            format!("{}", ty.unwrap_or("ProxyBase")),
-        ));
+        self.inputs
+            .push((format!("&{}", ident), ty.unwrap_or("ProxyBase").to_string()));
         self.outputs
             .push((format!("p_{}", ident), ty.unwrap_or("Object").to_string()));
     }
