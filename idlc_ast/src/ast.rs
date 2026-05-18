@@ -177,7 +177,6 @@ impl FromStr for APIVersion {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FunctionAttribute {
-    Optional,
     Version(APIVersion),
 }
 

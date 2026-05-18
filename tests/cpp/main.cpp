@@ -112,7 +112,7 @@ public:
         &this->ctest, (c::Collection *)s_out_ptr, s_out_len, s_out_lenout);
   }
   int32_t well_documented_method(uint32_t foo_val, uint32_t *bar_ptr) {
-    return c::itest1_well_documented_method_real(&this->ctest, foo_val, bar_ptr);
+    return c::itest1_well_documented_method(&this->ctest, foo_val, bar_ptr);
   }
   int32_t test_obj_array_in(const ITest1 (&o_in_ptr)[3], uint32_t *a_ptr) {
     for (size_t i = 0; i < 3; i++) {
@@ -240,8 +240,6 @@ public:
     Object_ASSIGN_NULL(output_struct.second_obj);
     Object_ASSIGN_NULL(output_struct.should_be_empty);
 
-    ASSERT(me.unimplemented(3) == Object_ERROR_INVALID);
-
     uint32_t version = 0;
     CHECK_OK(me.api_version(&version));
     uint32_t major = (version >> ITest1::MAJOR_SHIFT) & ITest1::MAJOR_MASK;
@@ -357,7 +355,7 @@ public:
         &this->ctest, (c::Collection *)s_out_ptr, s_out_len, s_out_lenout);
   }
   int32_t well_documented_method(uint32_t foo_val, uint32_t *bar_ptr) {
-    return c::itest1_well_documented_method_real(&this->ctest, foo_val, bar_ptr);
+    return c::itest1_well_documented_method(&this->ctest, foo_val, bar_ptr);
   }
   int32_t test_obj_array_in(const ITest1 (&o_in_ptr)[3], uint32_t *a_ptr) {
     for (size_t i = 0; i < 3; i++) {

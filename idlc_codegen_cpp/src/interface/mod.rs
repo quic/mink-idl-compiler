@@ -142,7 +142,6 @@ pub fn emit_interface_invoke(interface: &Interface) -> String {
     let ident = interface.ident.to_string();
 
     let mut invokes = String::new();
-    let mut weak_declarations = String::new();
 
     // need to have all of the base-class functions
     interface.iter().skip(1).for_each(|iface| {
@@ -151,12 +150,7 @@ pub fn emit_interface_invoke(interface: &Interface) -> String {
                 let counts = idlc_codegen::counts::Counter::new(f);
                 let signature = functions::signature::Signature::new(f, &counts);
 
-                invokes.push_str(&functions::invoke::emit(
-                    f,
-                    &mut weak_declarations,
-                    &signature,
-                    &counts,
-                ));
+                invokes.push_str(&functions::invoke::emit(f, &signature, &counts));
             }
         })
     });
@@ -166,12 +160,7 @@ pub fn emit_interface_invoke(interface: &Interface) -> String {
             let counts = idlc_codegen::counts::Counter::new(f);
             let signature = functions::signature::Signature::new(f, &counts);
 
-            invokes.push_str(&functions::invoke::emit(
-                f,
-                &mut weak_declarations,
-                &signature,
-                &counts,
-            ));
+            invokes.push_str(&functions::invoke::emit(f, &signature, &counts));
         }
     }
 
@@ -192,7 +181,6 @@ class {ident}ImplBase : protected ImplBase, public I{ident} {{
                   (VERSION_PATCH & PATCH_MASK);
         return Object_OK;
     }}
-{weak_declarations}
   protected:
 {INDENT}virtual int32_t invoke(ObjectOp {OP_CODE}, ObjectArg* {ARGS}, ObjectCounts {COUNTS}) {{
 {INDENT}{INDENT}switch (ObjectOp_methodID({OP_CODE})) {{
