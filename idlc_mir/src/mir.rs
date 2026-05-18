@@ -460,9 +460,12 @@ pub struct Function {
 
 impl Function {
     pub fn get_version(&self) -> Option<&APIVersion> {
-        self.attributes.iter().find_map(|e| match e {
-            idlc_ast::FunctionAttribute::Version(a) => Some(a),
-        })
+        self.attributes
+            .iter()
+            .map(|e| match e {
+                idlc_ast::FunctionAttribute::Version(a) => a,
+            })
+            .next()
     }
 }
 

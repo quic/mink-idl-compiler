@@ -47,8 +47,8 @@ impl<'ast> CompilerPass<'ast> for Functions {
                     let version_attrs: Vec<&APIVersion> = function
                         .attributes
                         .iter()
-                        .filter_map(|attr| match attr {
-                            idlc_ast::FunctionAttribute::Version(a) => Some(a),
+                        .map(|attr| match attr {
+                            idlc_ast::FunctionAttribute::Version(a) => a,
                         })
                         .collect();
                     // - Ensure that no more than 1 version is listed
