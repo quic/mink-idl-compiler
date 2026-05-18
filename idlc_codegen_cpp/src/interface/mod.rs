@@ -46,12 +46,7 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
                 idlc_codegen::documentation::DocumentationStyle::C,
             );
             if is_root {
-                let mut params = idlc_codegen_c::interface::functions::signature::iter_to_string(
-                    signature.params(),
-                );
-                if !params.is_empty() {
-                    params.remove(0);
-                }
+                let params = signature.params();
                 func_titles.push_str(&format!(
                     r#"
     virtual int32_t {}({}) = 0;"#,

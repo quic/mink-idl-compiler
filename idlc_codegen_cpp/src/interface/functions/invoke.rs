@@ -178,14 +178,8 @@ pub fn emit(
     counts: &idlc_codegen::counts::Counter,
 ) -> String {
     let ident = &function.ident;
-
     let invoke = Invoke::new(function);
-
-    let mut return_idents =
-        idlc_codegen_c::interface::functions::signature::iter_to_string(signature.return_idents());
-    if !return_idents.is_empty() {
-        return_idents.remove(0);
-    }
+    let return_idents = signature.return_idents();
 
     let call = format!("int32_t r = {ident}({return_idents});");
 

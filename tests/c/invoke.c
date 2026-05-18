@@ -86,6 +86,10 @@ int32_t itest1_retain(struct CTest1 *ctx) {
   return Object_OK;
 }
 
+int32_t itest1_no_args(struct CTest1 *ctx) {
+  return Object_OK;
+}
+
 int32_t itest1_test_f1(struct CTest1 *ctx, uint32_t a_val, uint32_t *b_ptr) {
   *b_ptr = a_val + ctx->value;
   return Object_OK;
@@ -359,6 +363,9 @@ int32_t itest3_extra_test3(struct CTest1 *ctx, uint32_t *output_ptr) {
   return Object_OK;
 }
 
+int32_t itest3_no_args(struct CTest1 *ctx) {
+  return itest1_no_args(ctx);
+}
 int32_t itest3_test_f1(struct CTest1 *ctx, uint32_t a_val, uint32_t *b_ptr) {
   return itest1_test_f1(ctx, a_val, b_ptr);
 }
