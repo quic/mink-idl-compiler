@@ -127,7 +127,6 @@ pub fn emit_interface_invoke(interface: &Interface, is_no_typed_objects: bool) -
     let ident = interface.ident.to_string();
 
     let mut invokes = String::new();
-    let mut weak_declarations = String::new();
 
     // need to have all of the base-class functions
     interface.iter().skip(1).for_each(|iface| {
@@ -138,7 +137,6 @@ pub fn emit_interface_invoke(interface: &Interface, is_no_typed_objects: bool) -
                     functions::signature::Signature::new(f, &counts, is_no_typed_objects);
                 invokes.push_str(&functions::invoke::emit(
                     f,
-                    &mut weak_declarations,
                     &iface.ident,
                     &signature,
                     &counts,
@@ -154,7 +152,6 @@ pub fn emit_interface_invoke(interface: &Interface, is_no_typed_objects: bool) -
             let signature = functions::signature::Signature::new(f, &counts, is_no_typed_objects);
             invokes.push_str(&functions::invoke::emit(
                 f,
-                &mut weak_declarations,
                 &ident,
                 &signature,
                 &counts,
@@ -169,19 +166,8 @@ pub fn emit_interface_invoke(interface: &Interface, is_no_typed_objects: bool) -
 
     let APIVersion { major, minor } = interface.get_version();
 
-    // weak_delcarations goes inside `func` to preserve the expected when the macro is instantiated
-    // with `static IFoo_DEFINE_INVOKE`. It is OK to declare functions within functions for C.
     format!(
         r#"{typed_objects}
-#ifdef __clang__
-#define __compiler_pragma_pre \
-    _Pragma("clang diagnostic push") \
-    _Pragma("clang diagnostic ignored \"-Wignored-attributes\"")
-#define __compiler_pragma_post _Pragma("clang diagnostic pop")
-#else
-#define __compiler_pragma_pre
-#define __compiler_pragma_post
-#endif
 
 #define {ident}_VERSION_MAJOR {major}
 #define {ident}_VERSION_MINOR {minor}
@@ -190,9 +176,6 @@ pub fn emit_interface_invoke(interface: &Interface, is_no_typed_objects: bool) -
 #define {ident}_DEFINE_INVOKE(func, prefix, type) \
     int32_t func(ObjectCxt {CONTEXT}, ObjectOp {OP_CODE}, ObjectArg *{ARGS}, ObjectCounts {COUNTS}) \
     {{ \
-        __compiler_pragma_pre \
-        {weak_declarations} \
-        __compiler_pragma_post \
         type me = (type) {CONTEXT}; \
         switch (ObjectOp_methodID({OP_CODE})) {{ \
             case Object_OP_release: {{ \

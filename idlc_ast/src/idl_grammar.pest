@@ -27,7 +27,7 @@ const         =  { const_keyword ~ primitive_type ~ ident ~ "=" ~ value ~ ";" }
 
 version              =  { ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+ }
 method_version       =  { "version" ~ WHITESPACE* ~ "=" ~ WHITESPACE* ~ version }
-supported_attributes =  { "optional" | method_version }
+supported_attributes =  { method_version }
 attribute            = ${ "#[" ~ supported_attributes ~ "]" }
 param_type           =  { ((ident | "interface") ~ bounded_array) | ((primitive_type | !"interface" ~ ident) ~ unbounded_array) | primitive_type | ident | "interface" | "buffer" }
 mutability           = @{ ("in" | "out") }

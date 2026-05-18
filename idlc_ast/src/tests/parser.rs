@@ -171,9 +171,6 @@ fn function() {
                           out uint32 bar);",
             "method\tfoo(in buffer req, out buffer rsp);",
             "method\nfoo(in buffer req, out buffer rsp);",
-            "#[optional] method foo(in buffer req, out buffer rsp);",
-            r"#[optional]
-              method foo(in buffer req, out buffer rsp);",
             "#[version = 1.1] method foo(in buffer req, out buffer rsp);",
             "#[version=1.1] method foo(in buffer req, out buffer rsp);",
             r"#[version = 1.1]
@@ -205,7 +202,6 @@ fn function() {
             "method bar(in 2IHWKey x,    out IHWKeyFactory2 y);",
             "methodfoo();",
             "#[unsupported_attribute] method foo(in buffer req, out buffer rsp);",
-            "#[optional]method foo(in buffer req, out buffer rsp);",
             "#[version = 1.1]method foo(in buffer req, out buffer rsp);",
             r"#[version = 1]
               method foo(in buffer req, out buffer rsp);",
