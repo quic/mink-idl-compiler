@@ -38,6 +38,8 @@ pub enum Error {
     },
     #[error("struct `{parent}` contains duplicate field names: `{names:?}`")]
     StructFieldSameName { parent: Ident, names: Vec<Ident> },
+    #[error("struct `{parent}` contains Object array: `{obj_arr}`. Object arrays are not allowed as struct fields.")]
+    StructFieldObjArray { parent: Ident, obj_arr: Ident },
 }
 
 impl StructVerifier {
@@ -62,6 +64,27 @@ impl StructVerifier {
 
                 let (ty, count) = field.r#type();
                 let count = count.get() as usize;
+
+                // Checks for array fields
+                if count > 1 {
+                    match ty {
+                        // literally defined as 'interface' type
+                        Type::Interface => {
+                            return Err(Error::StructFieldObjArray {
+                                parent: node.ident.clone(),
+                                obj_arr: ident.clone(),
+                            });
+                        }
+                        // Custom type that is a known Mink interface
+                        Type::Custom(c) if idl_store.iface_lookup(c).is_some() => {
+                            return Err(Error::StructFieldObjArray {
+                                parent: node.ident.clone(),
+                                obj_arr: c.clone(),
+                            });
+                        }
+                        _ => {}
+                    }
+                }
 
                 let (i_size, i_alignment) = match ty {
                     Type::Primitive(p) => (p.size(), p.alignment()),
