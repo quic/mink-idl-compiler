@@ -75,7 +75,7 @@ impl Signature {
         let mut acc = String::new();
         for ident in self.return_idents_iter() {
             acc.push_str(", ");
-            acc += ident.as_ref();
+            acc += ident;
         }
         acc
     }
