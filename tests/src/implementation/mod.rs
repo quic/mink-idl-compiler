@@ -17,7 +17,7 @@ mod test2;
 pub use test1::{ITest1, ITest3};
 pub use test2::ITest2;
 
-fn test_singlular_object(
+fn test_singular_object(
     o: Option<&crate::interfaces::itest1::ITest1>,
 ) -> Result<(), crate::object::Error> {
     use crate::interfaces::itest::*;
@@ -63,6 +63,23 @@ fn test_singlular_object(
         ),
         Ok(())
     );
+    assert_eq!(o.in_struct(&TRUTH), Ok(()));
+    assert_eq!(o.in_small_struct(&TRUTH2), Ok(()));
+    assert_eq!(o.add_1000(5), Ok(1005));
+    assert_eq!(o.struct_array_in(&[TRUTH, TRUTH]), Ok(()));
+    let zeroed = Collection { a: 0, b: 0, c: 0, d: 0 };
+    let mut s_out = [zeroed; 2];
+    let mut s_out_lenout = 0usize;
+    assert_eq!(o.struct_array_out(&mut s_out, &mut s_out_lenout), Ok(()));
+    assert_eq!(s_out_lenout, 2);
+    assert_eq!(s_out[0], TRUTH);
+    assert_eq!(s_out[1], TRUTH);
+    let (arr, magic) = o.primitive_array_in_struct().unwrap();
+    assert_eq!(arr.a, [7, 8]);
+    assert_eq!(arr.c[0], crate::interfaces::itest::F2 { a: 9, b: 7 });
+    assert_eq!(arr.c[1], crate::interfaces::itest::F2 { a: 8, b: 9 });
+    assert_eq!(arr.d, SUCCESS_FLAG as u16);
+    assert_eq!(magic, SUCCESS_FLAG);
 
     assert_eq!(o.single_out(), Ok(SUCCESS_FLAG));
     assert_eq!(
@@ -78,6 +95,8 @@ fn test_singlular_object(
             SUCCESS_FLAG
         ))
     );
+    assert_eq!(o.out_struct(), Ok(TRUTH));
+    assert_eq!(o.out_small_struct(), Ok(TRUTH2));
 
     assert_eq!(o.well_documented_method(SUCCESS_FLAG), Ok(SUCCESS_FLAG));
 

@@ -40,7 +40,7 @@ interface ITest1 {
   error CUSTOM_ME_ARE_TWO;
   error MISMATCH;
 
-  method test_f1(in uint32 a, out uint32 b);
+  method add_1000(in uint32 a, out uint32 b);
   method in_struct(in Collection input);
   method out_struct(out Collection output);
   method in_small_struct(in SingleEncapsulated input);
