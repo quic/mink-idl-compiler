@@ -23,10 +23,10 @@ fn long_version() -> &'static str {
 /// Compile Mink IDL files into a header to be used by one of the supported language
 pub struct Cli {
     /// Input IDL file
-    pub file: std::path::PathBuf,
+    pub idl_file: std::path::PathBuf,
 
-    #[arg(short, value_name = "FILE")]
-    /// Output file name
+    #[arg(short, value_name = "FILE or PATH")]
+    /// Output file (C/C++) or path (Rust/Java)
     pub output: Option<std::path::PathBuf>,
 
     #[arg(long, conflicts_with_all = ["java", "rust"])]

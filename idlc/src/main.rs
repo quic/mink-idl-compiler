@@ -21,7 +21,7 @@ fn main() {
     };
 
     // Change current dir based on the location of the input file.
-    let input_file = args.file.canonicalize().expect("Invalid input file.");
+    let input_file = args.idl_file.canonicalize().expect("Invalid input file.");
     let dir_path = input_file
         .parent()
         .expect("Failed to find the location of the input file");
