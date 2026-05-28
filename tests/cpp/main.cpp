@@ -74,7 +74,7 @@ public:
   int32_t multiple_primitive(const void *unused_ptr, size_t unused_len,
                              void *unused2_ptr, size_t unused2_len,
                              size_t *unused2_lenout, uint16_t input_val,
-                             uint16_t *output_ptr, ProxyBase &unused3_ref,
+                             uint16_t *output_ptr, const ProxyBase &unused3_ref,
                              ProxyBase &unused4_ref, uint32_t input2_val,
                              uint64_t *output2_ptr, void *unused5_ptr,
                              size_t unused5_len, size_t *unused5_lenout) {
@@ -198,7 +198,8 @@ Object create_cpp_itest1(uint32_t value) {
 
 class ITest2Impl : public ITest2ImplBase {
 public:
-  int32_t entrypoint(ITest1 &o) {
+  int32_t entrypoint(const ITest1 &o_ref) {
+    ITest1 &o = const_cast<ITest1&>(o_ref);
     if (o.isNull()) {
       return Object_ERROR_BADOBJ;
     }
@@ -210,17 +211,17 @@ public:
     const SingleEncapsulated single_encapsulated = {.inner = SUCCESS_FLAG};
 
     CHECK_OK(o.single_in(SUCCESS_FLAG));
-    CHECK_OK(o.single_primitive_in(empty, sizeof(empty), empty,
-                                        sizeof(empty), &lenout, SUCCESS_FLAG));
-    CHECK_OK(o.primitive_plus_struct_in(single_encapsulated,
-                                             SUCCESS_FLAG));
-    CHECK_OK(o.multiple_primitive(empty, sizeof(empty), empty, sizeof(empty), &lenout,
-                                  SUCCESS_FLAG, &flag1, empty_o, empty_o, SUCCESS_FLAG, &flag2,
-                                  empty, sizeof(empty), &lenout));
+    CHECK_OK(o.single_primitive_in(empty, sizeof(empty), empty, sizeof(empty),
+                                   &lenout, SUCCESS_FLAG));
+    CHECK_OK(o.primitive_plus_struct_in(single_encapsulated, SUCCESS_FLAG));
+    CHECK_OK(o.multiple_primitive(empty, sizeof(empty), empty, sizeof(empty),
+                                  &lenout, SUCCESS_FLAG, &flag1, empty_o,
+                                  empty_o, SUCCESS_FLAG, &flag2, empty,
+                                  sizeof(empty), &lenout));
     ASSERT(flag1 == SUCCESS_FLAG);
     ASSERT(flag2 == SUCCESS_FLAG);
-    CHECK_OK(o.bundled_with_unbundled(single_encapsulated,
-                                      SUCCESS_FLAG, TRUTH));
+    CHECK_OK(
+        o.bundled_with_unbundled(single_encapsulated, SUCCESS_FLAG, TRUTH));
     CHECK_OK(o.in_struct(TRUTH));
     CHECK_OK(o.in_small_struct({.inner = 0}));
     {
@@ -254,50 +255,49 @@ public:
       uint32_t out = 0;
       CHECK_OK(o.single_out(&out));
       ASSERT(out == SUCCESS_FLAG);
-  }
-  {
-    uint32_t out = 0;
-    CHECK_OK(o.single_primitive_out(empty, sizeof(empty), empty,
-                                         sizeof(empty), &lenout, &out));
-    ASSERT(out == SUCCESS_FLAG);
-  }
-  {
-    SingleEncapsulated single_encapsulated = {0};
-    uint32_t out = 0;
-    CHECK_OK(
-        o.primitive_plus_struct_out(single_encapsulated, &out));
-    ASSERT(out == SUCCESS_FLAG);
-    ASSERT(single_encapsulated.inner == SUCCESS_FLAG);
-  }
-  {
-    Collection out = {};
-    CHECK_OK(o.out_struct(out));
-    ASSERT(memcmp(&out, &TRUTH, sizeof(TRUTH)) == 0);
-  }
-  {
-    SingleEncapsulated out = {};
-    CHECK_OK(o.out_small_struct(out));
-    ASSERT(out.inner == 0);
-  }
-  {
-    uint32_t out = 0;
-    CHECK_OK(o.well_documented_method(SUCCESS_FLAG, &out));
-    ASSERT(out == SUCCESS_FLAG);
-  }
-  {
-    // Check for version against typed Objects
-    uint32_t version = 0;
-    CHECK_OK(o.api_version(&version));
-    uint32_t major = (version >> ITest1::MAJOR_SHIFT) & ITest1::MAJOR_MASK;
-    uint32_t minor = (version >> ITest1::MINOR_SHIFT) & ITest1::MINOR_MASK;
-    uint32_t patch =  version                         & ITest1::PATCH_MASK;
-    ASSERT(major == 2);
-    ASSERT(minor == 0);
-    ASSERT(patch == 0);
-  }
+    }
+    {
+      uint32_t out = 0;
+      CHECK_OK(o.single_primitive_out(empty, sizeof(empty), empty,
+                                      sizeof(empty), &lenout, &out));
+      ASSERT(out == SUCCESS_FLAG);
+    }
+    {
+      SingleEncapsulated single_encapsulated = {0};
+      uint32_t out = 0;
+      CHECK_OK(o.primitive_plus_struct_out(single_encapsulated, &out));
+      ASSERT(out == SUCCESS_FLAG);
+      ASSERT(single_encapsulated.inner == SUCCESS_FLAG);
+    }
+    {
+      Collection out = {};
+      CHECK_OK(o.out_struct(out));
+      ASSERT(memcmp(&out, &TRUTH, sizeof(TRUTH)) == 0);
+    }
+    {
+      SingleEncapsulated out = {};
+      CHECK_OK(o.out_small_struct(out));
+      ASSERT(out.inner == 0);
+    }
+    {
+      uint32_t out = 0;
+      CHECK_OK(o.well_documented_method(SUCCESS_FLAG, &out));
+      ASSERT(out == SUCCESS_FLAG);
+    }
+    {
+      // Check for version against typed Objects
+      uint32_t version = 0;
+      CHECK_OK(o.api_version(&version));
+      uint32_t major = (version >> ITest1::MAJOR_SHIFT) & ITest1::MAJOR_MASK;
+      uint32_t minor = (version >> ITest1::MINOR_SHIFT) & ITest1::MINOR_MASK;
+      uint32_t patch = version & ITest1::PATCH_MASK;
+      ASSERT(major == 2);
+      ASSERT(minor == 0);
+      ASSERT(patch == 0);
+    }
 
     ITest1 objects[3] = {create_cpp_itest1(1), Object_NULL,
-                              create_cpp_itest1(2)};
+                         create_cpp_itest1(2)};
     ITest1 objects_out[3] = {Object_NULL, Object_NULL, Object_NULL};
     uint32_t a = 0;
     CHECK_OK(o.test_obj_array_in(objects, &a));
@@ -402,7 +402,7 @@ public:
   int32_t multiple_primitive(const void *unused_ptr, size_t unused_len,
                              void *unused2_ptr, size_t unused2_len,
                              size_t *unused2_lenout, uint16_t input_val,
-                             uint16_t *output_ptr, ProxyBase &unused3_ref,
+                             uint16_t *output_ptr, const ProxyBase &unused3_ref,
                              ProxyBase &unused4_ref, uint32_t input2_val,
                              uint64_t *output2_ptr, void *unused5_ptr,
                              size_t unused5_len, size_t *unused5_lenout) {
