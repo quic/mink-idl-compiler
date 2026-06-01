@@ -1,8 +1,7 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause
 
-use idlc_codegen::keywords::invoke::VERSION_FUNC_NAME;
-use idlc_mir::{APIVersion, Interface, InterfaceNode};
+use idlc_mir::{APIVersion, Interface, InterfaceNode, VERSION_FUNC_NAME};
 
 pub mod functions;
 pub mod variable_names;
@@ -42,6 +41,7 @@ pub fn emit_interface_impl(interface: &Interface, is_no_typed_objects: bool) -> 
                 f,
                 idlc_codegen::documentation::DocumentationStyle::C,
             );
+            let fn_ident = crate::safe_ident_c(f.ident.as_ref());
             if is_root {
                 op_codes.push_str(&format!("#define {}_OP_{} {}\n", ident, f.ident, f.id));
             }
@@ -52,6 +52,7 @@ pub fn emit_interface_impl(interface: &Interface, is_no_typed_objects: bool) -> 
                 &documentation,
                 &counts,
                 &signature,
+                &fn_ident,
             ));
         }
     };

@@ -162,6 +162,9 @@ public:
     return Object_OK;
   }
 
+  int32_t _delete(double key_val) {
+    return Object_OK;
+  }
   int32_t derive_v0(uint32_t a_val) {
     return Object_OK;
   }
@@ -487,6 +490,9 @@ public:
     output_ref.first_obj = create_cpp_itest1(1);
     output_ref.second_obj = create_cpp_itest1(2);
     output_ref.should_be_empty = Object_NULL;
+    return Object_OK;
+  }
+  int32_t _delete(double key_val) {
     return Object_OK;
   }
   int32_t derive_v0(uint32_t a_val) {

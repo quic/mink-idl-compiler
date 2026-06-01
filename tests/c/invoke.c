@@ -300,6 +300,10 @@ int32_t itest1_objects_in_struct(struct CTest1 *ctx, const ObjInStruct *input,
   return Object_OK;
 }
 
+int32_t itest1_delete(struct CTest1 *ctx, double key_val) {
+  return Object_OK;
+}
+
 int32_t itest1_derive_v0(struct CTest1 *ctx, uint32_t a_val) {
   return Object_OK;
 }
@@ -520,6 +524,10 @@ int32_t itest3_test_obj_array_out(struct CTest1 *ctx, Object (*o_ptr)[3],
 int32_t itest3_objects_in_struct(struct CTest1 *ctx, const ObjInStruct *input,
                                  ObjInStruct *output) {
   return itest1_objects_in_struct(ctx, input, output);
+}
+
+int32_t itest3_delete(struct CTest1 *ctx, double key_val) {
+  return Object_OK;
 }
 
 int32_t itest3_derive_v0(struct CTest1 *ctx, uint32_t a_val) {

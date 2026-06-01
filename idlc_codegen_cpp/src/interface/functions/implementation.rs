@@ -232,6 +232,7 @@ pub fn emit(
     documentation: &str,
     counts: &idlc_codegen::counts::Counter,
     signature: &super::signature::Signature,
+    fn_ident: &str,
 ) -> String {
     let ident = &function.ident;
     let total = counts.total();
@@ -271,7 +272,7 @@ pub fn emit(
     format!(
         r#"
 {documentation}
-{INDENT}virtual int32_t {ident}({params}) {{
+{INDENT}virtual int32_t {fn_ident}({params}) {{
 {formatted_body}
 {INDENT}}}
 "#

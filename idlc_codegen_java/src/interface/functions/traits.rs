@@ -2,15 +2,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 pub fn emit(
-    function: &idlc_mir::Function,
     documentation: &str,
     signature: &super::signature::Signature,
+    fn_ident: &str,
 ) -> String {
-    let ident = &function.ident;
     let params = super::signature::iter_to_string(signature.params());
     format!(
         r#"{documentation}
-    void {ident}({params}) throws IMinkObject.InvokeException;
+    void {fn_ident}({params}) throws IMinkObject.InvokeException;
     "#
     )
 }

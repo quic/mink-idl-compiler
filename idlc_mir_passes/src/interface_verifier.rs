@@ -5,7 +5,7 @@ use std::collections::HashSet;
 
 use crate::MirCompilerPass;
 
-use idlc_mir::{InterfaceNode, Node, ParamTypeIn, ParamTypeOut, Struct, Type};
+use idlc_mir::{InterfaceNode, Node, ParamTypeIn, ParamTypeOut, Struct, Type, VERSION_FUNC_NAME};
 
 pub struct InterfaceVerifier<'mir> {
     mir: &'mir idlc_mir::Mir,
@@ -39,6 +39,14 @@ impl MirCompilerPass<'_> for InterfaceVerifier<'_> {
                         InterfaceNode::Error(e) => consts.add_ident(&e.ident, from),
                         InterfaceNode::Function(f) => {
                             functions.add_ident(&f.ident, from);
+
+                            if VERSION_FUNC_NAME == f.ident.as_ref() {
+                                idlc_errors::unrecoverable!(
+                                    "Method `{}::{}` conflicts with Mink IDL reserved word",
+                                    src.ident,
+                                    f.ident
+                                );
+                            }
 
                             let mut args_array_in = false;
                             let mut args_value_in = false;

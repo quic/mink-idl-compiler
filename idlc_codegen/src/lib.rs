@@ -7,8 +7,6 @@ pub mod functions;
 pub mod marking;
 pub mod serialization;
 
-// TODO: Remove this when we indeed start banning idents matching reserved keywords
-#[allow(dead_code)]
 pub mod keywords;
 
 use std::path::PathBuf;

@@ -176,12 +176,13 @@ pub fn emit(
     function: &idlc_mir::Function,
     signature: &super::signature::Signature,
     counts: &idlc_codegen::counts::Counter,
+    fn_ident: &str,
 ) -> String {
     let ident = &function.ident;
     let invoke = Invoke::new(function);
     let return_idents = signature.return_idents();
 
-    let call = format!("int32_t r = {ident}({return_idents});");
+    let call = format!("int32_t r = {fn_ident}({return_idents});");
 
     let counts = format!(
         "{0}, {1}, {2}, {3}",

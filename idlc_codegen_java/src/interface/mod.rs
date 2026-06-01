@@ -39,10 +39,10 @@ pub fn emit_interface(interface: &Interface, input_name: &str) -> String {
                 ))
             }
             InterfaceNode::Function(f) => {
-                let fn_ident = &f.ident;
+                let raw_fn_ident = f.ident.as_ref();
                 let id = f.id;
                 op_codes.push_str(&format!(
-                    r#"int {ident}_{OP_ID}_{fn_ident} = {id};
+                    r#"int {ident}_{OP_ID}_{raw_fn_ident} = {id};
     "#
                 ));
                 let counts = idlc_codegen::counts::Counter::new(f);
@@ -51,6 +51,7 @@ pub fn emit_interface(interface: &Interface, input_name: &str) -> String {
                     f,
                     idlc_codegen::documentation::DocumentationStyle::Java,
                 );
+                let fn_ident = crate::safe_ident_java(raw_fn_ident);
 
                 implementations.push_str(&functions::implementation::emit(
                     f,
@@ -58,9 +59,14 @@ pub fn emit_interface(interface: &Interface, input_name: &str) -> String {
                     &documentation,
                     &counts,
                     &signature,
+                    &fn_ident,
                 ));
                 invokes.push_str(&functions::invoke::emit(f, ident, &iface.ident, &signature));
-                traits.push_str(&functions::traits::emit(f, &documentation, &signature));
+                traits.push_str(&functions::traits::emit(
+                    &documentation,
+                    &signature,
+                    &fn_ident,
+                ));
             }
         });
     });
