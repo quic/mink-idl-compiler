@@ -7,8 +7,9 @@ struct ObjInStruct {
   ITest1 second_obj;
 };
 
-struct F1 {
-    uint32 a;
+// The purpose of this struct is to show reserved words are handled properly
+struct break {
+    uint32 switch;
 };
 
 struct SingleEncapsulated {
