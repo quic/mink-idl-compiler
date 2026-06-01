@@ -34,16 +34,16 @@ pub fn emit_struct(r#struct: &StructInner) -> String {
         };
 
         inner.push_str(&if count == 1 {
-            format!("pub {ident}: {ty},\n")
+            format!("pub r#{ident}: {ty},\n")
         } else {
-            format!("pub {ident}: [{ty}; {count}],\n")
+            format!("pub r#{ident}: [{ty}; {count}],\n")
         });
     }
     format!(
         r#"
 #[repr(C)]
 #[derive({derives})]
-pub struct {ident} {{
+pub struct r#{ident} {{
     {inner}
 }}
 "#,
