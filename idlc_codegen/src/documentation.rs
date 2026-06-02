@@ -20,14 +20,14 @@ impl DocumentationStyle {
     const fn end(self) -> &'static str {
         match self {
             Self::Rust => "///</pre>",
-            Self::C | Self::Java => "*/",
+            Self::C | Self::Java => " */",
         }
     }
 
     const fn prefix(self) -> &'static str {
         match self {
             Self::Rust => "///",
-            Self::C | Self::Java => "*",
+            Self::C | Self::Java => " *",
         }
     }
 }
@@ -147,19 +147,19 @@ starts with nothing
             documentation.as_ref(),
             "\
 /*
-*  Hello this is a sample documentation
-*     I can even contain no asterisk in the beginning and this is style a valid idl doc style
-*
-*  @param[out]
-*  New Lines must be preserved and convention interleaving should work too!
-* @param[in] credentials  Lines that wrap around must ensure
-*                         formatting is maintained
-*                         a
-*                         b
-*                         c
-* starts with nothing
-*
-*/"
+ *  Hello this is a sample documentation
+ *     I can even contain no asterisk in the beginning and this is style a valid idl doc style
+ *
+ *  @param[out]
+ *  New Lines must be preserved and convention interleaving should work too!
+ * @param[in] credentials  Lines that wrap around must ensure
+ *                         formatting is maintained
+ *                         a
+ *                         b
+ *                         c
+ * starts with nothing
+ *
+ */"
         );
     }
 
@@ -171,19 +171,19 @@ starts with nothing
             documentation.as_ref(),
             "\
 /**
-*  Hello this is a sample documentation
-*     I can even contain no asterisk in the beginning and this is style a valid idl doc style
-*
-*  @param[out]
-*  New Lines must be preserved and convention interleaving should work too!
-* @param[in] credentials  Lines that wrap around must ensure
-*                         formatting is maintained
-*                         a
-*                         b
-*                         c
-* starts with nothing
-*
-*/"
+ *  Hello this is a sample documentation
+ *     I can even contain no asterisk in the beginning and this is style a valid idl doc style
+ *
+ *  @param[out]
+ *  New Lines must be preserved and convention interleaving should work too!
+ * @param[in] credentials  Lines that wrap around must ensure
+ *                         formatting is maintained
+ *                         a
+ *                         b
+ *                         c
+ * starts with nothing
+ *
+ */"
         );
     }
 }

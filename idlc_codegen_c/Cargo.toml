@@ -9,6 +9,7 @@ edition = "2021"
 idlc_codegen = { path="../idlc_codegen" }
 idlc_errors = { path="../idlc_errors" }
 idlc_mir = { path="../idlc_mir" }
+heck = "0.5"
 
 [package.metadata.workspaces]
 independent = true

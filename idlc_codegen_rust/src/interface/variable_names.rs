@@ -11,6 +11,6 @@ pub(super) mod invoke {
 
     pub const BI_STRUCT: &str = "BI";
     pub const BO_STRUCT: &str = "BO";
-    pub const BI_NAME: &str = "bi";
-    pub const BO_NAME: &str = "bo";
+    pub const BI_NAME: &str = "in_bundle";
+    pub const BO_NAME: &str = "out_bundle";
 }
