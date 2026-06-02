@@ -1,15 +1,15 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause
 
-/// Reserved keywords for each supported output language.
-///
-/// C17: [https://www.open-std.org/JTC1/SC22/WG14/www/docs/n2310.pdf](https://www.open-std.org/JTC1/SC22/WG14/www/docs/n2310.pdf)
-/// C++23: [https://www.open-std.org/JTC1/SC22/WG21/docs/papers/2023/n4950.pdf](https://docs.oracle.com/javase/specs/jls/se22/html/jls-3.html#jls-3.9)
-/// Java: [https://docs.oracle.com/javase/specs/jls/se22/html/jls-3.html#jls-3.9](https://docs.oracle.com/javase/specs/jls/se22/html/jls-3.html#jls-3.9)
-///
-/// Rust keywords are not added here since the language provides a way to escape
-/// keywords using the `r#` syntax. See
-/// [raw-identifiers](https://doc.rust-lang.org/rust-by-example/compatibility/raw_identifiers.html#raw-identifiers)
+//! Reserved keywords for each supported output language.
+//!
+//! C17: [https://www.open-std.org/JTC1/SC22/WG14/www/docs/n2310.pdf](https://www.open-std.org/JTC1/SC22/WG14/www/docs/n2310.pdf)
+//! C++23: [https://www.open-std.org/JTC1/SC22/WG21/docs/papers/2023/n4950.pdf](https://docs.oracle.com/javase/specs/jls/se22/html/jls-3.html#jls-3.9)
+//! Java: [https://docs.oracle.com/javase/specs/jls/se22/html/jls-3.html#jls-3.9](https://docs.oracle.com/javase/specs/jls/se22/html/jls-3.html#jls-3.9)
+//!
+//! Rust keywords are not added here since the language provides a way to escape
+//! keywords using the `r#` syntax. See
+//! [raw-identifiers](https://doc.rust-lang.org/rust-by-example/compatibility/raw_identifiers.html#raw-identifiers)
 
 /// C17 reserved keywords.
 pub const C_KEYWORDS: &[&str] = &[
