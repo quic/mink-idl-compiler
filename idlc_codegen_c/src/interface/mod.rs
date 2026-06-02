@@ -1,8 +1,7 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause
 
-use idlc_codegen::keywords::invoke::VERSION_FUNC_NAME;
-use idlc_mir::{APIVersion, Interface, InterfaceNode};
+use idlc_mir::{APIVersion, Interface, InterfaceNode, VERSION_FUNC_NAME};
 
 pub mod functions;
 pub mod variable_names;

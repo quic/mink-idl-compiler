@@ -147,3 +147,14 @@ fn obj_with_obj_array_output() {
         ",
     );
 }
+
+#[should_panic = "conflicts with Mink IDL reserved word"]
+#[test]
+fn method_named_api_version() {
+    verify(
+        r"
+        interface IFoo {
+            method api_version();
+        };",
+    );
+}

@@ -7,10 +7,10 @@ use crate::types::change_primitive;
 
 pub fn emit_struct(r#struct: &StructInner) -> String {
     let mut contents = String::new();
-    let struct_ident = &r#struct.ident;
+    let struct_ident = crate::safe_ident_java(r#struct.ident.as_ref());
 
     for field in &r#struct.fields {
-        let ident = &field.ident;
+        let ident = crate::safe_ident_java(field.ident.as_ref());
         let count = field.val.1.get();
         let ty = match &field.val.0 {
             &idlc_mir::Type::Primitive(primitive) => change_primitive(primitive).to_string(),

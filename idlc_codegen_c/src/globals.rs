@@ -16,7 +16,7 @@ pub fn emit_struct(r#struct: &StructInner) -> String {
     result.push_str("typedef struct {\n");
 
     for field in &r#struct.fields {
-        let ident = &field.ident;
+        let ident = crate::safe_ident_c(field.ident.as_ref());
         let count = field.val.1.get();
         let ty = match &field.val.0 {
             &idlc_mir::Type::Primitive(primitive) => change_primitive(primitive).to_string(),
@@ -30,7 +30,8 @@ pub fn emit_struct(r#struct: &StructInner) -> String {
             format!("{INDENT}{ty} {ident}[{count}];\n")
         });
     }
-    result.push_str(&format!("}} {};\n\n", r#struct.ident));
+    let struct_ident = crate::safe_ident_c(r#struct.ident.as_ref());
+    result.push_str(&format!("}} {struct_ident};\n\n"));
     result
 }
 

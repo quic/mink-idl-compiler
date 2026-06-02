@@ -3,8 +3,7 @@
 
 use crate::globals::emit_const;
 
-use idlc_codegen::keywords::invoke::VERSION_FUNC_NAME;
-use idlc_mir::{APIVersion, Interface, InterfaceNode};
+use idlc_mir::{APIVersion, Interface, InterfaceNode, VERSION_FUNC_NAME};
 
 mod error;
 mod functions;

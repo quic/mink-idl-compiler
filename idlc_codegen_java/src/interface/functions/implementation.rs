@@ -423,6 +423,7 @@ pub fn emit(
     documentation: &str,
     counts: &idlc_codegen::counts::Counter,
     signature: &super::signature::Signature,
+    fn_ident: &str,
 ) -> String {
     let ident = &function.ident;
 
@@ -487,7 +488,7 @@ pub fn emit(
         r#"
         {documentation}
         @Override
-        public void {ident}({params}) throws IMinkObject.InvokeException {{
+        public void {fn_ident}({params}) throws IMinkObject.InvokeException {{
             {inputs}
             {initializations}
             minkObject.invoke({iface_ident}_{OP_ID}_{ident}, {bi}, {bo_sizes}, {bo}, {oi}, {oo});

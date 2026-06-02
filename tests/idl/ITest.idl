@@ -7,8 +7,9 @@ struct ObjInStruct {
   ITest1 second_obj;
 };
 
-struct F1 {
-    uint32 a;
+// The purpose of this struct is to show reserved words are handled properly
+struct break {
+    uint32 switch;
 };
 
 struct SingleEncapsulated {
@@ -65,6 +66,7 @@ interface ITest1 {
   method test_obj_array_out(out ITest1[3] out, out uint32 a);
   method objects_in_struct(in ObjInStruct input, out ObjInStruct output);
   method no_args();
+  method delete(in float64 key); // To show that reserved words are handled properly
 
   #[version = 1.0]
   method derive_v0(in uint32 a); // the default version attribute should have no effect. Cannot have major version less than 1.
