@@ -1,6 +1,6 @@
 [package]
 name = "idlc_ast"
-version = "0.3.0"
+version = "1.0.0"
 edition = "2021"
 description = "AST structure for IDL; contains grammar and AST generators"
 
