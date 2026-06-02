@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.0](https://github.com/quic/mink-idl-compiler/compare/v0.3.0...v1.0.0) (2026-06-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* C++ implementation of IDL versioning with old impl_base.hpp ([#48](https://github.com/quic/mink-idl-compiler/issues/48))
+* Remove `#[optional]` function attribute ([#16](https://github.com/quic/mink-idl-compiler/issues/16))
+
+### Bug Fixes
+
+* C++ implementation of IDL versioning with old impl_base.hpp ([#48](https://github.com/quic/mink-idl-compiler/issues/48)) ([69a0fb5](https://github.com/quic/mink-idl-compiler/commit/69a0fb589142e4012789c80def459e6c883f7ab7))
+* Disallow array of Mink Object in a struct ([#46](https://github.com/quic/mink-idl-compiler/issues/46)) ([0438b0b](https://github.com/quic/mink-idl-compiler/commit/0438b0bf2d83f257937e192a435b1f673cb322cd))
+* Prefix reserved words ([#52](https://github.com/quic/mink-idl-compiler/issues/52)) ([ce31e73](https://github.com/quic/mink-idl-compiler/commit/ce31e7307c5071aca6675aa5a9e11964bf2e9239))
+* Refactor tests ([#50](https://github.com/quic/mink-idl-compiler/issues/50)) ([2557353](https://github.com/quic/mink-idl-compiler/commit/2557353638ca93a774a2e339d55a37ddd328eef8))
+* Remove `#[optional]` function attribute ([#16](https://github.com/quic/mink-idl-compiler/issues/16)) ([3d11875](https://github.com/quic/mink-idl-compiler/commit/3d1187533eba753acc07300eb8ac8be7ed60df55))
+* **tests:** CLI negatives tests work for all ARCH ([#41](https://github.com/quic/mink-idl-compiler/issues/41)) ([73a9a3a](https://github.com/quic/mink-idl-compiler/commit/73a9a3a0a2ccdcb09216289a6c8ab17039838867))
+
+
+### Miscellaneous
+
+* clarify input/output metavar names ([77b0939](https://github.com/quic/mink-idl-compiler/commit/77b093997c5f5a28ecfe7b10eac3ccf15aefca4a))
+* **release:** Build and upload exe for releases ([34c503f](https://github.com/quic/mink-idl-compiler/commit/34c503f3bdf1993897e05bfd6d3c94066b1568bf))
+* **release:** bump crate versions ([89f90e3](https://github.com/quic/mink-idl-compiler/commit/89f90e32dc2a270ae032469a18a8ad7b5a76f290))
+* Update copyright markings on all files ([d219801](https://github.com/quic/mink-idl-compiler/commit/d219801ff3bf343818f9c804ad94e0e7095811d3))
+
+
+### Integration/Automation
+
+* Build Windows executable ([#43](https://github.com/quic/mink-idl-compiler/issues/43)) ([1a7ba9e](https://github.com/quic/mink-idl-compiler/commit/1a7ba9ecda7b089eee50b9d068e248a6eea34b69))
+
+
+### Code Refactoring
+
+* **codegen:** params args ([#49](https://github.com/quic/mink-idl-compiler/issues/49)) ([39f9157](https://github.com/quic/mink-idl-compiler/commit/39f91571fd84da227bafbd9a878b334b6ae5a6cf))
+
 ## [0.3.0](https://github.com/quic/mink-idl-compiler/compare/v0.2.4...v0.3.0) (2026-04-28)
 
 
