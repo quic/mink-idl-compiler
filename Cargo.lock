@@ -331,6 +331,7 @@ name = "idlc_codegen_c"
 version = "0.3.0"
 dependencies = [
  "idlc_codegen",
+ "idlc_errors",
  "idlc_mir",
 ]
 
@@ -340,6 +341,7 @@ version = "0.3.0"
 dependencies = [
  "idlc_codegen",
  "idlc_codegen_c",
+ "idlc_errors",
  "idlc_mir",
 ]
 
@@ -349,6 +351,7 @@ version = "0.3.0"
 dependencies = [
  "convert_case",
  "idlc_codegen",
+ "idlc_errors",
  "idlc_mir",
 ]
 

@@ -239,6 +239,10 @@ macro_rules! itest1_impl {
             }
 
             #[allow(unused_variables)]
+            fn r#delete(&mut self, r#key: f64) -> Result<(), itest1::Error> {
+                Ok(())
+            }
+            #[allow(unused_variables)]
             fn r#derive_v0(&mut self, r#input: u32) -> Result<(), itest1::Error> {
                 Ok(())
             }

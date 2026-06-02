@@ -1,8 +1,7 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause
 
-use idlc_codegen::keywords::invoke::VERSION_FUNC_NAME;
-use idlc_mir::{APIVersion, Interface, InterfaceNode};
+use idlc_mir::{APIVersion, Interface, InterfaceNode, VERSION_FUNC_NAME};
 
 mod functions;
 
@@ -45,12 +44,13 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
                 f,
                 idlc_codegen::documentation::DocumentationStyle::C,
             );
+            let fn_ident = crate::safe_ident_cpp(f.ident.as_ref());
             if is_root {
                 let params = signature.params();
                 func_titles.push_str(&format!(
                     r#"
     virtual int32_t {}({}) = 0;"#,
-                    f.ident, params,
+                    fn_ident, params,
                 ));
                 op_codes.push_str(&format!(
                     r#"
@@ -63,6 +63,7 @@ pub fn emit_interface_impl(interface: &Interface) -> String {
                 &documentation,
                 &counts,
                 &signature,
+                &fn_ident,
             ));
         }
     };
@@ -142,20 +143,22 @@ pub fn emit_interface_invoke(interface: &Interface) -> String {
     interface.iter().skip(1).for_each(|iface| {
         iface.nodes.iter().for_each(|node| {
             if let InterfaceNode::Function(f) = node {
+                let fn_ident = crate::safe_ident_cpp(f.ident.as_ref());
                 let counts = idlc_codegen::counts::Counter::new(f);
                 let signature = functions::signature::Signature::new(f, &counts);
 
-                invokes.push_str(&functions::invoke::emit(f, &signature, &counts));
+                invokes.push_str(&functions::invoke::emit(f, &signature, &counts, &fn_ident));
             }
         })
     });
 
     for node in &interface.nodes {
         if let InterfaceNode::Function(f) = node {
+            let fn_ident = crate::safe_ident_cpp(f.ident.as_ref());
             let counts = idlc_codegen::counts::Counter::new(f);
             let signature = functions::signature::Signature::new(f, &counts);
 
-            invokes.push_str(&functions::invoke::emit(f, &signature, &counts));
+            invokes.push_str(&functions::invoke::emit(f, &signature, &counts, &fn_ident));
         }
     }
 
