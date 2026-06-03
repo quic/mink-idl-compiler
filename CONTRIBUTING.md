@@ -77,6 +77,9 @@ Here are a few things you can do that will increase the likelihood of your pull 
 
 ## Pre-PR Checklist
 
+When making changes, be sure to use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/). That is, prefix your
+commit messages with `feat:`, `fix:`, `deps:`, etc. Since we use squash commits for PRs, this is only relevant for the squash commmit itself but it is still helpful to follow this for the PR branch commits.
+
 For each PR branch, ensure that the source code
 1. is formatted with `cargo fmt`
 2. has no warnings from `cargo clippy --all-targets -- -D clippy::all -D unused -D warnings`
@@ -117,16 +120,10 @@ not possible. The current approach uses a mix of semi-manual updates with [cargo
 
 ## Release-prep model
 
-Changes are introduces through Pull Requests (PRs) that are merged through squash commits.
-
-When making changes, be sure to use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/). That is, prefix your
-commit messages with `feat:`, `fix:`, `deps:`, etc. Since we use squash commits for PRs, the tip of
-your PR branch must contain the prefix keyword.
-
 *Version Policy*
 - PRs:
     - modify code only
-    - **never touch versions**
+    - **never touch versions** (including Cargo.lock)
 - Versions are bumped only during release preparation
 - `cargo ws changed` determines affected crates
 - Patch/minor/major is chosen intentionally
