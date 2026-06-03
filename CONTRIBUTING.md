@@ -112,7 +112,7 @@ The release process strives to ensure that each release contains the following:
 The release process involves some automation and the following steps should be carefully followed to
 ensure uniformity among the releases.
 
-Due to the structure of this repo and QUIC policies, some obvious approaches to automating releases are
+Due to the structure of this repo and Qualcomm's Github CI policies, some obvious approaches to automating releases are
 not possible. The current approach uses a mix of semi-manual updates with [cargo-workspaces](https://github.com/pksunkara/cargo-workspaces) and automated releases with [release-please](https://github.com/marketplace/actions/release-please-action).
 
 ## Release-prep model
