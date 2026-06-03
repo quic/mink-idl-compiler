@@ -1,3 +1,6 @@
+// Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+// SPDX-License-Identifier: BSD-3-Clause
+
 use idlc_ast::{APIVersion, VersionParseError};
 use std::str::FromStr;
 use thiserror::Error;

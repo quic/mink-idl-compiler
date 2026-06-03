@@ -1,8 +1,6 @@
-/***********************************************************
- Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
- All Rights Reserved.
- Confidential and Proprietary - Qualcomm Technologies, Inc.
-************************************************************/
+// Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+// SPDX-License-Identifier: BSD-3-Clause
+
 /* c++ implementation skeleton base class */
 #ifndef __IMPL_BASE_HPP
 #define __IMPL_BASE_HPP
