@@ -1,7 +1,13 @@
 # The Mink IDL Compiler
 Mink Interface Description Language (IDL) describes programming interfaces that can be used to communicate across security domain boundaries. It defines its own type system, independent of any particular target language. See [Mink IPC](https://github.com/qualcomm/minkipc) for more detail.
 
-The Mink IDL compiler generates target language header files which include bindings for Mink interfaces and their associates structures. The generated header files introduce proxy functions that facilitate method invocation using Mink's `Object_invoke` IPC mechanism. This abstraction shields both client-side proxy, called `stubs`, and implementation-side proxy, called `skeletons`, from the details of direct invocation.
+The Mink IDL _compiler_ generates target language header files which include bindings for Mink interfaces and their associates structures. The generated header files introduce proxy functions that facilitate method invocation using Mink's `Object_invoke` IPC mechanism. This abstraction shields both client-side proxy, called `stubs`, and implementation-side proxy, called `skeletons`, from the details of direct invocation.
+
+It compiles `.idl` files into language bindings for:
+- C
+- C++
+- Java
+- Rust
 
 ## Branches
 
@@ -13,20 +19,18 @@ The Mink IDL compiler generates target language header files which include bindi
 - `clang` and `clang++` (integration tests compile C/C++ shims)
 - Optional: nightly Rust for sanitizer and miri runs
 
-Follow [these instruction](https://rust-lang.org/tools/install/) to install Rust. If you've installed `rustup` in the past, you can update your installation by running `rustup update`.
+Follow [these instructions](https://rust-lang.org/tools/install/) to install Rust.
 
-## Installation Instructions
-
-By default, `idlc` is statically compiled with MUSL linkage so there are no dependencies or installation instructions.
+If you've installed `rustup` in the past, you can update your installation by running `rustup update`.
 
 ## Usage
-
-By default, the output language is C.
 
 Run the compiler (file output):
 ```sh
 cargo run -- tests/idl/ITest.idl -o /tmp/ITest.h
 ```
+The target/output language is C, by default.
+
 
 Generate Rust output (directory output):
 ```sh
@@ -68,7 +72,7 @@ Run `cargo run -- --help` to see all available options.
 
 ## Development
 
-For details on how to contribute, see [CONTRIBUTING.md file](CONTRIBUTING.md).
+For details on how to contribute, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Getting in Contact
 
