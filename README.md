@@ -1,17 +1,36 @@
 # The Mink IDL Compiler
+Mink Interface Description Language (IDL) describes programming interfaces that can be used to communicate across security domain boundaries. It defines its own type system, independent of any particular target language. See [Mink IPC](https://github.com/qualcomm/minkipc) for more detail.
 
-## Background
-Mink IDL describes programming interfaces that can be used to communicate across security domain boundaries. It defines its own type system, independent of any particular target language. See [Mink IPC](https://github.com/qualcomm/minkipc) for more detail.
+The Mink IDL _compiler_ generates target language header files which include bindings for Mink interfaces and their associates structures. The generated header files introduce proxy functions that facilitate method invocation using Mink's `Object_invoke` IPC mechanism. This abstraction shields both client-side proxy, called `stubs`, and implementation-side proxy, called `skeletons`, from the details of direct invocation.
 
-The Mink IDL compiler generates target language header files which include bindings for Mink interfaces and their associates structures. The generated header files introduce proxy functions that facilitate method invocation using Mink's `Object_invoke` IPC mechanism. This abstraction shields both client-side proxy, called `stubs`, and implementation-side proxy, called `skeletons`, from the details of direct invocation.
+It compiles `.idl` files into language bindings for:
+- C
+- C++
+- Java
+- Rust
 
-## Getting Started
-By default, the output language is C.
+## Branches
+
+**main**: Primary development branch. Contributors should develop submissions based on this branch, and submit pull requests to this branch.
+
+## Requirements
+
+- Rust stable toolchain (`cargo`, `rustc`) - minimum supported Rust version = 1.81.0
+- `clang` and `clang++` (integration tests compile C/C++ shims)
+- Optional: nightly Rust for sanitizer and miri runs
+
+Follow [these instructions](https://rust-lang.org/tools/install/) to install Rust.
+
+If you've installed `rustup` in the past, you can update your installation by running `rustup update`.
+
+## Usage
 
 Run the compiler (file output):
 ```sh
 cargo run -- tests/idl/ITest.idl -o /tmp/ITest.h
 ```
+The target/output language is C, by default.
+
 
 Generate Rust output (directory output):
 ```sh
@@ -20,8 +39,6 @@ cargo run -- tests/idl/ITest.idl --rust -o /tmp/rust_out
 ```
 
 Run `cargo run -- --help` to see all available options.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for more detail.
 
 ## Notable Features
 - Arrays of Objects
@@ -53,5 +70,18 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for more detail.
 - Cannot have multiple Object arrays _with the same directionality_ in a method.
 - New methods must be appended at the bottom since method op_codes are positional.
 
-Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
-SPDX-License-Identifier: BSD-3-Clause
+## Development
+
+For details on how to contribute, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Getting in Contact
+
+How to contact maintainers. E.g. GitHub Issues, GitHub Discussions could be indicated for many cases. However a mail list or list of Maintainer e-mails could be shared for other types of discussions. E.g.
+
+* [Report an Issue on GitHub](../../issues)
+* [Open a Discussion on GitHub](../../discussions)
+* [E-mail us](mailto:mink-idl-compiler@qti.qualcomm.com) for general questions
+
+## License
+
+_mink-idl-compiler_ is licensed under the [BSD-3-clause License](https://spdx.org/licenses/BSD-3-Clause.html). See [LICENSE.txt](LICENSE.txt) for the full license text.
