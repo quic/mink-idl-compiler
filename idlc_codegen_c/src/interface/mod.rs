@@ -193,7 +193,7 @@ pub fn emit_interface_invoke(interface: &Interface, is_no_typed_objects: bool) -
                 if (k != ObjectCounts_pack(0, 1, 0, 0) || a[0].b.size != 4) {{ \
                   break; \
                 }} \
-                uint32_t *a_ptr = (void*)a[0].b.ptr; \
+                uint32_t *a_ptr = (uint32_t*)a[0].b.ptr; \
                 *a_ptr = (({ident}_VERSION_MAJOR & {ident}_MAJOR_MASK) << {ident}_MAJOR_SHIFT) | \
                          (({ident}_VERSION_MINOR & {ident}_MINOR_MASK) << {ident}_MINOR_SHIFT) | \
                           ({ident}_VERSION_PATCH & {ident}_PATCH_MASK); \

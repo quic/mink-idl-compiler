@@ -115,6 +115,7 @@ fn main() {
     c_ffi.file("c/invoke.c");
     c_ffi.include("c");
     c_ffi.include(c_generated(None));
+    c_ffi.flag("-Wc++-compat");
     c_ffi.flag("-Wno-unused-parameter");
     c_ffi.flag("-Werror");
     c_ffi.compile("c-ffi");
