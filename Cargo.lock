@@ -328,7 +328,7 @@ dependencies = [
 
 [[package]]
 name = "idlc_codegen_c"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "idlc_codegen",
  "idlc_errors",
@@ -377,7 +377,7 @@ dependencies = [
 
 [[package]]
 name = "idlc_mir"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "idlc_ast",
  "idlc_ast_passes",
