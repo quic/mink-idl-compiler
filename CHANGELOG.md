@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.1](https://github.com/qualcomm/mink-idl-compiler/compare/v1.0.0...v1.0.1) (2026-06-10)
+
+
+### Bug Fixes
+
+* invalid type conversion in `api_version` ([#59](https://github.com/qualcomm/mink-idl-compiler/issues/59)) ([e00d8b0](https://github.com/qualcomm/mink-idl-compiler/commit/e00d8b0f8e48a9bcf36697daa03703cfdd494ce2))
+
+
+### Miscellaneous
+
+* **deps:** bump googleapis/release-please-action from 4 to 5 ([#57](https://github.com/qualcomm/mink-idl-compiler/issues/57)) ([9f49ed5](https://github.com/qualcomm/mink-idl-compiler/commit/9f49ed5447f1cd64d044e1c154a64b8431d529dc))
+* **release:** bump crate versions ([6865ad7](https://github.com/qualcomm/mink-idl-compiler/commit/6865ad734327a43b82c36b4d37ddd62c0bfc2b54))
+* Update docs, template, and license file ([#58](https://github.com/qualcomm/mink-idl-compiler/issues/58)) ([a3d44d9](https://github.com/qualcomm/mink-idl-compiler/commit/a3d44d9bbfd7395dc919a8889fc388a8a038503f))
+
+
+### Integration/Automation
+
+* Prepare the repository for a new organization ([#55](https://github.com/qualcomm/mink-idl-compiler/issues/55)) ([b56b467](https://github.com/qualcomm/mink-idl-compiler/commit/b56b4675c17506fc1955a5cab4eb15efbac3e985))
+
 ## [1.0.0](https://github.com/quic/mink-idl-compiler/compare/v0.3.0...v1.0.0) (2026-06-02)
 
 
