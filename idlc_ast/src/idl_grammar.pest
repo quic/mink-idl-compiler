@@ -14,7 +14,7 @@ float_type     = @{ "float" ~ ("32" | "64") }
 primitive_type = @{ (integer_type | float_type) }
 value          = @{ ("-"? ~ "0x" ~ ASCII_HEX_DIGIT+ | "-"? ~ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)?) }
 
-array_size      = @{ ASCII_DIGIT+ }
+array_size      = @{ ASCII_DIGIT+ | ident }
 bounded_array   =  { "[" ~ array_size ~ "]" }
 unbounded_array =  { "[" ~ "]" }
 
